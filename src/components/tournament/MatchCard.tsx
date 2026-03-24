@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock, ChevronDown, ChevronUp } from 'lucide-react'
+import { Lock, ChevronDown, ChevronUp, Check, Save, AlertCircle } from 'lucide-react'
 import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
@@ -26,19 +26,39 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const { isLocked } = useCountdown(match.matchStartTime)
   const { placeBet } = useTournament()
   const { currentUser } = useAuth()
-  const [homeScore, setHomeScore] = useState<number | null>(userBet?.predictedScore.home ?? null)
-  const [awayScore, setAwayScore] = useState<number | null>(userBet?.predictedScore.away ?? null)
+  const [homeScore, setHomeScore] = useState<number | null>(userBet?.predictedScore.home ?? 0)
+  const [awayScore, setAwayScore] = useState<number | null>(userBet?.predictedScore.away ?? 0)
+  const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState(false)
+  const [dirty, setDirty] = useState(false)
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showOthers, setShowOthers] = useState(false)
   const isFinished = match.status === 'finished' || match.actualScore !== null
   const isInputLocked = isLocked || isFinished
 
-  // שמירה אוטומטית כשמשתנה הניחוש
+  // סנכרן מהשרת כשהבט מגיע אסינכרונית
+  const syncedBetId = useRef<string | null>(null)
   useEffect(() => {
-    if (homeScore !== null && awayScore !== null && !isInputLocked && currentUser) {
-      placeBet(match.id, { home: homeScore, away: awayScore }, currentUser.id)
+    if (userBet && userBet.id !== syncedBetId.current) {
+      syncedBetId.current = userBet.id
+      setHomeScore(userBet.predictedScore.home)
+      setAwayScore(userBet.predictedScore.away)
+      setDirty(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeScore, awayScore])
+  }, [userBet?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleHomeChange = (v: number) => { setHomeScore(v); setDirty(true); setSaved(false) }
+  const handleAwayChange = (v: number) => { setAwayScore(v); setDirty(true); setSaved(false) }
+
+  const handleSave = async () => {
+    if (homeScore === null || awayScore === null || !currentUser) return
+    const ok = await placeBet(match.id, { home: homeScore, away: awayScore }, currentUser.id)
+    if (!ok) { setSaveError(true); setTimeout(() => setSaveError(false), 3000); return }
+    setDirty(false)
+    setSaved(true)
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
+    savedTimerRef.current = setTimeout(() => setSaved(false), 2500)
+  }
 
   const matchDate = new Date(match.matchStartTime)
   const dateStr = matchDate.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -55,26 +75,55 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className={cn('overflow-hidden', isFinished && 'border-green-200')}>
-        <div className="flex items-center justify-between px-4 py-2 bg-muted/50 text-xs text-muted-foreground">
+      <Card className={cn('overflow-hidden', isFinished && 'border-green-300 bg-green-50/60')}>
+        <div className={cn('flex items-center justify-between px-4 py-2 text-xs text-muted-foreground', isFinished ? 'bg-green-100/70' : 'bg-muted/50')}>
           <CountdownTimer matchStartTime={match.matchStartTime} />
           <span>{dateStr} · {timeStr}</span>
         </div>
 
-        <div className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 flex flex-col items-center gap-1">
-              <TeamFlag team={match.homeTeam} size="md" />
-              <span className="text-xs font-semibold text-center leading-tight">{match.homeTeam.name}</span>
+        <div className="p-6">
+          {/* שורה ראשית: קבוצה בית | תוצאה | קבוצה חוץ */}
+          <div className="flex items-center gap-4">
+            {/* קבוצת בית */}
+            <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
+              <TeamFlag team={match.homeTeam} size="xl" />
+              <span className="text-[11px] font-semibold text-center leading-tight line-clamp-2 w-full break-words">{match.homeTeam.name}</span>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <ScoreInput value={homeScore} onChange={setHomeScore} disabled={isInputLocked} />
-              <span className="text-lg font-bold text-muted-foreground">:</span>
-              <ScoreInput value={awayScore} onChange={setAwayScore} disabled={isInputLocked} />
+
+            {/* ניחוש תוצאה */}
+            <div className="flex flex-col items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <ScoreInput value={homeScore} onChange={handleHomeChange} disabled={isInputLocked} />
+                <span className="text-xl font-bold text-muted-foreground">:</span>
+                <ScoreInput value={awayScore} onChange={handleAwayChange} disabled={isInputLocked} />
+              </div>
+
+              {!isInputLocked && (
+                <button
+                  onClick={handleSave}
+                  disabled={!dirty || saved}
+                  className={cn(
+                    'flex items-center gap-1 text-xs px-3 py-1 rounded-full font-medium transition-all',
+                    saveError
+                      ? 'bg-red-100 text-red-600 cursor-default'
+                      : dirty && !saved
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      : 'bg-muted text-muted-foreground cursor-default'
+                  )}
+                >
+                  {saveError
+                    ? <><AlertCircle className="h-3 w-3" />שגיאה</>
+                    : saved
+                    ? <><Check className="h-3 w-3" />נשמר</>
+                    : <><Save className="h-3 w-3" />שמור</>}
+                </button>
+              )}
             </div>
-            <div className="flex-1 flex flex-col items-center gap-1">
-              <TeamFlag team={match.awayTeam} size="md" />
-              <span className="text-xs font-semibold text-center leading-tight">{match.awayTeam.name}</span>
+
+            {/* קבוצת חוץ */}
+            <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
+              <TeamFlag team={match.awayTeam} size="xl" />
+              <span className="text-[11px] font-semibold text-center leading-tight line-clamp-2 w-full break-words">{match.awayTeam.name}</span>
             </div>
           </div>
 

@@ -1,6 +1,5 @@
 'use client'
-import { useState } from 'react'
-import { Input } from '@/components/ui/input'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -10,37 +9,62 @@ interface Props {
   className?: string
 }
 
-export function ScoreInput({ value, onChange, disabled, className }: Props) {
-  const [local, setLocal] = useState(value?.toString() ?? '')
+const MIN = 0
+const MAX = 10
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocal(e.target.value)
+export function ScoreInput({ value, onChange, disabled, className }: Props) {
+  const current = value ?? 0
+
+  const increment = () => {
+    if (disabled || current >= MAX) return
+    onChange(current + 1)
   }
 
-  const handleBlur = () => {
-    const num = parseInt(local, 10)
-    if (!isNaN(num) && num >= 0 && num <= 99) {
-      onChange(num)
-    } else {
-      setLocal(value?.toString() ?? '')
-    }
+  const decrement = () => {
+    if (disabled || current <= MIN) return
+    onChange(current - 1)
+  }
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (disabled) return
+    e.preventDefault()
+    if (e.deltaY < 0) increment()
+    else decrement()
   }
 
   return (
-    <Input
-      type="number"
-      min={0}
-      max={99}
-      value={local}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      disabled={disabled}
-      className={cn(
-        'w-14 text-center text-lg font-bold h-10 p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
-        disabled && 'bg-muted cursor-not-allowed opacity-70',
-        className
-      )}
-      placeholder="-"
-    />
+    <div className={cn('flex flex-col items-center gap-0.5 select-none', className)}>
+      <button
+        type="button"
+        onClick={increment}
+        disabled={disabled || current >= MAX}
+        className="p-1 rounded hover:bg-muted disabled:opacity-20 transition-colors"
+        tabIndex={-1}
+      >
+        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+      </button>
+
+      <div
+        onWheel={handleWheel}
+        className={cn(
+          'w-11 h-11 flex items-center justify-center rounded-lg border text-xl font-bold transition-colors',
+          disabled
+            ? 'bg-muted text-muted-foreground border-muted cursor-not-allowed'
+            : 'bg-white border-gray-200 cursor-ns-resize hover:border-indigo-300'
+        )}
+      >
+        {current}
+      </div>
+
+      <button
+        type="button"
+        onClick={decrement}
+        disabled={disabled || current <= MIN}
+        className="p-1 rounded hover:bg-muted disabled:opacity-20 transition-colors"
+        tabIndex={-1}
+      >
+        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+      </button>
+    </div>
   )
 }

@@ -35,7 +35,7 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-l from-indigo-700 to-purple-700 text-white sticky top-0 z-20">
-        <div className="max-w-2xl mx-auto px-4 py-3">
+        <div className="max-w-[1600px] mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
             <button onClick={() => router.push('/competitions')} className="p-1 rounded hover:bg-white/10 transition-colors">
               <ArrowRight className="h-5 w-5" />
@@ -84,7 +84,7 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="flex-1 max-w-2xl mx-auto w-full px-4 py-6"
+        className="flex-1 max-w-[1600px] mx-auto w-full px-4 py-6"
       >
         {children}
       </motion.div>

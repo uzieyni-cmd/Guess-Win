@@ -17,6 +17,7 @@ export interface Tournament {
   logoUrl: string
   description: string
   status: TournamentStatus
+  isHidden: boolean
   participantIds: string[]
   matches: Match[]
   createdAt: string

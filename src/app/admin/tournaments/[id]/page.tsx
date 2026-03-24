@@ -1,8 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw } from 'lucide-react'
+import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
 import { supabase } from '@/lib/supabase'
@@ -18,13 +18,14 @@ import { Match } from '@/types'
 export default function AdminTournamentDetailPage() {
   const params = useParams()
   const id = params.id as string
-  const { tournaments, addMatch, reload } = useTournament()
+  const { tournaments, addMatch, reload, reloadMatches } = useTournament()
   const tournament = tournaments.find((t) => t.id === id)
 
   const [scores, setScores] = useState<Record<string, { home: string; away: string }>>({})
   const [saved, setSaved] = useState<string[]>([])
   const [syncing, setSyncing] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
+  const [hideFinished, setHideFinished] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [newMatch, setNewMatch] = useState({
     homeName: '',
@@ -34,7 +35,56 @@ export default function AdminTournamentDetailPage() {
     kickoff: '',
   })
 
+  // ── טעינת משחקים אמיתיים תמיד בכניסה לדף ─────────────────────
+  const [matchesLoaded, setMatchesLoaded] = useState(false)
+  const autoSynced = useRef(false)
+
+  useEffect(() => {
+    if (!id) return
+    // תמיד טען משחקים מלאים (לא stubs) בכניסה לדף
+    reloadMatches(id)
+    setMatchesLoaded(true)
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-sync: אחרי טעינה, אם אין משחקים ויש League ID ────────
+  useEffect(() => {
+    if (!matchesLoaded || !tournament || autoSynced.current) return
+    // בדוק האם המשחקים הם stubs (חסרי homeTeam)
+    const hasRealMatches = tournament.matches.length > 0 && tournament.matches[0].homeTeam
+    if (hasRealMatches) return
+    if (tournament.matches.length > 0 && !tournament.matches[0].homeTeam) {
+      // עדיין stubs — נחכה לריענון
+      return
+    }
+    supabase
+      .from('tournaments')
+      .select('api_league_id, api_season')
+      .eq('id', id)
+      .single()
+      .then(async ({ data: row }) => {
+        if (row?.api_league_id && row?.api_season) {
+          autoSynced.current = true
+          setSyncing(true)
+          setSyncMsg(`⏳ מסנכרן משחקים מ-API-Football...`)
+          const result = await syncFixtures(id, row.api_league_id, row.api_season)
+          setSyncing(false)
+          if (result.error) {
+            setSyncMsg(`שגיאה: ${result.error}`)
+          } else {
+            setSyncMsg(`✓ ${result.synced} משחקים נטענו בהצלחה!`)
+            reloadMatches(id)
+          }
+        }
+      })
+  }, [matchesLoaded, tournament, id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!tournament) return <div className="p-6 text-muted-foreground">התחרות לא נמצאה.</div>
+
+  // stubs = matches ממתינות לטעינה אמיתית
+  const realMatches = tournament.matches.filter((m) => !!m.homeTeam)
+  const isLoadingMatches = !matchesLoaded || (tournament.matches.length > 0 && realMatches.length === 0)
+  const visibleMatches = hideFinished ? realMatches.filter((m) => m.status !== 'finished') : realMatches
+  const finishedCount = realMatches.filter((m) => m.status === 'finished').length
 
   // ── Sync from API-Football ─────────────────────────────────────
   const handleSync = async () => {
@@ -69,7 +119,7 @@ export default function AdminTournamentDetailPage() {
       .single()
     if (!data?.api_fixture_id) return
     await refreshMatchResult(data.api_fixture_id)
-    reload()
+    reloadMatches(id)
   }
 
   // ── Manual score save ──────────────────────────────────────────
@@ -82,7 +132,7 @@ export default function AdminTournamentDetailPage() {
     await setMatchScore(matchId, home, away)
     setSaved((prev) => [...prev, matchId])
     setTimeout(() => setSaved((prev) => prev.filter((x) => x !== matchId)), 2000)
-    reload()
+    reloadMatches(id)
   }
 
   // ── Add match manually ─────────────────────────────────────────
@@ -117,6 +167,19 @@ export default function AdminTournamentDetailPage() {
           <p className="text-muted-foreground text-sm">{tournament.description}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* כפתור הסתרת משחקים שהסתיימו */}
+          {finishedCount > 0 && (
+            <Button
+              variant={hideFinished ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setHideFinished((v) => !v)}
+              title={hideFinished ? 'הצג משחקים שהסתיימו' : 'הסתר משחקים שהסתיימו'}
+            >
+              {hideFinished
+                ? <><Eye className="h-4 w-4 ml-1" />הצג הכל ({finishedCount})</>
+                : <><EyeOff className="h-4 w-4 ml-1" />הסתר שהסתיימו ({finishedCount})</>}
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
             {syncing
               ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
@@ -170,8 +233,16 @@ export default function AdminTournamentDetailPage() {
         </div>
       )}
 
+      {/* ── ספינר טעינה ── */}
+      {isLoadingMatches && (
+        <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+          <span>טוען משחקים...</span>
+        </div>
+      )}
+
       <div className="space-y-4">
-        {tournament.matches.map((match: Match, i: number) => (
+        {!isLoadingMatches && visibleMatches.map((match: Match, i: number) => (
           <motion.div key={match.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
             <Card>
               <CardHeader className="pb-2">
@@ -237,7 +308,7 @@ export default function AdminTournamentDetailPage() {
           </motion.div>
         ))}
 
-        {tournament.matches.length === 0 && (
+        {!isLoadingMatches && visibleMatches.length === 0 && realMatches.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <p className="mb-2">אין משחקים עדיין.</p>
             <p className="text-sm">לחץ <strong>סנכרן מ-API</strong> כדי לייבא משחקים אמיתיים,<br />או הוסף משחק ידנית.</p>

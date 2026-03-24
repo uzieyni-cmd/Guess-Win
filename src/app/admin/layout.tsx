@@ -56,7 +56,10 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="p-3 border-t">
-          <Link href="/competitions" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
+          <Link
+            href="/competitions"
+            className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
+          >
             <ArrowRight className="h-4 w-4" />
             חזרה לאפליקציה
           </Link>

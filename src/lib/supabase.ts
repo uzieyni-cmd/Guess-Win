@@ -22,6 +22,7 @@ export type DbTournament = {
   logo_url: string | null
   description: string | null
   status: 'upcoming' | 'active' | 'completed'
+  is_hidden: boolean
   api_league_id: number | null
   api_season: number | null
   created_at: string

@@ -29,10 +29,14 @@ export function useCountdown(matchStartTime: string): CountdownResult {
   const isLocked = timeLeft <= 0
 
   const totalSeconds = Math.floor(timeLeft / 1000)
-  const hours = Math.floor(totalSeconds / 3600)
+  const days    = Math.floor(totalSeconds / 86400)
+  const hours   = Math.floor((totalSeconds % 86400) / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = totalSeconds % 60
-  const formatted = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+
+  const formatted = days > 0
+    ? `${days} ימים ו-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} שעות`
+    : `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 
   return { timeLeft, isLocked, formatted }
 }

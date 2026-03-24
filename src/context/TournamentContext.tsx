@@ -3,23 +3,32 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { supabase, DbMatch, DbBet, DbTournament } from '@/lib/supabase'
 import { deriveLeaderboard } from '@/lib/scoring'
+import { translateTeam } from '@/lib/teams-he'
 import { Bet, Match, ParticipantStanding, Score, Tournament, User } from '@/types'
+import {
+  adminCreateTournament,
+  adminUpdateTournament,
+  adminDeleteTournament,
+  adminToggleHide,
+} from '@/app/actions/tournaments'
 
 // ── Adapters: DB row → App type ──────────────────────────────────
 
 function dbMatchToMatch(m: DbMatch): Match {
+  const homeName = translateTeam(m.home_team_name)
+  const awayName = translateTeam(m.away_team_name)
   return {
     id: m.id,
     tournamentId: m.tournament_id,
     homeTeam: {
       id: m.home_team_id,
-      name: m.home_team_name,
+      name: homeName,
       shortCode: m.home_team_short ?? m.home_team_name.slice(0, 3).toUpperCase(),
       flagUrl: m.home_team_flag ?? '',
     },
     awayTeam: {
       id: m.away_team_id,
-      name: m.away_team_name,
+      name: awayName,
       shortCode: m.away_team_short ?? m.away_team_name.slice(0, 3).toUpperCase(),
       flagUrl: m.away_team_flag ?? '',
     },
@@ -42,6 +51,13 @@ interface CreateTournamentInput {
   apiSeason?: number
 }
 
+interface UpdateTournamentInput {
+  name?: string
+  logoUrl?: string
+  description?: string
+  status?: Tournament['status']
+}
+
 interface TournamentContextType {
   tournaments: Tournament[]
   activeTournament: Tournament | null
@@ -49,12 +65,16 @@ interface TournamentContextType {
   participants: User[]
   standings: ParticipantStanding[]
   setActiveTournamentId: (id: string) => void
-  placeBet: (matchId: string, score: Score, userId: string) => Promise<void>
+  placeBet: (matchId: string, score: Score, userId: string) => Promise<boolean>
   setActualScore: (tournamentId: string, matchId: string, score: Score) => Promise<void>
-  createTournament: (data: CreateTournamentInput) => Promise<void>
+  createTournament: (data: CreateTournamentInput) => Promise<string | undefined>
+  updateTournament: (id: string, data: UpdateTournamentInput) => Promise<void>
+  deleteTournament: (id: string) => Promise<void>
+  toggleHideTournament: (id: string, hidden: boolean) => Promise<void>
   addMatch: (tournamentId: string, match: Omit<Match, 'id' | 'tournamentId'>) => Promise<void>
   updateUserPermissions: (userId: string, competitionIds: string[]) => Promise<void>
   reload: () => void
+  reloadMatches: (tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean }) => Promise<string | null>
 }
 
 const TournamentContext = createContext<TournamentContextType | null>(null)
@@ -65,7 +85,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [bets, setBets] = useState<Bet[]>([])
   const [participants, setParticipants] = useState<User[]>([])
 
-  // ── Load all tournaments ───────────────────────────────────────
+  // ── Load tournaments (metadata only — no matches) ─────────────
   const loadTournaments = useCallback(async () => {
     const { data: rows } = await supabase
       .from('tournaments')
@@ -73,36 +93,78 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       .order('created_at', { ascending: false })
     if (!rows) return
 
-    const result: Tournament[] = await Promise.all(
-      rows.map(async (t: DbTournament) => {
-        const { data: matchRows } = await supabase
-          .from('matches')
-          .select('*')
-          .eq('tournament_id', t.id)
-          .order('match_start_time', { ascending: true })
+    // ספירת משחקים ומשתתפים בלי שאיבת כל השורות
+    const tournamentIds = rows.map((t: DbTournament) => t.id)
+    const [matchCountsRes, participantRowsRes] = await Promise.all([
+      supabase.from('matches')
+        .select('tournament_id', { count: 'exact' })
+        .in('tournament_id', tournamentIds),
+      supabase.from('tournament_participants')
+        .select('tournament_id, user_id')
+        .in('tournament_id', tournamentIds),
+    ])
 
-        const { data: participantRows } = await supabase
-          .from('tournament_participants')
-          .select('user_id')
-          .eq('tournament_id', t.id)
+    // בנה מפת ספירת משחקים per tournament
+    const matchCountMap: Record<string, number> = {}
+    ;(matchCountsRes.data ?? []).forEach((m: { tournament_id: string }) => {
+      matchCountMap[m.tournament_id] = (matchCountMap[m.tournament_id] ?? 0) + 1
+    })
 
-        return {
-          id: t.id,
-          name: t.name,
-          logoUrl: t.logo_url ?? '',
-          description: t.description ?? '',
-          status: t.status,
-          participantIds: participantRows?.map((p: { user_id: string }) => p.user_id) ?? [],
-          matches: matchRows?.map(dbMatchToMatch) ?? [],
-          createdAt: t.created_at,
-          updatedAt: t.updated_at,
-        }
-      })
-    )
+    const result: Tournament[] = rows.map((t: DbTournament) => ({
+      id: t.id,
+      name: t.name,
+      logoUrl: t.logo_url ?? '',
+      description: t.description ?? '',
+      status: t.status,
+      isHidden: t.is_hidden ?? false,
+      participantIds: (participantRowsRes.data ?? [])
+        .filter((p: { tournament_id: string }) => p.tournament_id === t.id)
+        .map((p: { user_id: string }) => p.user_id),
+      matches: new Array(matchCountMap[t.id] ?? 0)
+        .fill(null).map((_, i) => ({ id: `stub-${i}` } as unknown as Match)),
+      createdAt: t.created_at,
+      updatedAt: t.updated_at,
+    }))
     setTournaments(result)
   }, [])
 
+  // ── Load matches — Route Handler עם cache ─────────────────────
+  const loadActiveMatches = useCallback(async (
+    tournamentId: string,
+    options: { all?: boolean; after?: string; append?: boolean } = {}
+  ) => {
+    const { all = false, after, append = false } = options
+    let url = `/api/matches/${tournamentId}`
+    if (all)  url += '?all=1'
+    if (after) url += `?after=${encodeURIComponent(after)}`
+
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return null
+
+    const json: { matches: DbMatch[]; hasMore: boolean } = await res.json()
+    const newMatches = json.matches.map(dbMatchToMatch)
+
+    setTournaments((prev) => prev.map((t) => {
+      if (t.id !== tournamentId) return t
+      const existing = append ? t.matches.filter(m => !!m.homeTeam) : []
+      // מיזוג ללא כפילויות לפי id
+      const ids = new Set(existing.map(m => m.id))
+      const merged = [...existing, ...newMatches.filter(m => !ids.has(m.id))]
+      return { ...t, matches: merged }
+    }))
+
+    return json.hasMore
+      ? newMatches.at(-1)?.matchStartTime ?? null
+      : null
+  }, [])
+
   useEffect(() => { loadTournaments() }, [loadTournaments])
+
+  // ── Load full matches when active tournament changes ──────────
+  useEffect(() => {
+    if (!activeTournamentId) return
+    loadActiveMatches(activeTournamentId)
+  }, [activeTournamentId, loadActiveMatches])
 
   // ── Load bets + participants when active tournament changes ────
   useEffect(() => {
@@ -180,7 +242,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   // ── Place / update a bet ───────────────────────────────────────
-  const placeBet = useCallback(async (matchId: string, score: Score, userId: string) => {
+  const placeBet = useCallback(async (matchId: string, score: Score, userId: string): Promise<boolean> => {
     const { error } = await supabase
       .from('bets')
       .upsert({
@@ -192,7 +254,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,match_id' })
 
-    if (error) console.error('placeBet error:', error)
+    if (error) { console.error('placeBet error:', error); return false }
+    return true
   }, [activeTournamentId])
 
   // ── Set actual score (Admin) ───────────────────────────────────
@@ -204,21 +267,18 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     await loadTournaments()
   }, [loadTournaments])
 
-  // ── Create tournament (Admin) ──────────────────────────────────
+  // ── Create tournament (Admin) — via Server Action ──────────────
   const createTournament = useCallback(async (data: CreateTournamentInput) => {
-    const { data: row, error } = await supabase
-      .from('tournaments')
-      .insert({
-        name: data.name,
-        description: data.description,
-        logo_url: data.logoUrl || null,
-        api_league_id: data.apiLeagueId ?? null,
-        api_season: data.apiSeason ?? null,
-        status: 'upcoming',
-      })
-      .select()
-      .single()
-    if (error || !row) return
+    const result = await adminCreateTournament(data)
+    if (result.error || !result.id) { console.error('createTournament:', result.error); return }
+    await loadTournaments()
+    return result.id
+  }, [loadTournaments])
+
+  // ── Update tournament (Admin) — via Server Action ──────────────
+  const updateTournament = useCallback(async (id: string, data: UpdateTournamentInput) => {
+    const result = await adminUpdateTournament(id, data)
+    if (!result.ok) { console.error('updateTournament:', result.error); return }
     await loadTournaments()
   }, [loadTournaments])
 
@@ -257,13 +317,31 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     await loadTournaments()
   }, [loadTournaments])
 
+  // ── Delete tournament (Admin) — via Server Action ─────────────
+  const deleteTournament = useCallback(async (id: string) => {
+    const result = await adminDeleteTournament(id)
+    if (!result.ok) { console.error('deleteTournament:', result.error); return }
+    await loadTournaments()
+  }, [loadTournaments])
+
+  // ── Toggle visibility (Admin) — via Server Action ──────────────
+  const toggleHideTournament = useCallback(async (id: string, hidden: boolean) => {
+    const result = await adminToggleHide(id, hidden)
+    if (!result.ok) { console.error('toggleHide:', result.error); return }
+    // עדכון מיידי ב-state ללא reload מלא
+    setTournaments((prev) => prev.map((t) => t.id === id ? { ...t, isHidden: hidden } : t))
+  }, [])
+
   const reload = useCallback(() => { loadTournaments() }, [loadTournaments])
+  const reloadMatches = useCallback((tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean }) => {
+    return loadActiveMatches(tournamentId, options ?? {})
+  }, [loadActiveMatches])
 
   return (
     <TournamentContext.Provider value={{
       tournaments, activeTournament, bets, participants, standings,
       setActiveTournamentId, placeBet, setActualScore, createTournament,
-      addMatch, updateUserPermissions, reload,
+      updateTournament, deleteTournament, toggleHideTournament, addMatch, updateUserPermissions, reload, reloadMatches,
     }}>
       {children}
     </TournamentContext.Provider>

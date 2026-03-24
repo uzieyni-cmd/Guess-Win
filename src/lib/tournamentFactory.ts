@@ -14,6 +14,7 @@ export function generateTournament(input: CreateTournamentInput): Tournament {
     logoUrl: input.logoUrl || 'https://flagcdn.com/w40/un.png',
     description: input.description,
     status: 'upcoming',
+    isHidden: false,
     participantIds: input.participantIds,
     matches: [],
     createdAt: new Date().toISOString(),

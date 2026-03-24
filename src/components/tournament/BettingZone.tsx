@@ -15,17 +15,9 @@ export function BettingZone({ matches }: Props) {
   const { currentUser } = useAuth()
 
   const sorted = useMemo(() => {
-    const now = Date.now()
-    return [...matches].sort((a, b) => {
-      const aTime = new Date(a.matchStartTime).getTime()
-      const bTime = new Date(b.matchStartTime).getTime()
-      const aUpcoming = aTime > now
-      const bUpcoming = bTime > now
-      if (aUpcoming && !bUpcoming) return -1
-      if (!aUpcoming && bUpcoming) return 1
-      if (aUpcoming && bUpcoming) return aTime - bTime
-      return bTime - aTime
-    })
+    return [...matches].sort((a, b) =>
+      new Date(a.matchStartTime).getTime() - new Date(b.matchStartTime).getTime()
+    )
   }, [matches])
 
   const grouped = useMemo(() => {
@@ -47,7 +39,7 @@ export function BettingZone({ matches }: Props) {
       {Object.entries(grouped).map(([date, dayMatches]) => (
         <div key={date}>
           <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">{date}</h3>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
             <AnimatePresence>
               {dayMatches.map((match) => {
                 const userBet = bets.find((b) => b.matchId === match.id && b.userId === currentUser?.id) ?? null

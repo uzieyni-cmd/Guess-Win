@@ -19,7 +19,10 @@ function CompetitionsContent() {
 
   const myTournaments = useMemo(() => {
     if (!currentUser) return []
-    return tournaments.filter((t) => currentUser.competitionIds.includes(t.id))
+    // אדמין רואה את כל התחרויות (כולל מוסתרות)
+    if (currentUser.role === 'admin') return tournaments
+    // משתמש רגיל: רק תחרויות גלויות שהוא משתתף בהן
+    return tournaments.filter((t) => !t.isHidden && currentUser.competitionIds.includes(t.id))
   }, [tournaments, currentUser])
 
   return (
