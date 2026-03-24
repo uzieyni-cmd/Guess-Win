@@ -1,0 +1,377 @@
+'use client'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { useTournament } from '@/context/TournamentContext'
+import { fetchLeagueSeasons } from '@/app/actions/leagues'
+import { adminUpdateTournament } from '@/app/actions/tournaments'
+import { Tournament } from '@/types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+
+const POPULAR_LEAGUES = [
+  { id: 2,   name: 'UEFA Champions League'  },
+  { id: 1,   name: 'FIFA World Cup'         },
+  { id: 3,   name: 'UEFA Europa League'     },
+  { id: 848, name: 'UEFA Conference League' },
+  { id: 39,  name: 'Premier League'         },
+  { id: 140, name: 'La Liga'                },
+  { id: 135, name: 'Serie A'                },
+]
+
+// עונות מועדפות — Pro Plan, נתוני 2025 זמינים לכל הליגות
+const KNOWN_DATA_SEASONS: Record<number, number> = {
+  2: 2025,   // UCL: 2025/2026 ✅ (276 משחקים)
+  3: 2025,   // Europa: 2025/2026 ✅ (266 משחקים)
+  848: 2025, // Conference: 2025/2026 ✅ (404 משחקים)
+  39: 2025,  // Premier League: 2025/2026 ✅ (380 משחקים)
+  140: 2025, // La Liga: 2025/2026 ✅ (380 משחקים)
+  135: 2025, // Serie A: 2025/2026 ✅ (380 משחקים)
+  1: 2026,   // World Cup: 2026 ✅
+}
+
+const STATUS_OPTIONS: { value: Tournament['status']; label: string }[] = [
+  { value: 'upcoming',  label: 'בקרוב'  },
+  { value: 'active',    label: 'פעיל'   },
+  { value: 'completed', label: 'הסתיים' },
+]
+
+interface SeasonOption { year: number; label: string; current: boolean }
+
+export default function AdminTournamentsPage() {
+  const { tournaments, createTournament, deleteTournament, toggleHideTournament, reload } = useTournament()
+  const [confirmDelete, setConfirmDelete] = useState<Tournament | null>(null)
+  const router = useRouter()
+  const [creating, setCreating] = useState(false)
+
+  // ── Create state ─────────────────────────────────────────────────
+  const [createOpen, setCreateOpen]         = useState(false)
+  const [name, setName]                     = useState('')
+  const [description, setDescription]       = useState('')
+  const [logoUrl, setLogoUrl]               = useState('')
+  const [leagueId, setLeagueId]             = useState('')
+  const [season, setSeason]                 = useState('')
+  const [seasons, setSeasons]               = useState<SeasonOption[]>([])
+  const [isPending, startTransition]        = useTransition()
+  const [selectedLeagueName, setSelectedLeagueName] = useState('')
+
+  // ── Edit state ───────────────────────────────────────────────────
+  const [editTournament, setEditTournament]         = useState<Tournament | null>(null)
+  const [editName, setEditName]                     = useState('')
+  const [editLogo, setEditLogo]                     = useState('')
+  const [editDescription, setEditDescription]       = useState('')
+  const [editStatus, setEditStatus]                 = useState<Tournament['status']>('upcoming')
+  const [editSaved, setEditSaved]                   = useState(false)
+  const [editSaving, setEditSaving]                 = useState(false)
+
+  const openEdit = (t: Tournament) => {
+    setEditTournament(t)
+    setEditName(t.name)
+    setEditLogo(t.logoUrl)
+    setEditDescription(t.description)
+    setEditStatus(t.status)
+    setEditSaved(false)
+  }
+
+  // ── Select a popular league → fetch seasons from API ─────────────
+  const selectLeague = (league: { id: number; name: string }) => {
+    setLeagueId(String(league.id))
+    setSelectedLeagueName(league.name)
+    setName(league.name)
+    setSeason('')
+    setSeasons([])
+    startTransition(async () => {
+      const data = await fetchLeagueSeasons(league.id)
+      setSeasons(data)
+      // עדיפות: עונה שיש לה נתונים ידועים, אחרת העונה הנוכחית
+      const knownSeason = KNOWN_DATA_SEASONS[league.id]
+      const preferred = (knownSeason ? data.find((s) => s.year === knownSeason) : null)
+        ?? data.find((s) => s.current)
+        ?? data[0]
+      if (preferred) {
+        setSeason(String(preferred.year))
+        setName(`${league.name} ${preferred.label}`)
+      }
+    })
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────────
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreating(true)
+    const newId = await createTournament({
+      name, description, logoUrl,
+      apiLeagueId: leagueId ? parseInt(leagueId) : undefined,
+      apiSeason:   season   ? parseInt(season)   : undefined,
+    })
+    setCreating(false)
+    setCreateOpen(false)
+    setName(''); setDescription(''); setLogoUrl('')
+    setLeagueId(''); setSeason(''); setSeasons([])
+    setSelectedLeagueName('')
+    // נווט ישירות לדף הניהול — שם ה-sync יקרה אוטומטית עם progress bar
+    if (newId) router.push(`/admin/tournaments/${newId}`)
+  }
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editTournament) return
+    setEditSaving(true)
+    // קריאה ישירה ל-Server Action עם supabaseAdmin — עוקף RLS
+    const result = await adminUpdateTournament(editTournament.id, {
+      name: editName, logoUrl: editLogo,
+      description: editDescription, status: editStatus,
+    })
+    setEditSaving(false)
+    if (!result.ok) {
+      alert('שגיאה בשמירה: ' + result.error)
+      return
+    }
+    setEditSaved(true)
+    reload() // רענן את רשימת הטורנירים
+    setTimeout(() => { setEditTournament(null); setEditSaved(false) }, 900)
+  }
+
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-suez text-2xl">תחרויות</h1>
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 ml-1" />תחרות חדשה</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>יצירת תחרות</DialogTitle></DialogHeader>
+            <form onSubmit={handleCreate} className="space-y-4">
+
+              {/* שלב 1: בחירת ליגה */}
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">① בחר ליגה</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {POPULAR_LEAGUES.map((l) => (
+                    <button key={l.id} type="button" onClick={() => selectLeague(l)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                        leagueId === String(l.id)
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'border-indigo-300 text-indigo-700 hover:bg-indigo-50'
+                      }`}>
+                      {l.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* שלב 2: בחירת עונה (אחרי שנשלפה מה-API) */}
+              {(isPending || seasons.length > 0) && (
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">② בחר עונה</Label>
+                  {isPending ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      טוען עונות מ-API-Football...
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {seasons.map((s) => (
+                        <button key={s.year} type="button"
+                          onClick={() => {
+                            setSeason(String(s.year))
+                            setName(`${selectedLeagueName} ${s.label}`)
+                          }}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                            season === String(s.year)
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'border-gray-300 text-gray-700 hover:border-indigo-300'
+                          }`}>
+                          {s.label}
+                          {s.current && <span className="mr-1 text-green-400">●</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="border-t pt-4 space-y-4">
+                {/* שם (מתמלא אוטומטית, ניתן לעריכה) */}
+                <div>
+                  <Label>שם התחרות</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)}
+                    placeholder="UEFA Champions League 2024/2025" required />
+                </div>
+                <div>
+                  <Label>תיאור</Label>
+                  <Input value={description} onChange={(e) => setDescription(e.target.value)}
+                    placeholder="שלב הבתים, שלב ה-16, רבע גמר..." />
+                </div>
+
+                {/* League ID ועונה ידניים (כגיבוי אם לא בחרו מהרשימה) */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>League ID</Label>
+                    <Input value={leagueId} onChange={(e) => setLeagueId(e.target.value)}
+                      placeholder="2" type="number" />
+                  </div>
+                  <div>
+                    <Label>עונה (שנת התחלה)</Label>
+                    <Input value={season} onChange={(e) => setSeason(e.target.value)}
+                      placeholder="2024" type="number" />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>קישור לוגו (אופציונלי)</Label>
+                  <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isPending || creating}>
+                {(isPending || creating)
+                  ? <><Loader2 className="h-4 w-4 ml-1 animate-spin" />{creating ? 'יוצר...' : 'טוען עונות...'}</>
+                  : <><Plus className="h-4 w-4 ml-1" />צור תחרות</>}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Tournament list */}
+      <div className="space-y-3">
+        {tournaments.map((t, i) => (
+          <motion.div key={t.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
+            <Card className={t.isHidden ? 'opacity-60' : ''}>
+              <CardContent className="p-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {t.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={t.logoUrl} alt={t.name}
+                      className="h-9 w-9 rounded-full object-contain bg-gray-100 p-0.5 shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                      <Trophy className="h-4 w-4 text-indigo-500" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className={`font-medium truncate ${t.isHidden ? 'text-muted-foreground' : ''}`}>{t.name}</p>
+                      {t.isHidden && (
+                        <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full shrink-0">מוסתר</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {t.matches.length} משחקים · {t.participantIds.length} שחקנים ·{' '}
+                      <span className={t.status === 'active' ? 'text-green-600' : t.status === 'completed' ? 'text-gray-400' : 'text-amber-600'}>
+                        {t.status === 'active' ? 'פעיל' : t.status === 'upcoming' ? 'בקרוב' : 'הסתיים'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon"
+                    onClick={() => toggleHideTournament(t.id, !t.isHidden)}
+                    title={t.isHidden ? 'הצג תחרות' : 'הסתר תחרות'}>
+                    {t.isHidden
+                      ? <EyeOff className="h-4 w-4 text-amber-500" />
+                      : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(t)} title="עריכה">
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t)} title="מחיקה">
+                    <Trash2 className="h-4 w-4 text-red-400" />
+                  </Button>
+                  <Link href={`/admin/tournaments/${t.id}`}>
+                    <Button variant="outline" size="sm">ניהול</Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+        {tournaments.length === 0 && (
+          <p className="text-center py-12 text-muted-foreground">אין תחרויות עדיין. צור את הראשונה!</p>
+        )}
+      </div>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!confirmDelete} onOpenChange={(open) => { if (!open) setConfirmDelete(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle className="text-red-600">מחיקת תחרות</DialogTitle></DialogHeader>
+          <div className="py-2">
+            <p className="text-sm text-muted-foreground">
+              האם אתה בטוח שברצונך למחוק את{' '}
+              <strong className="text-foreground">"{confirmDelete?.name}"</strong>?
+            </p>
+            <p className="text-xs text-red-500 mt-2">פעולה זו תמחק את כל המשחקים והניחושים בתחרות ואינה הפיכה.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(null)}>ביטול</Button>
+            <Button variant="destructive" className="flex-1"
+              onClick={async () => {
+                if (confirmDelete) await deleteTournament(confirmDelete.id)
+                setConfirmDelete(null)
+              }}>
+              <Trash2 className="h-4 w-4 ml-1" />מחק לצמיתות
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editTournament} onOpenChange={(open) => { if (!open) setEditTournament(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>עריכת תחרות</DialogTitle></DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4">
+            <div>
+              <Label>שם התחרות</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} required />
+            </div>
+            <div>
+              <Label>תיאור</Label>
+              <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
+            </div>
+            <div>
+              <Label>קישור לוגו</Label>
+              <Input value={editLogo} onChange={(e) => setEditLogo(e.target.value)} placeholder="https://..." />
+              {editLogo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={editLogo} alt="preview"
+                  className="mt-2 h-12 w-12 object-contain rounded-full border"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+              )}
+            </div>
+            <div>
+              <Label>סטטוס</Label>
+              <div className="flex gap-2 mt-1">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button key={opt.value} type="button" onClick={() => setEditStatus(opt.value)}
+                    className={`flex-1 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                      editStatus === opt.value
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'border-gray-200 text-gray-600 hover:border-indigo-300'
+                    }`}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={editSaving || editSaved}>
+              {editSaved
+                ? <><CheckCircle2 className="h-4 w-4 ml-1 text-green-400" />נשמר בהצלחה!</>
+                : editSaving
+                  ? <><Loader2 className="h-4 w-4 ml-1 animate-spin" />שומר...</>
+                  : 'שמור שינויים'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
