@@ -1,31 +1,63 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { Loader2, Mail, Lock, Trophy } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Loader2, Mail, Lock, Trophy, User } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+
+type Tab = 'login' | 'register'
 
 export function LoginForm() {
-  const { login } = useAuth()
+  const { login, register } = useAuth()
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [tab, setTab] = useState<Tab>('login')
+  const [email, setEmail]           = useState('')
+  const [password, setPassword]     = useState('')
+  const [confirmPass, setConfirmPass] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [error, setError]           = useState('')
+  const [success, setSuccess]       = useState('')
+  const [isLoading, setIsLoading]   = useState(false)
+
+  const reset = () => {
+    setError(''); setSuccess('')
+    setEmail(''); setPassword(''); setConfirmPass(''); setDisplayName('')
+  }
+
+  const switchTab = (t: Tab) => { setTab(t); reset() }
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    setIsLoading(true)
+    setError(''); setIsLoading(true)
     try {
       await login(email, password)
       router.push('/competitions')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בכניסה')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!displayName.trim()) { setError('נא להזין שם תצוגה'); return }
+    if (password.length < 6)  { setError('הסיסמה חייבת להכיל לפחות 6 תווים'); return }
+    if (password !== confirmPass) { setError('הסיסמאות אינן תואמות'); return }
+    setIsLoading(true)
+    try {
+      await register(email, password, displayName.trim())
+      setSuccess('נרשמת בהצלחה! בדוק את הדוא"ל שלך לאישור.')
+      setPassword(''); setConfirmPass('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'שגיאה ברישום')
     } finally {
       setIsLoading(false)
     }
@@ -46,60 +78,153 @@ export function LoginForm() {
             </div>
           </div>
           <CardTitle className="font-suez text-3xl text-gray-900">Guess&amp;Win</CardTitle>
-          <CardDescription className="text-base">היכנסו לחשבון שלכם</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">דוא"ל</Label>
-              <div className="relative">
-                <Mail className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pr-9"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">סיסמה</Label>
-              <div className="relative">
-                <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="pr-9"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            {error && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-sm text-destructive text-center"
+
+          {/* Tabs */}
+          <div className="flex mt-4 rounded-lg bg-muted p-1 gap-1">
+            {(['login', 'register'] as Tab[]).map(t => (
+              <button
+                key={t}
+                onClick={() => switchTab(t)}
+                className={cn(
+                  'flex-1 rounded-md py-1.5 text-sm font-medium transition-all',
+                  tab === t
+                    ? 'bg-white shadow text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
-                {error}
-              </motion.p>
-            )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : null}
-              כניסה
-            </Button>
-          </form>
-          <div className="mt-6 rounded-lg bg-muted p-3 text-xs text-muted-foreground space-y-1">
-            <p className="font-medium">חשבונות לדגמה:</p>
-            <p>admin@guesswin.com / admin123</p>
-            <p>alice@example.com / alice123</p>
-            <p>bob@example.com / bob123</p>
+                {t === 'login' ? 'כניסה' : 'הרשמה'}
+              </button>
+            ))}
           </div>
+        </CardHeader>
+
+        <CardContent className="pt-4">
+          <AnimatePresence mode="wait">
+            {tab === 'login' ? (
+              <motion.form
+                key="login"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handleLogin}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">דוא"ל</Label>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      className="pr-9"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">סיסמה</Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pr-9"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                {error && <p className="text-sm text-destructive text-center">{error}</p>}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                  כניסה
+                </Button>
+              </motion.form>
+            ) : (
+              <motion.form
+                key="register"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handleRegister}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="reg-name">שם תצוגה</Label>
+                  <div className="relative">
+                    <User className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="reg-name"
+                      type="text"
+                      placeholder="השם שיופיע בלוח תוצאות"
+                      className="pr-9"
+                      value={displayName}
+                      onChange={e => setDisplayName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-email">דוא"ל</Label>
+                  <div className="relative">
+                    <Mail className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="reg-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      className="pr-9"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-password">סיסמה</Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="reg-password"
+                      type="password"
+                      placeholder="לפחות 6 תווים"
+                      className="pr-9"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reg-confirm">אימות סיסמה</Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="reg-confirm"
+                      type="password"
+                      placeholder="הזן שוב את הסיסמה"
+                      className="pr-9"
+                      value={confirmPass}
+                      onChange={e => setConfirmPass(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                {error   && <p className="text-sm text-destructive text-center">{error}</p>}
+                {success && <p className="text-sm text-green-600 text-center">{success}</p>}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                  הרשמה
+                </Button>
+              </motion.form>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </motion.div>

@@ -15,6 +15,53 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
+const ROUND_MAP: Record<string, string> = {
+  // UCL שלב ליגה
+  'League Stage - 1': 'שלב הליגה - 1',
+  'League Stage - 2': 'שלב הליגה - 2',
+  'League Stage - 3': 'שלב הליגה - 3',
+  'League Stage - 4': 'שלב הליגה - 4',
+  'League Stage - 5': 'שלב הליגה - 5',
+  'League Stage - 6': 'שלב הליגה - 6',
+  'League Stage - 7': 'שלב הליגה - 7',
+  'League Stage - 8': 'שלב הליגה - 8',
+  // שלבי נוק-אאוט — פורמט קצר (כפי שמגיע מ-API)
+  'Round of 32':  'סיבוב 32',
+  'Round of 16':  'שמינית גמר',
+  'Quarter-finals': 'רבע גמר',
+  'Semi-finals':  'חצי גמר',
+  'Final':        'גמר',
+  'Play-offs':    'פלייאוף',
+  // שלבי נוק-אאוט — פורמט עם רגליים
+  'Round of 16 - 1st leg':   'שמינית גמר - הלוך',
+  'Round of 16 - 2nd leg':   'שמינית גמר - חזור',
+  'Quarter-finals - 1st leg': 'רבע גמר - הלוך',
+  'Quarter-finals - 2nd leg': 'רבע גמר - חזור',
+  'Semi-finals - 1st leg':   'חצי גמר - הלוך',
+  'Semi-finals - 2nd leg':   'חצי גמר - חזור',
+  // סיבובי איכות
+  '1st Qualifying Round': 'סיבוב מוקדם 1',
+  '2nd Qualifying Round': 'סיבוב מוקדם 2',
+  '3rd Qualifying Round': 'סיבוב מוקדם 3',
+  'Knockout Round Play-offs':       'פלייאוף כניסה',
+  'Knockout Round Play-offs - 1st leg': 'פלייאוף כניסה - הלוך',
+  'Knockout Round Play-offs - 2nd leg': 'פלייאוף כניסה - חזור',
+  // ליגות מקומיות
+  'Regular Season': 'עונה סדירה',
+  'Group Stage':    'שלב הבתים',
+}
+
+function translateRound(round: string): string {
+  if (ROUND_MAP[round]) return ROUND_MAP[round]
+  // Regular Season - N
+  const rsMatch = round.match(/^Regular Season - (\d+)$/)
+  if (rsMatch) return `מחזור ${rsMatch[1]}`
+  // League Stage - N (fallback)
+  const lsMatch = round.match(/^League Stage - (\d+)$/)
+  if (lsMatch) return `שלב הליגה - ${lsMatch[1]}`
+  return round
+}
+
 interface Props {
   match: Match
   userBet: Bet | null
@@ -63,6 +110,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const matchDate = new Date(match.matchStartTime)
   const dateStr = matchDate.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })
   const timeStr = matchDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+  const roundStr = match.round ? translateRound(match.round) : null
 
   // ניחושי משתתפים אחרים (גלויים רק אחרי נעילה)
   const otherBets = (isLocked || isFinished)
@@ -78,7 +126,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
       <Card className={cn('overflow-hidden', isFinished && 'border-green-300 bg-green-50/60')}>
         <div className={cn('flex items-center justify-between px-4 py-2 text-xs text-muted-foreground', isFinished ? 'bg-green-100/70' : 'bg-muted/50')}>
           <CountdownTimer matchStartTime={match.matchStartTime} />
-          <span>{dateStr} · {timeStr}</span>
+          <div className="flex items-center gap-1.5 text-left">
+            {roundStr && <span className="font-medium text-indigo-500">{roundStr}</span>}
+            {roundStr && <span>·</span>}
+            <span>{dateStr} · {timeStr}</span>
+          </div>
         </div>
 
         <div className="p-6">
