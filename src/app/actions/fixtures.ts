@@ -27,6 +27,7 @@ export async function syncFixtures(
       actual_home_score: f.score.fulltime.home ?? null,
       actual_away_score: f.score.fulltime.away ?? null,
       api_fixture_id: f.fixture.id,
+      round: f.league.round ?? null,
     }))
 
     const { error } = await supabaseAdmin

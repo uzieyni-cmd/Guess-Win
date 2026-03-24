@@ -41,6 +41,7 @@ export interface Match {
   matchStartTime: string
   status: MatchStatus
   actualScore: Score | null
+  round?: string
 }
 
 export interface Score {

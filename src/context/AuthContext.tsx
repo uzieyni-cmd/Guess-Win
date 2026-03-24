@@ -8,6 +8,7 @@ interface AuthContextType {
   currentUser: User | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
+  register: (email: string, password: string, displayName: string) => Promise<void>
   logout: () => void
 }
 
@@ -68,13 +69,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw new Error('דוא"ל או סיסמה שגויים')
   }, [])
 
+  const register = useCallback(async (email: string, password: string, displayName: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { display_name: displayName } },
+    })
+    if (error) throw new Error(error.message)
+  }, [])
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut()
     setCurrentUser(null)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ currentUser, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )
