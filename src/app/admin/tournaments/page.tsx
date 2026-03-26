@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2, Upload, Link2, Search, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useTournament } from '@/context/TournamentContext'
-import { fetchLeagueSeasons, fetchAllLeagues, LeagueItem } from '@/app/actions/leagues'
+import { fetchLeagueSeasons, fetchAllLeagues, type LeagueItem } from '@/app/actions/leagues'
 import { adminUpdateTournament, fetchLogoForTournament, uploadLogo } from '@/app/actions/tournaments'
 import { Tournament } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -251,7 +251,10 @@ export default function AdminTournamentsPage() {
                               : <Trophy className="h-5 w-5 text-muted-foreground shrink-0" />
                             }
                             <span className="flex-1 truncate font-medium">{l.name}</span>
-                            <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1.5">
+                              {l.type === 'Cup' && (
+                                <span className="text-[10px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded">גביע</span>
+                              )}
                               {l.flag && <img src={l.flag} alt="" className="h-3.5 w-5 object-cover rounded-sm" />}
                               {l.country}
                             </span>

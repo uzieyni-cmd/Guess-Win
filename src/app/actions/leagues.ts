@@ -21,7 +21,7 @@ export interface ApiSeason {
 }
 
 interface ApiLeagueResponse {
-  league: { id: number; name: string; logo: string }
+  league: { id: number; name: string; logo: string; type: string }
   country: { name: string; flag: string }
   seasons: ApiSeason[]
 }
@@ -32,18 +32,23 @@ export interface LeagueItem {
   logo: string
   country: string
   flag: string
+  type: 'League' | 'Cup'
 }
 
-// מחזיר את כל הליגות (type=league בלבד, ללא גביעים)
+// מחזיר את כל הליגות והגביעים (Nations League מסווג כ-Cup ב-API)
 export async function fetchAllLeagues(): Promise<LeagueItem[]> {
-  const rows = await apiFetch<ApiLeagueResponse[]>('/leagues?type=league')
-  return rows
+  const [leagues, cups] = await Promise.all([
+    apiFetch<ApiLeagueResponse[]>('/leagues?type=league'),
+    apiFetch<ApiLeagueResponse[]>('/leagues?type=cup'),
+  ])
+  return [...leagues, ...cups]
     .map((r) => ({
       id: r.league.id,
       name: r.league.name,
       logo: r.league.logo ?? '',
       country: r.country?.name ?? '',
       flag: r.country?.flag ?? '',
+      type: r.league.type as 'League' | 'Cup',
     }))
     .sort((a, b) => a.country.localeCompare(b.country) || a.name.localeCompare(b.name))
 }
