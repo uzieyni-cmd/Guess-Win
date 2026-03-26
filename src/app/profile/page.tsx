@@ -214,7 +214,7 @@ function ProfileContent() {
                 <div className="relative">
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={currentUser?.avatarUrl} />
-                    <AvatarFallback className="bg-indigo-600 text-white text-2xl font-bold">
+                    <AvatarFallback delayMs={0} className="bg-indigo-600 text-white text-2xl font-bold">
                       {initials}
                     </AvatarFallback>
                   </Avatar>

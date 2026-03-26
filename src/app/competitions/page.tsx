@@ -44,7 +44,7 @@ function CompetitionsContent() {
             <button onClick={() => router.push('/profile')} className="rounded-full hover:ring-2 hover:ring-indigo-400 transition-all">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={currentUser?.avatarUrl} />
-                <AvatarFallback className="bg-indigo-600 text-white text-sm font-bold">
+                <AvatarFallback delayMs={0} className="bg-indigo-600 text-white text-sm font-bold">
                   {currentUser?.displayName?.charAt(0)?.toUpperCase() ?? '?'}
                 </AvatarFallback>
               </Avatar>
