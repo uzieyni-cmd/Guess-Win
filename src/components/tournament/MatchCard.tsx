@@ -12,7 +12,6 @@ import { ScoreInput } from './ScoreInput'
 import { PointsBadge } from '@/components/shared/PointsBadge'
 import { calculateScore } from '@/lib/scoring'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 const ROUND_MAP: Record<string, string> = {
@@ -87,6 +86,9 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     !isFinished && isLocked &&
     new Date(match.matchStartTime).getTime() > Date.now() - 2.5 * 60 * 60 * 1000
   )
+  // דקה: מה-DB אם קיימת, אחרת חישוב לפי זמן התחלה
+  const liveMinute = match.liveMinute ??
+    (isLive ? Math.min(90, Math.floor((Date.now() - new Date(match.matchStartTime).getTime()) / 60000)) : undefined)
   const isInputLocked = isLocked || isFinished || isLive
 
   // סנכרן מהשרת כשהבט מגיע אסינכרונית
@@ -143,7 +145,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
         )}>
           {/* שמאל: timer / LIVE indicator */}
           {isLive ? (
-            <LiveIndicator minute={match.liveMinute} />
+            <LiveIndicator minute={liveMinute} />
           ) : (
             <CountdownTimer matchStartTime={match.matchStartTime} />
           )}
@@ -168,25 +170,26 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             {/* מרכז */}
             <div className="flex flex-col items-center gap-2 shrink-0">
 
-              {isLive ? (
-                /* ── ציון LIVE ─── */
+              {(isLive || isFinished) && (match.actualScore || isLive) ? (
+                /* ── ציון LIVE / תוצאה סופית ─── */
                 <div className="flex flex-col items-center gap-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-white tabular-nums w-7 text-center">
+                    <span className={cn('text-2xl font-bold tabular-nums w-7 text-center', isFinished ? 'text-slate-100' : 'text-white')}>
                       {match.actualScore?.home ?? 0}
                     </span>
                     <span className="text-base font-bold text-slate-400">–</span>
-                    <span className="text-2xl font-bold text-white tabular-nums w-7 text-center">
+                    <span className={cn('text-2xl font-bold tabular-nums w-7 text-center', isFinished ? 'text-slate-100' : 'text-white')}>
                       {match.actualScore?.away ?? 0}
                     </span>
                   </div>
-                  {/* ניחוש המשתמש עצמו מוצג מתחת */}
+                  {/* ניחוש המשתמש + נקודות מתחת לתוצאה */}
                   {userBet ? (
-                    <div className="flex items-center gap-1 mt-0.5">
+                    <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[11px] text-slate-500">ניחוש שלי:</span>
                       <span className="text-[11px] font-mono font-semibold text-slate-400 tabular-nums">
                         {userBet.predictedScore.home}–{userBet.predictedScore.away}
                       </span>
+                      {userResult && <PointsBadge result={userResult.result} points={userResult.points} />}
                     </div>
                   ) : (
                     <span className="text-[11px] text-slate-600 mt-0.5">לא ניחשת</span>
@@ -231,17 +234,6 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
               <span className="text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words">{match.awayTeam.name}</span>
             </div>
           </div>
-
-          {/* תוצאה סופית */}
-          {isFinished && match.actualScore && (
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <span className="text-xs text-muted-foreground">תוצאה:</span>
-              <Badge variant="outline" className="font-bold text-sm">
-                {match.actualScore.home} – {match.actualScore.away}
-              </Badge>
-              {userResult && <PointsBadge result={userResult.result} points={userResult.points} />}
-            </div>
-          )}
 
           {/* ממתינים לתוצאה — רק כשנעול ולא live ולא גמור */}
           {isLocked && !isFinished && !isLive && (
@@ -294,14 +286,19 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 function LiveIndicator({ minute }: { minute?: number }) {
   return (
     <div className="flex items-center gap-2">
-      {/* נקודה מהבהבת */}
-      <span className="relative flex h-2.5 w-2.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+      {/* pill LIVE */}
+      <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[11px] font-bold tracking-widest px-2 py-0.5 rounded-sm uppercase leading-none">
+        <span className="relative flex h-1.5 w-1.5 shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+        </span>
+        LIVE
       </span>
-      <span className="font-bold text-red-400 text-xs tracking-wide">LIVE</span>
+      {/* דקה */}
       {minute != null && (
-        <span className="text-red-300 font-mono text-xs">{minute}′</span>
+        <span className="inline-flex items-center bg-red-950/60 text-red-300 text-[11px] font-mono font-semibold px-2 py-0.5 rounded-sm leading-none min-w-[32px] justify-center">
+          {minute}′
+        </span>
       )}
     </div>
   )
