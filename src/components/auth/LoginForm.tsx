@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Mail, Lock, Trophy, User } from 'lucide-react'
+import { Loader2, Mail, Lock, Trophy, User, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,8 @@ export function LoginForm() {
   const [error, setError]           = useState('')
   const [success, setSuccess]       = useState('')
   const [isLoading, setIsLoading]   = useState(false)
+  const [showPassword, setShowPassword]   = useState(false)
+  const [showConfirm, setShowConfirm]     = useState(false)
 
   const reset = () => {
     setError(''); setSuccess('')
@@ -131,13 +133,20 @@ export function LoginForm() {
                     <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="login-password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
-                      className="pr-9"
+                      className="pr-9 pl-9"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
                 {error && <p className="text-sm text-destructive text-center">{error}</p>}
@@ -192,13 +201,20 @@ export function LoginForm() {
                     <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="reg-password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="לפחות 6 תווים"
-                      className="pr-9"
+                      className="pr-9 pl-9"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -207,13 +223,20 @@ export function LoginForm() {
                     <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="reg-confirm"
-                      type="password"
+                      type={showConfirm ? 'text' : 'password'}
                       placeholder="הזן שוב את הסיסמה"
-                      className="pr-9"
+                      className="pr-9 pl-9"
                       value={confirmPass}
                       onChange={e => setConfirmPass(e.target.value)}
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(v => !v)}
+                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
                 {error   && <p className="text-sm text-destructive text-center">{error}</p>}
