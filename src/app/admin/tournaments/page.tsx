@@ -6,7 +6,7 @@ import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2 } from
 import Link from 'next/link'
 import { useTournament } from '@/context/TournamentContext'
 import { fetchLeagueSeasons } from '@/app/actions/leagues'
-import { adminUpdateTournament } from '@/app/actions/tournaments'
+import { adminUpdateTournament, fetchLogoForTournament } from '@/app/actions/tournaments'
 import { Tournament } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -68,6 +68,7 @@ export default function AdminTournamentsPage() {
   const [editStatus, setEditStatus]                 = useState<Tournament['status']>('upcoming')
   const [editSaved, setEditSaved]                   = useState(false)
   const [editSaving, setEditSaving]                 = useState(false)
+  const [fetchingLogo, setFetchingLogo]             = useState(false)
 
   const openEdit = (t: Tournament) => {
     setEditTournament(t)
@@ -86,13 +87,14 @@ export default function AdminTournamentsPage() {
     setSeason('')
     setSeasons([])
     startTransition(async () => {
-      const data = await fetchLeagueSeasons(league.id)
-      setSeasons(data)
+      const { seasons: fetchedSeasons, logoUrl: fetchedLogo } = await fetchLeagueSeasons(league.id)
+      setSeasons(fetchedSeasons)
+      if (fetchedLogo) setLogoUrl(fetchedLogo)
       // עדיפות: עונה שיש לה נתונים ידועים, אחרת העונה הנוכחית
       const knownSeason = KNOWN_DATA_SEASONS[league.id]
-      const preferred = (knownSeason ? data.find((s) => s.year === knownSeason) : null)
-        ?? data.find((s) => s.current)
-        ?? data[0]
+      const preferred = (knownSeason ? fetchedSeasons.find((s) => s.year === knownSeason) : null)
+        ?? fetchedSeasons.find((s) => s.current)
+        ?? fetchedSeasons[0]
       if (preferred) {
         setSeason(String(preferred.year))
         setName(`${league.name} ${preferred.label}`)
@@ -339,7 +341,19 @@ export default function AdminTournamentsPage() {
             </div>
             <div>
               <Label>קישור לוגו</Label>
-              <Input value={editLogo} onChange={(e) => setEditLogo(e.target.value)} placeholder="https://..." />
+              <div className="flex gap-2">
+                <Input value={editLogo} onChange={(e) => setEditLogo(e.target.value)} placeholder="https://..." />
+                <Button type="button" variant="outline" size="sm" disabled={fetchingLogo}
+                  onClick={async () => {
+                    if (!editTournament) return
+                    setFetchingLogo(true)
+                    const url = await fetchLogoForTournament(editTournament.id)
+                    if (url) setEditLogo(url)
+                    setFetchingLogo(false)
+                  }}>
+                  {fetchingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'שלוף'}
+                </Button>
+              </div>
               {editLogo && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={editLogo} alt="preview"

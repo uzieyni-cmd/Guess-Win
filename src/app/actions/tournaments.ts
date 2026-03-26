@@ -2,6 +2,18 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { TournamentStatus } from '@/types'
+import { fetchLeagueSeasons } from './leagues'
+
+export async function fetchLogoForTournament(tournamentId: string): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from('tournaments')
+    .select('api_league_id')
+    .eq('id', tournamentId)
+    .single()
+  if (!data?.api_league_id) return null
+  const { logoUrl } = await fetchLeagueSeasons(data.api_league_id)
+  return logoUrl || null
+}
 
 export async function adminUpdateTournament(
   id: string,

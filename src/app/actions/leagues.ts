@@ -25,20 +25,23 @@ interface ApiLeagueResponse {
   seasons: ApiSeason[]
 }
 
-// מחזיר את רשימת העונות הזמינות לליגה מסוימת
+// מחזיר עונות + לוגו הליגה
 export async function fetchLeagueSeasons(
   leagueId: number
-): Promise<{ year: number; label: string; current: boolean }[]> {
+): Promise<{ seasons: { year: number; label: string; current: boolean }[]; logoUrl: string }> {
   const rows = await apiFetch<ApiLeagueResponse[]>(`/leagues?id=${leagueId}`)
-  if (!rows?.length) return []
+  if (!rows?.length) return { seasons: [], logoUrl: '' }
 
-  return rows[0].seasons
-    .sort((a, b) => b.year - a.year) // חדשות קודם
-    .map((s) => ({
-      year: s.year,
-      label: formatSeason(s.year, s.start, s.end),
-      current: s.current,
-    }))
+  return {
+    logoUrl: rows[0].league.logo ?? '',
+    seasons: rows[0].seasons
+      .sort((a, b) => b.year - a.year)
+      .map((s) => ({
+        year: s.year,
+        label: formatSeason(s.year, s.start, s.end),
+        current: s.current,
+      })),
+  }
 }
 
 // פורמט: "2024/2025" אם עונה מתפרסת על שתי שנים, "2026" אם שנה אחת
