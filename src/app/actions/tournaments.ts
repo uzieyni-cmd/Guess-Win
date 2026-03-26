@@ -60,7 +60,7 @@ export async function uploadLogo(formData: FormData): Promise<{ url?: string; er
   const file = formData.get('file') as File | null
   if (!file || !file.size) return { error: 'לא נבחר קובץ' }
   const ext = file.name.split('.').pop() ?? 'png'
-  const path = `logos/${Date.now()}.${ext}`
+  const path = `${Date.now()}.${ext}`
   const bytes = await file.arrayBuffer()
   const { error } = await supabaseAdmin.storage
     .from('logos')
