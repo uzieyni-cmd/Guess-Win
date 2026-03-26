@@ -91,9 +91,9 @@ export default function MatchesPage() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Target className="h-5 w-5 text-indigo-600" />
-          <h2 className="font-suez text-xl text-gray-800">ניחושי משחקים</h2>
+          <h2 className="font-suez text-xl text-slate-100">ניחושי משחקים</h2>
           {realMatches.length > 0 && (
-            <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded-full">
+            <span className="text-xs text-slate-300 bg-slate-700 px-2 py-0.5 rounded-full">
               {realMatches.length} משחקים
             </span>
           )}
@@ -104,7 +104,7 @@ export default function MatchesPage() {
           {finishedCount > 0 && (
             <button
               onClick={() => setHideFinished(v => !v)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gray-700 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
             >
               {hideFinished
                 ? <><Eye className="h-3.5 w-3.5" />הצג הכל ({finishedCount})</>

@@ -9,9 +9,9 @@ interface Props {
 }
 
 const config = {
-  exact: { label: '10 נק׳ ⚽', variant: 'success' },
-  outcome: { label: '5 נק׳ ✓', variant: 'warning' },
-  miss: { label: '0 נק׳ ✗', variant: 'secondary' },
+  exact: { label: '10 נק׳', variant: 'success' },
+  outcome: { label: '5 נק׳', variant: 'warning' },
+  miss: { label: '0 נק׳', variant: 'secondary' },
 } as const
 
 export function PointsBadge({ result, className }: Props) {

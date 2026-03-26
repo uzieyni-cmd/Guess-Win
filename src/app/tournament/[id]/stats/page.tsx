@@ -43,7 +43,7 @@ export default function StatsPage() {
     <div>
       <div className="flex items-center gap-2 mb-4">
         <TrendingUp className="h-5 w-5 text-indigo-600" />
-        <h2 className="font-suez text-xl text-gray-800">הסטטיסטיקה שלי</h2>
+        <h2 className="font-suez text-xl text-slate-100">הסטטיסטיקה שלי</h2>
       </div>
       <div className="grid grid-cols-2 gap-3 mb-4">
         {[

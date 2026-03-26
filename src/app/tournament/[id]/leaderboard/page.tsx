@@ -5,8 +5,11 @@ import { useTournament } from '@/context/TournamentContext'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 
-const rankColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600']
-const rankEmojis = ['🥇', '🥈', '🥉']
+const rankStyles = [
+  { text: 'text-yellow-400', bg: 'bg-yellow-400/20 border border-yellow-400/40', label: '1' },
+  { text: 'text-slate-300',  bg: 'bg-slate-300/20 border border-slate-300/40',   label: '2' },
+  { text: 'text-amber-500',  bg: 'bg-amber-500/20 border border-amber-500/40',   label: '3' },
+]
 
 export default function LeaderboardPage() {
   const { standings } = useTournament()
@@ -15,7 +18,7 @@ export default function LeaderboardPage() {
     <div>
       <div className="flex items-center gap-2 mb-4">
         <BarChart2 className="h-5 w-5 text-indigo-600" />
-        <h2 className="font-suez text-xl text-gray-800">טבלת דירוג</h2>
+        <h2 className="font-suez text-xl text-slate-100">טבלת דירוג</h2>
       </div>
       {standings.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">אין תוצאות עדיין.</div>
@@ -30,12 +33,15 @@ export default function LeaderboardPage() {
               className={cn(
                 'flex items-center gap-3 p-3 rounded-xl bg-white border',
                 i === 0 && 'border-yellow-300 bg-yellow-50',
-                i === 1 && 'border-gray-300 bg-gray-50',
+                i === 1 && 'border-slate-300 bg-slate-50',
                 i === 2 && 'border-amber-300 bg-amber-50'
               )}
             >
-              <div className={cn('w-8 text-center text-lg font-bold', rankColors[i] ?? 'text-muted-foreground')}>
-                {i < 3 ? rankEmojis[i] : `#${s.rank}`}
+              <div className={cn(
+                'w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold shrink-0',
+                i < 3 ? rankStyles[i].bg + ' ' + rankStyles[i].text : 'text-muted-foreground'
+              )}>
+                {i < 3 ? rankStyles[i].label : `${s.rank}`}
               </div>
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-bold">

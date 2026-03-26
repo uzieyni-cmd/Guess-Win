@@ -32,7 +32,7 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
   const tournament = activeTournament ?? tournaments.find((t) => t.id === id)
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-slate-900 flex flex-col">
       {/* Header */}
       <div className="bg-gradient-to-l from-indigo-700 to-purple-700 text-white sticky top-0 z-20">
         <div className="max-w-[1600px] mx-auto px-4 py-3">

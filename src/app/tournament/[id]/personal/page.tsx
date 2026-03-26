@@ -32,7 +32,7 @@ export default function PersonalPage() {
     <div>
       <div className="flex items-center gap-2 mb-4">
         <User className="h-5 w-5 text-indigo-600" />
-        <h2 className="font-suez text-xl text-gray-800">הניחושים שלי</h2>
+        <h2 className="font-suez text-xl text-slate-100">הניחושים שלי</h2>
       </div>
       {myBets.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">לא הגשת ניחושים עדיין.</div>

@@ -86,7 +86,7 @@ export function LoginForm() {
                 key={t}
                 onClick={() => switchTab(t)}
                 className={cn(
-                  'flex-1 rounded-md py-1.5 text-sm font-medium transition-all',
+                  'flex-1 rounded-md py-1.5 text-sm font-medium transition-all cursor-pointer',
                   tab === t
                     ? 'bg-white shadow text-primary'
                     : 'text-muted-foreground hover:text-foreground'

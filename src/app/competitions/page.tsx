@@ -54,7 +54,7 @@ function CompetitionsContent() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <div className="mb-6">
             <h2 className="font-suez text-2xl text-white mb-1">
-              שלום, {currentUser?.displayName}! 👋
+              שלום, {currentUser?.displayName}!
             </h2>
             <p className="text-indigo-300">בחרו תחרות לניחוש</p>
           </div>
