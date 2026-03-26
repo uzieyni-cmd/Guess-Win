@@ -48,6 +48,7 @@ export type DbMatch = {
   api_fixture_id: number | null
   round: string | null
   elapsed_minutes: number | null
+  match_period: string | null
   created_at: string
 }
 

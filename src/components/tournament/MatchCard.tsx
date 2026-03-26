@@ -86,9 +86,12 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     !isFinished && isLocked &&
     new Date(match.matchStartTime).getTime() > Date.now() - 2.5 * 60 * 60 * 1000
   )
-  // דקה: מה-DB אם קיימת, אחרת חישוב לפי זמן התחלה
+  // דקה: מה-DB אם קיימת; בהפסקה/פנדלים אל תחשב לפי שעון
+  const isBreak = ['HT', 'BT', 'P'].includes(match.matchPeriod ?? '')
   const liveMinute = match.liveMinute ??
-    (isLive ? Math.min(90, Math.floor((Date.now() - new Date(match.matchStartTime).getTime()) / 60000)) : undefined)
+    (isLive && !isBreak
+      ? Math.min(90, Math.floor((Date.now() - new Date(match.matchStartTime).getTime()) / 60000))
+      : undefined)
   const isInputLocked = isLocked || isFinished || isLive
 
   // סנכרן מהשרת כשהבט מגיע אסינכרונית
@@ -145,7 +148,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
         )}>
           {/* שמאל: timer / LIVE indicator */}
           {isLive ? (
-            <LiveIndicator minute={liveMinute} />
+            <LiveIndicator minute={liveMinute} period={match.matchPeriod} />
           ) : (
             <CountdownTimer matchStartTime={match.matchStartTime} />
           )}
@@ -283,7 +286,17 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 }
 
 // ── אינדיקטור LIVE ─────────────────────────────────────────────────
-function LiveIndicator({ minute }: { minute?: number }) {
+function LiveIndicator({ minute, period }: { minute?: number; period?: string }) {
+  // תצוגת זמן לפי period
+  const timeChip = (() => {
+    if (period === 'HT') return { label: 'הפסקה', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
+    if (period === 'BT') return { label: 'הפסקה', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
+    if (period === 'P')  return { label: 'פנדלים', cls: 'bg-purple-500/20 text-purple-300 border border-purple-500/30' }
+    if (period === 'ET') return { label: minute != null ? `${minute}′` : 'הארכה', cls: 'bg-orange-500/20 text-orange-300 border border-orange-500/30' }
+    if (minute != null)  return { label: `${minute}′`, cls: 'bg-red-950/60 text-red-300' }
+    return null
+  })()
+
   return (
     <div className="flex items-center gap-2">
       {/* pill LIVE */}
@@ -294,10 +307,10 @@ function LiveIndicator({ minute }: { minute?: number }) {
         </span>
         LIVE
       </span>
-      {/* דקה */}
-      {minute != null && (
-        <span className="inline-flex items-center bg-red-950/60 text-red-300 text-[11px] font-mono font-semibold px-2 py-0.5 rounded-sm leading-none min-w-[32px] justify-center">
-          {minute}′
+      {/* chip זמן */}
+      {timeChip && (
+        <span className={cn('inline-flex items-center text-[11px] font-mono font-semibold px-2 py-0.5 rounded-sm leading-none min-w-[36px] justify-center', timeChip.cls)}>
+          {timeChip.label}
         </span>
       )}
     </div>

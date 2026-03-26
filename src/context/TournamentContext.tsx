@@ -36,6 +36,7 @@ function dbMatchToMatch(m: DbMatch): Match {
     status: m.status as Match['status'],
     round: m.round ?? undefined,
     liveMinute: m.elapsed_minutes ?? undefined,
+    matchPeriod: m.match_period ?? undefined,
     actualScore:
       m.actual_home_score !== null && m.actual_away_score !== null
         ? { home: m.actual_home_score, away: m.actual_away_score }

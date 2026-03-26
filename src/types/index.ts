@@ -43,6 +43,7 @@ export interface Match {
   actualScore: Score | null
   round?: string
   liveMinute?: number
+  matchPeriod?: string   // '1H' | '2H' | 'HT' | 'ET' | 'P' | 'BT'
 }
 
 export interface Score {

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 const COLS =
   'id,tournament_id,home_team_id,home_team_name,home_team_short,home_team_flag,' +
   'away_team_id,away_team_name,away_team_short,away_team_flag,' +
-  'match_start_time,status,actual_home_score,actual_away_score,api_fixture_id,round,elapsed_minutes'
+  'match_start_time,status,actual_home_score,actual_away_score,api_fixture_id,round,elapsed_minutes,match_period'
 
 export async function GET(
   _req: NextRequest,

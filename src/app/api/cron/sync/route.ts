@@ -70,6 +70,7 @@ export async function GET(req: Request) {
               ? (f.goals.away ?? null)
               : (f.score.fulltime.away ?? null),
             elapsed_minutes: isLive ? (f.fixture.status.elapsed ?? null) : null,
+            match_period: isLive ? (f.fixture.status.short ?? null) : null,
           })
           .eq('api_fixture_id', f.fixture.id)
         synced++
