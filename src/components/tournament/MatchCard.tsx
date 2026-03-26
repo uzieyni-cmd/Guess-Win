@@ -167,7 +167,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             {/* קבוצת בית */}
             <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
               <TeamFlag team={match.homeTeam} size="xl" />
-              <span className="text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words">{match.homeTeam.name}</span>
+              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>{match.homeTeam.name}</span>
             </div>
 
             {/* מרכז */}
@@ -175,27 +175,27 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 
               {(isLive || isFinished) && (match.actualScore || isLive) ? (
                 /* ── ציון LIVE / תוצאה סופית ─── */
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center gap-1 min-h-[36px] justify-center">
                   <div className="flex items-center gap-2">
-                    <span className={cn('text-2xl font-bold tabular-nums w-7 text-center', isFinished ? 'text-slate-100' : 'text-white')}>
+                    <span className="text-2xl font-bold tabular-nums w-7 text-center text-slate-100">
                       {match.actualScore?.home ?? 0}
                     </span>
                     <span className="text-base font-bold text-slate-400">–</span>
-                    <span className={cn('text-2xl font-bold tabular-nums w-7 text-center', isFinished ? 'text-slate-100' : 'text-white')}>
+                    <span className="text-2xl font-bold tabular-nums w-7 text-center text-slate-100">
                       {match.actualScore?.away ?? 0}
                     </span>
                   </div>
                   {/* ניחוש המשתמש + נקודות מתחת לתוצאה */}
                   {userBet ? (
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[11px] text-slate-500">ניחוש שלי:</span>
-                      <span className="text-[11px] font-mono font-semibold text-slate-400 tabular-nums">
+                      <span className={cn('text-[11px]', isLive ? 'text-slate-300' : 'text-slate-500')}>ניחוש שלי:</span>
+                      <span className={cn('text-[11px] font-mono font-semibold tabular-nums', isLive ? 'text-slate-200' : 'text-slate-400')}>
                         {userBet.predictedScore.home}–{userBet.predictedScore.away}
                       </span>
                       {userResult && <PointsBadge result={userResult.result} points={userResult.points} />}
                     </div>
                   ) : (
-                    <span className="text-[11px] text-slate-600 mt-0.5">לא ניחשת</span>
+                    <span className={cn('text-[11px] mt-0.5', isLive ? 'text-slate-400' : 'text-slate-500')}>לא ניחשת</span>
                   )}
                 </div>
               ) : (
@@ -234,7 +234,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             {/* קבוצת חוץ */}
             <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
               <TeamFlag team={match.awayTeam} size="xl" />
-              <span className="text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words">{match.awayTeam.name}</span>
+              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>{match.awayTeam.name}</span>
             </div>
           </div>
 
@@ -293,7 +293,7 @@ function LiveIndicator({ minute, period }: { minute?: number; period?: string })
     if (period === 'BT') return { label: 'הפסקה', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
     if (period === 'P')  return { label: 'פנדלים', cls: 'bg-purple-500/20 text-purple-300 border border-purple-500/30' }
     if (period === 'ET') return { label: minute != null ? `${minute}′` : 'הארכה', cls: 'bg-orange-500/20 text-orange-300 border border-orange-500/30' }
-    if (minute != null)  return { label: `${minute}′`, cls: 'bg-red-950/60 text-red-300' }
+    if (minute != null)  return { label: `${minute}′`, cls: 'bg-red-500/20 text-red-200 border border-red-500/40' }
     return null
   })()
 
