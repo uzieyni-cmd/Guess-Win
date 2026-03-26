@@ -86,10 +86,10 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     !isFinished && isLocked &&
     new Date(match.matchStartTime).getTime() > Date.now() - 2.5 * 60 * 60 * 1000
   )
-  // דקה: מה-DB אם קיימת; בהפסקה/פנדלים אל תחשב לפי שעון
-  const isBreak = ['HT', 'BT', 'P'].includes(match.matchPeriod ?? '')
+  // דקה: מה-DB אם קיימת; בהפסקה/פנדלים/הארכה אל תחשב לפי שעון (לא מדויק)
+  const skipClientCalc = ['HT', 'BT', 'P', 'ET'].includes(match.matchPeriod ?? '')
   const liveMinute = match.liveMinute ??
-    (isLive && !isBreak
+    (isLive && !skipClientCalc
       ? Math.min(90, Math.floor((Date.now() - new Date(match.matchStartTime).getTime()) / 60000))
       : undefined)
   const isInputLocked = isLocked || isFinished || isLive
