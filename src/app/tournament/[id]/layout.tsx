@@ -4,7 +4,6 @@ import { useParams, useRouter, usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowRight, Trophy, BarChart2, User, Target, LogOut, Settings } from 'lucide-react'
 import Link from 'next/link'
-import { AppProviders } from '@/context/AppProviders'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
@@ -104,10 +103,8 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
 
 export default function TournamentLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AppProviders>
-      <AuthGuard>
-        <TournamentShell>{children}</TournamentShell>
-      </AuthGuard>
-    </AppProviders>
+    <AuthGuard>
+      <TournamentShell>{children}</TournamentShell>
+    </AuthGuard>
   )
 }

@@ -42,22 +42,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // בדוק session קיים
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const user = await loadProfile(session.user.id)
-        setCurrentUser(user)
-      }
-      setIsLoading(false)
-    })
-
-    // האזן לשינויים ב-auth
+    // onAuthStateChange fires INITIAL_SESSION immediately with current session —
+    // no need for a separate getSession() call. This avoids double loadProfile races.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const user = await loadProfile(session.user.id)
-        setCurrentUser(user)
-      } else {
+      // Silent token refresh — profile hasn't changed, skip reload
+      if (event === 'TOKEN_REFRESHED') return
+
+      try {
+        if (session?.user) {
+          const user = await loadProfile(session.user.id)
+          setCurrentUser(user)
+        } else {
+          setCurrentUser(null)
+        }
+      } catch {
+        // Network / Supabase error — treat as logged out, never hang
         setCurrentUser(null)
+      } finally {
+        setIsLoading(false)
       }
     })
 

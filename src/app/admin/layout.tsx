@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Trophy, Users, LayoutDashboard, ArrowRight } from 'lucide-react'
-import { AppProviders } from '@/context/AppProviders'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -88,10 +87,8 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AppProviders>
-      <AuthGuard>
-        <AdminShell>{children}</AdminShell>
-      </AuthGuard>
-    </AppProviders>
+    <AuthGuard>
+      <AdminShell>{children}</AdminShell>
+    </AuthGuard>
   )
 }

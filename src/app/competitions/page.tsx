@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import { LogOut, Trophy, Settings } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useTournament } from '@/context/TournamentContext'
-import { AppProviders } from '@/context/AppProviders'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { CompetitionCard } from '@/components/competitions/CompetitionCard'
 import { Button } from '@/components/ui/button'
@@ -79,10 +78,8 @@ function CompetitionsContent() {
 
 export default function CompetitionsPage() {
   return (
-    <AppProviders>
-      <AuthGuard>
-        <CompetitionsContent />
-      </AuthGuard>
-    </AppProviders>
+    <AuthGuard>
+      <CompetitionsContent />
+    </AuthGuard>
   )
 }
