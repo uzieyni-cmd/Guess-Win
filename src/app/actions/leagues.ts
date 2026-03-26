@@ -22,7 +22,30 @@ export interface ApiSeason {
 
 interface ApiLeagueResponse {
   league: { id: number; name: string; logo: string }
+  country: { name: string; flag: string }
   seasons: ApiSeason[]
+}
+
+export interface LeagueItem {
+  id: number
+  name: string
+  logo: string
+  country: string
+  flag: string
+}
+
+// מחזיר את כל הליגות (type=league בלבד, ללא גביעים)
+export async function fetchAllLeagues(): Promise<LeagueItem[]> {
+  const rows = await apiFetch<ApiLeagueResponse[]>('/leagues?type=league')
+  return rows
+    .map((r) => ({
+      id: r.league.id,
+      name: r.league.name,
+      logo: r.league.logo ?? '',
+      country: r.country?.name ?? '',
+      flag: r.country?.flag ?? '',
+    }))
+    .sort((a, b) => a.country.localeCompare(b.country) || a.name.localeCompare(b.name))
 }
 
 // מחזיר עונות + לוגו הליגה

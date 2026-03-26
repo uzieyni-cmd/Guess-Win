@@ -2,10 +2,10 @@
 import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2, Upload, Link2 } from 'lucide-react'
+import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2, Upload, Link2, Search, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useTournament } from '@/context/TournamentContext'
-import { fetchLeagueSeasons } from '@/app/actions/leagues'
+import { fetchLeagueSeasons, fetchAllLeagues, LeagueItem } from '@/app/actions/leagues'
 import { adminUpdateTournament, fetchLogoForTournament, uploadLogo } from '@/app/actions/tournaments'
 import { Tournament } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -60,6 +60,12 @@ export default function AdminTournamentsPage() {
   const [isPending, startTransition]        = useTransition()
   const [selectedLeagueName, setSelectedLeagueName] = useState('')
 
+  // ── All leagues browser ───────────────────────────────────────────
+  const [leagueBrowserOpen, setLeagueBrowserOpen] = useState(false)
+  const [allLeagues, setAllLeagues]               = useState<LeagueItem[]>([])
+  const [leaguesLoading, setLeaguesLoading]       = useState(false)
+  const [leagueSearch, setLeagueSearch]           = useState('')
+
   // ── Edit state ───────────────────────────────────────────────────
   const [editTournament, setEditTournament]         = useState<Tournament | null>(null)
   const [editName, setEditName]                     = useState('')
@@ -85,6 +91,19 @@ export default function AdminTournamentsPage() {
     setEditSaved(false)
     setUploadError('')
     setEditLogoError(false)
+  }
+
+  // ── Open leagues browser ──────────────────────────────────────────
+  const openLeagueBrowser = async () => {
+    setLeagueBrowserOpen(true)
+    if (allLeagues.length > 0) return
+    setLeaguesLoading(true)
+    try {
+      const leagues = await fetchAllLeagues()
+      setAllLeagues(leagues)
+    } finally {
+      setLeaguesLoading(false)
+    }
   }
 
   // ── Select a popular league → fetch seasons from API ─────────────
@@ -168,14 +187,81 @@ export default function AdminTournamentsPage() {
                     <button key={l.id} type="button" onClick={() => selectLeague(l)}
                       className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                         leagueId === String(l.id)
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'border-indigo-300 text-indigo-700 hover:bg-indigo-50'
+                          ? 'bg-emerald-600 text-white border-emerald-600'
+                          : 'border-gray-300 text-gray-700 hover:border-emerald-400'
                       }`}>
                       {l.name}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={openLeagueBrowser}
+                    className="text-xs px-2.5 py-1 rounded-full border border-dashed border-gray-400 text-gray-500 hover:border-emerald-500 hover:text-emerald-600 transition-colors flex items-center gap-1"
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                    בחירה אחרת
+                  </button>
                 </div>
               </div>
+
+              {/* League browser dialog */}
+              <Dialog open={leagueBrowserOpen} onOpenChange={setLeagueBrowserOpen}>
+                <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+                  <DialogHeader><DialogTitle>כל הליגות</DialogTitle></DialogHeader>
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="חפש ליגה או מדינה..."
+                      value={leagueSearch}
+                      onChange={(e) => setLeagueSearch(e.target.value)}
+                      className="w-full border rounded-md py-2 pr-9 pl-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div className="flex-1 overflow-y-auto space-y-0.5 min-h-0">
+                    {leaguesLoading ? (
+                      <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground text-sm">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        טוען ליגות מ-API-Football...
+                      </div>
+                    ) : (() => {
+                        const q = leagueSearch.toLowerCase()
+                        const filtered = allLeagues.filter(
+                          (l) => l.name.toLowerCase().includes(q) || l.country.toLowerCase().includes(q)
+                        )
+                        if (filtered.length === 0) return (
+                          <p className="text-center py-8 text-sm text-muted-foreground">לא נמצאו ליגות</p>
+                        )
+                        return filtered.map((l) => (
+                          <button
+                            key={l.id}
+                            type="button"
+                            onClick={() => {
+                              selectLeague({ id: l.id, name: l.name })
+                              setLeagueBrowserOpen(false)
+                              setLeagueSearch('')
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors text-right ${
+                              leagueId === String(l.id) ? 'bg-emerald-50 text-emerald-700' : ''
+                            }`}
+                          >
+                            {l.logo
+                              ? <img src={l.logo} alt="" className="h-6 w-6 object-contain shrink-0" />
+                              : <Trophy className="h-5 w-5 text-muted-foreground shrink-0" />
+                            }
+                            <span className="flex-1 truncate font-medium">{l.name}</span>
+                            <span className="text-xs text-muted-foreground shrink-0 flex items-center gap-1">
+                              {l.flag && <img src={l.flag} alt="" className="h-3.5 w-5 object-cover rounded-sm" />}
+                              {l.country}
+                            </span>
+                          </button>
+                        ))
+                      })()
+                    }
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {/* שלב 2: בחירת עונה (אחרי שנשלפה מה-API) */}
               {(isPending || seasons.length > 0) && (
