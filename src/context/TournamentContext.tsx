@@ -35,6 +35,7 @@ function dbMatchToMatch(m: DbMatch): Match {
     matchStartTime: m.match_start_time,
     status: m.status as Match['status'],
     round: m.round ?? undefined,
+    liveMinute: m.elapsed_minutes ?? undefined,
     actualScore:
       m.actual_home_score !== null && m.actual_away_score !== null
         ? { home: m.actual_home_score, away: m.actual_away_score }
@@ -76,6 +77,7 @@ interface TournamentContextType {
   updateUserPermissions: (userId: string, competitionIds: string[]) => Promise<void>
   reload: () => void
   reloadMatches: (tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean }) => Promise<string | null>
+  patchMatches: (tournamentId: string, updatedMatches: Match[]) => void
 }
 
 const TournamentContext = createContext<TournamentContextType | null>(null)
@@ -342,11 +344,24 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     return loadActiveMatches(tournamentId, options ?? {})
   }, [loadActiveMatches])
 
+  // עדכון חלקי — רק הmatches שהשתנו (לspolling של live)
+  const patchMatches = useCallback((tournamentId: string, updatedMatches: Match[]) => {
+    if (!updatedMatches.length) return
+    const patchMap = new Map(updatedMatches.map((m) => [m.id, m]))
+    setTournaments((prev) =>
+      prev.map((t) =>
+        t.id !== tournamentId
+          ? t
+          : { ...t, matches: t.matches.map((m) => patchMap.get(m.id) ?? m) }
+      )
+    )
+  }, [])
+
   return (
     <TournamentContext.Provider value={{
       tournaments, activeTournament, bets, participants, standings,
       setActiveTournamentId, placeBet, setActualScore, createTournament,
-      updateTournament, deleteTournament, toggleHideTournament, addMatch, updateUserPermissions, reload, reloadMatches,
+      updateTournament, deleteTournament, toggleHideTournament, addMatch, updateUserPermissions, reload, reloadMatches, patchMatches,
     }}>
       {children}
     </TournamentContext.Provider>

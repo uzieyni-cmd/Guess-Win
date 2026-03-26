@@ -4,10 +4,42 @@ import { useParams } from 'next/navigation'
 import { useTournament } from '@/context/TournamentContext'
 import { BettingZone } from '@/components/tournament/BettingZone'
 import { Target, ChevronDown, Loader2, EyeOff, Eye } from 'lucide-react'
+import { DbMatch } from '@/lib/supabase'
+import { translateTeam } from '@/lib/teams-he'
+import { Match } from '@/types'
+
+const LIVE_POLL_MS = 30_000
+
+function dbMatchToMatchPartial(m: DbMatch): Match {
+  return {
+    id: m.id,
+    tournamentId: m.tournament_id,
+    homeTeam: {
+      id: m.home_team_id,
+      name: translateTeam(m.home_team_name),
+      shortCode: m.home_team_short ?? m.home_team_name.slice(0, 3).toUpperCase(),
+      flagUrl: m.home_team_flag ?? '',
+    },
+    awayTeam: {
+      id: m.away_team_id,
+      name: translateTeam(m.away_team_name),
+      shortCode: m.away_team_short ?? m.away_team_name.slice(0, 3).toUpperCase(),
+      flagUrl: m.away_team_flag ?? '',
+    },
+    matchStartTime: m.match_start_time,
+    status: m.status as Match['status'],
+    round: m.round ?? undefined,
+    liveMinute: m.elapsed_minutes ?? undefined,
+    actualScore:
+      m.actual_home_score !== null && m.actual_away_score !== null
+        ? { home: m.actual_home_score, away: m.actual_away_score }
+        : null,
+  }
+}
 
 export default function MatchesPage() {
   const { id } = useParams() as { id: string }
-  const { activeTournament, reloadMatches } = useTournament()
+  const { activeTournament, reloadMatches, patchMatches } = useTournament()
 
   // ── state ───────────────────────────────────────────────────────
   const [loadingAll, setLoadingAll]       = useState(false)
@@ -17,6 +49,27 @@ export default function MatchesPage() {
   const [cursor, setCursor]               = useState<string | null>(null)
   const [hideFinished, setHideFinished]   = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // ── Polling כל 30 שניות כשיש משחקים חיים ──────────────────────
+  useEffect(() => {
+    if (!activeTournament) return
+    const hasLive = activeTournament.matches.some((m) => m.status === 'live')
+    if (!hasLive) return
+
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/live/${id}`, { cache: 'no-store' })
+        if (!res.ok) return
+        const json: { matches: DbMatch[] } = await res.json()
+        patchMatches(id, json.matches.map(dbMatchToMatchPartial))
+      } catch {
+        // שקט — שגיאת רשת לא תקרוס את הדף
+      }
+    }
+
+    const timer = setInterval(poll, LIVE_POLL_MS)
+    return () => clearInterval(timer)
+  }, [activeTournament, id, patchMatches])
 
   // ── טעינה ראשונית — חלון שוטף ──────────────────────────────────
   useEffect(() => {

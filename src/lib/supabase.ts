@@ -47,6 +47,7 @@ export type DbMatch = {
   actual_away_score: number | null
   api_fixture_id: number | null
   round: string | null
+  elapsed_minutes: number | null
   created_at: string
 }
 

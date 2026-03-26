@@ -50,18 +50,26 @@ export async function GET(req: Request) {
 
       const json = await res.json()
       const fixtures: {
-        fixture: { id: number; status: { short: string } }
+        fixture: { id: number; status: { short: string; elapsed: number | null } }
+        goals: { home: number | null; away: number | null }
         score: { fulltime: { home: number | null; away: number | null } }
       }[] = json.response ?? []
 
       for (const f of fixtures) {
         const status = mapStatus(f.fixture.status.short)
+        const isLive = status === 'live'
         await supabaseAdmin
           .from('matches')
           .update({
             status,
-            actual_home_score: f.score.fulltime.home ?? null,
-            actual_away_score: f.score.fulltime.away ?? null,
+            // בזמן משחק חי: שמור את הציון הנוכחי (goals); בסיום: ציון סופי (fulltime)
+            actual_home_score: isLive
+              ? (f.goals.home ?? null)
+              : (f.score.fulltime.home ?? null),
+            actual_away_score: isLive
+              ? (f.goals.away ?? null)
+              : (f.score.fulltime.away ?? null),
+            elapsed_minutes: isLive ? (f.fixture.status.elapsed ?? null) : null,
           })
           .eq('api_fixture_id', f.fixture.id)
         synced++
