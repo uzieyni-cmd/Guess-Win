@@ -17,7 +17,7 @@ export default function LeaderboardPage() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <BarChart2 className="h-5 w-5 text-indigo-600" />
+        <BarChart2 className="h-5 w-5 text-emerald-500" />
         <h2 className="font-suez text-xl text-slate-100">טבלת דירוג</h2>
       </div>
       {standings.length === 0 ? (

@@ -190,9 +190,9 @@ function ProfileContent() {
   const initials = currentUser?.displayName?.charAt(0)?.toUpperCase() ?? '?'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-indigo-950">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] to-[#0d1b14]">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
+      <div className="sticky top-0 z-10 bg-[#0a0e1a]/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}
@@ -208,7 +208,7 @@ function ProfileContent() {
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
 
           {/* Profile summary */}
-          <Card className="bg-slate-800/50 border-white/10">
+          <Card className="bg-gray-900/60 border-white/10">
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-3">
                 <div className="relative">
@@ -221,7 +221,7 @@ function ProfileContent() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={avatarLoading}
-                    className="absolute bottom-0 left-0 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 rounded-full p-1.5 transition-colors"
+                    className="absolute bottom-0 left-0 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 rounded-full p-1.5 transition-colors"
                   >
                     {avatarLoading
                       ? <Loader2 className="h-3.5 w-3.5 text-white animate-spin" />
@@ -232,9 +232,9 @@ function ProfileContent() {
                 {avatarError && <p className="text-red-400 text-xs">{avatarError}</p>}
                 <div className="text-center">
                   <p className="font-suez text-xl text-white">{currentUser?.displayName}</p>
-                  <p className="text-sm text-indigo-300">{currentUser?.email}</p>
+                  <p className="text-sm text-emerald-300">{currentUser?.email}</p>
                   {currentUser?.role === 'admin' && (
-                    <Badge className="mt-1.5 bg-indigo-600 hover:bg-indigo-600 text-white">מנהל</Badge>
+                    <Badge className="mt-1.5 bg-emerald-600 hover:bg-emerald-600 text-white">מנהל</Badge>
                   )}
                 </div>
               </div>
@@ -242,20 +242,20 @@ function ProfileContent() {
           </Card>
 
           {/* Edit display name */}
-          <Card className="bg-slate-800/50 border-white/10">
+          <Card className="bg-gray-900/60 border-white/10">
             <CardHeader className="pb-3">
               <CardTitle className="text-white text-base flex items-center gap-2">
-                <User className="h-4 w-4 text-indigo-400" />
+                <User className="h-4 w-4 text-emerald-400" />
                 עריכת שם תצוגה
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-indigo-200 text-sm">שם תצוגה</Label>
+                <Label className="text-emerald-200 text-sm">שם תצוגה</Label>
                 <Input
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="bg-slate-700/50 border-white/10 text-white placeholder:text-slate-400"
+                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
                   placeholder="השם שלך"
                 />
               </div>
@@ -268,7 +268,7 @@ function ProfileContent() {
               <Button
                 onClick={handleSaveName}
                 disabled={nameLoading || !displayName.trim() || displayName.trim() === currentUser?.displayName}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
               >
                 {nameLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                 שמירה
@@ -277,41 +277,41 @@ function ProfileContent() {
           </Card>
 
           {/* Change password */}
-          <Card className="bg-slate-800/50 border-white/10">
+          <Card className="bg-gray-900/60 border-white/10">
             <CardHeader className="pb-3">
               <CardTitle className="text-white text-base flex items-center gap-2">
-                <Lock className="h-4 w-4 text-indigo-400" />
+                <Lock className="h-4 w-4 text-emerald-400" />
                 שינוי סיסמה
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-indigo-200 text-sm">סיסמה נוכחית</Label>
+                <Label className="text-emerald-200 text-sm">סיסמה נוכחית</Label>
                 <Input
                   type="password"
                   value={currentPw}
                   onChange={(e) => setCurrentPw(e.target.value)}
-                  className="bg-slate-700/50 border-white/10 text-white placeholder:text-slate-400"
+                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
                   placeholder="••••••••"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-indigo-200 text-sm">סיסמה חדשה</Label>
+                <Label className="text-emerald-200 text-sm">סיסמה חדשה</Label>
                 <Input
                   type="password"
                   value={newPw}
                   onChange={(e) => setNewPw(e.target.value)}
-                  className="bg-slate-700/50 border-white/10 text-white placeholder:text-slate-400"
+                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
                   placeholder="••••••••"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-indigo-200 text-sm">אישור סיסמה חדשה</Label>
+                <Label className="text-emerald-200 text-sm">אישור סיסמה חדשה</Label>
                 <Input
                   type="password"
                   value={confirmPw}
                   onChange={(e) => setConfirmPw(e.target.value)}
-                  className="bg-slate-700/50 border-white/10 text-white placeholder:text-slate-400"
+                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
                   placeholder="••••••••"
                 />
               </div>
@@ -324,7 +324,7 @@ function ProfileContent() {
               <Button
                 onClick={handleChangePassword}
                 disabled={pwLoading || !currentPw || !newPw || !confirmPw}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white"
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
               >
                 {pwLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                 שינוי סיסמה
@@ -333,24 +333,24 @@ function ProfileContent() {
           </Card>
 
           {/* Statistics */}
-          <Card className="bg-slate-800/50 border-white/10">
+          <Card className="bg-gray-900/60 border-white/10">
             <CardHeader className="pb-3">
               <CardTitle className="text-white text-base flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-indigo-400" />
+                <BarChart3 className="h-4 w-4 text-emerald-400" />
                 סטטיסטיקות אישיות
               </CardTitle>
             </CardHeader>
             <CardContent>
               {statsLoading ? (
                 <div className="flex justify-center py-6">
-                  <Loader2 className="h-6 w-6 text-indigo-400 animate-spin" />
+                  <Loader2 className="h-6 w-6 text-emerald-400 animate-spin" />
                 </div>
               ) : stats && stats.totalBets > 0 ? (
                 <div className="grid grid-cols-2 gap-3">
                   <StatBox label="סה״כ ניחושים" value={stats.totalBets} color="text-white" />
                   <StatBox label="תחרויות" value={stats.tournaments} color="text-white" />
                   <StatBox label="סה״כ נקודות" value={stats.totalPoints} color="text-yellow-400" />
-                  <StatBox label="ניחושים שהסתיימו" value={stats.finishedBets} color="text-indigo-300" />
+                  <StatBox label="ניחושים שהסתיימו" value={stats.finishedBets} color="text-emerald-300" />
                   <StatBox label="תוצאה מדויקת" value={stats.exact} color="text-green-400" sub="10 נק׳ כל אחד" />
                   <StatBox label="כיוון נכון" value={stats.outcome} color="text-blue-400" sub="5 נק׳ כל אחד" />
                   <StatBox label="החטאה" value={stats.miss} color="text-red-400" sub="0 נק׳" />
@@ -358,12 +358,12 @@ function ProfileContent() {
                     <StatBox
                       label="אחוז הצלחה"
                       value={`${Math.round(((stats.exact + stats.outcome) / stats.finishedBets) * 100)}%`}
-                      color="text-indigo-300"
+                      color="text-emerald-300"
                     />
                   )}
                 </div>
               ) : (
-                <p className="text-center text-indigo-300 py-4 text-sm">אין ניחושים עדיין</p>
+                <p className="text-center text-emerald-300 py-4 text-sm">אין ניחושים עדיין</p>
               )}
             </CardContent>
           </Card>

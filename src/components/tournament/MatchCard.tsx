@@ -127,7 +127,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
         <div className={cn('flex items-center justify-between px-4 py-2 text-xs text-muted-foreground', isFinished ? 'bg-green-100/70' : 'bg-muted/50')}>
           <CountdownTimer matchStartTime={match.matchStartTime} />
           <div className="flex items-center gap-1.5 text-left">
-            {roundStr && <span className="font-medium text-indigo-500">{roundStr}</span>}
+            {roundStr && <span className="font-medium text-emerald-400">{roundStr}</span>}
             {roundStr && <span>·</span>}
             <span>{dateStr} · {timeStr}</span>
           </div>
@@ -159,7 +159,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                     saveError
                       ? 'bg-red-100 text-red-600 cursor-default'
                       : dirty && !saved
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      ? 'bg-orange-500 text-white hover:bg-orange-600'
                       : 'bg-muted text-muted-foreground cursor-default'
                   )}
                 >

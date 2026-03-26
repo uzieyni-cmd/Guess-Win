@@ -18,6 +18,12 @@ const statusColors = {
   completed: 'secondary',
 } as const
 
+const statusBorders = {
+  active: 'border-emerald-500',
+  upcoming: 'border-indigo-500',
+  completed: 'border-slate-600',
+} as const
+
 const statusLabels = {
   active: 'פעיל',
   upcoming: 'בקרוב',
@@ -36,11 +42,11 @@ export function CompetitionCard({ tournament, index }: Props) {
       whileTap={{ scale: 0.98 }}
     >
       <Card
-        className={cn('cursor-pointer border-2 border-transparent hover:border-primary/40 transition-all duration-200 overflow-hidden')}
+        className={cn('cursor-pointer border-2 transition-all duration-200 overflow-hidden', statusBorders[tournament.status])}
         onClick={() => router.push(`/tournament/${tournament.id}/matches`)}
       >
         <CardContent className="p-0">
-          <div className="bg-gradient-to-l from-indigo-600 to-purple-600 p-4 flex items-center gap-3">
+          <div className="bg-gradient-to-l from-emerald-700 to-emerald-950 p-4 flex items-center gap-3">
             {tournament.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -56,7 +62,7 @@ export function CompetitionCard({ tournament, index }: Props) {
             )}
             <div className="flex-1 min-w-0">
               <h3 className="font-suez text-white text-lg leading-tight truncate">{tournament.name}</h3>
-              <p className="text-indigo-200 text-sm truncate">{tournament.description}</p>
+              <p className="text-emerald-100 text-sm truncate">{tournament.description}</p>
             </div>
           </div>
           <div className="p-4 flex items-center justify-between">

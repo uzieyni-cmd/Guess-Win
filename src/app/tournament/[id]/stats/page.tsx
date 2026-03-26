@@ -42,12 +42,12 @@ export default function StatsPage() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="h-5 w-5 text-indigo-600" />
+        <TrendingUp className="h-5 w-5 text-emerald-500" />
         <h2 className="font-suez text-xl text-slate-100">הסטטיסטיקה שלי</h2>
       </div>
       <div className="grid grid-cols-2 gap-3 mb-4">
         {[
-          { label: 'סך הנקודות', value: stats.totalPoints, icon: Zap, color: 'text-indigo-600' },
+          { label: 'סך הנקודות', value: stats.totalPoints, icon: Zap, color: 'text-emerald-500' },
           { label: 'דיוק', value: `${stats.accuracy}%`, icon: Target, color: 'text-green-600' },
           { label: 'פגיעות מדויקות', value: stats.exactHits, icon: Target, color: 'text-yellow-600' },
           { label: 'כיוון נכון', value: stats.outcomeHits, icon: Target, color: 'text-blue-600' },

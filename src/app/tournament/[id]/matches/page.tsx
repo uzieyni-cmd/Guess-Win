@@ -90,7 +90,7 @@ export default function MatchesPage() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-indigo-600" />
+          <Target className="h-5 w-5 text-emerald-500" />
           <h2 className="font-suez text-xl text-slate-100">ניחושי משחקים</h2>
           {realMatches.length > 0 && (
             <span className="text-xs text-slate-300 bg-slate-700 px-2 py-0.5 rounded-full">
@@ -117,7 +117,7 @@ export default function MatchesPage() {
             <button
               onClick={handleLoadPast}
               disabled={loadingAll}
-              className="flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-emerald-500 hover:text-emerald-300 disabled:opacity-50 transition-colors"
             >
               {loadingAll
                 ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />טוען...</>

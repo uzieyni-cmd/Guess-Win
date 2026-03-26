@@ -31,7 +31,7 @@ export default function PersonalPage() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <User className="h-5 w-5 text-indigo-600" />
+        <User className="h-5 w-5 text-emerald-500" />
         <h2 className="font-suez text-xl text-slate-100">הניחושים שלי</h2>
       </div>
       {myBets.length === 0 ? (

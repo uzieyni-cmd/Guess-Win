@@ -26,12 +26,12 @@ function CompetitionsContent() {
   }, [tournaments, currentUser])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-indigo-950">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] to-[#0d1b14]">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-white/10">
+      <div className="sticky top-0 z-10 bg-[#0a0e1a]/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-indigo-400" />
+            <Trophy className="h-6 w-6 text-emerald-400" />
             <span className="font-suez text-xl text-white">Guess&amp;Win</span>
           </div>
           <div className="flex items-center gap-2">
@@ -41,10 +41,10 @@ function CompetitionsContent() {
                 ניהול
               </Button>
             )}
-            <button onClick={() => router.push('/profile')} className="rounded-full hover:ring-2 hover:ring-indigo-400 transition-all">
+            <button onClick={() => router.push('/profile')} className="rounded-full hover:ring-2 hover:ring-emerald-400 transition-all">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={currentUser?.avatarUrl} />
-                <AvatarFallback delayMs={0} className="bg-indigo-600 text-white text-sm font-bold">
+                <AvatarFallback delayMs={0} className="bg-emerald-600 text-white text-sm font-bold">
                   {currentUser?.displayName?.charAt(0)?.toUpperCase() ?? '?'}
                 </AvatarFallback>
               </Avatar>
@@ -64,11 +64,11 @@ function CompetitionsContent() {
             <h2 className="font-suez text-2xl text-white mb-1">
               שלום, {currentUser?.displayName}!
             </h2>
-            <p className="text-indigo-300">בחרו תחרות לניחוש</p>
+            <p className="text-emerald-300">בחרו תחרות לניחוש</p>
           </div>
 
           {myTournaments.length === 0 ? (
-            <div className="text-center py-16 text-indigo-300">
+            <div className="text-center py-16 text-emerald-300">
               <Trophy className="h-12 w-12 mx-auto mb-4 opacity-40" />
               <p>אין לך תחרויות עדיין.</p>
             </div>

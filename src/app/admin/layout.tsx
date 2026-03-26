@@ -32,7 +32,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       <aside className="hidden md:flex w-56 bg-white border-l flex-col">
         <div className="p-4 border-b">
           <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-indigo-600" />
+            <Trophy className="h-5 w-5 text-emerald-600" />
             <span className="font-suez text-lg">לוח ניהול</span>
           </div>
         </div>
@@ -45,7 +45,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 className={cn(
                   'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  isActive ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'
+                  isActive ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-50'
                 )}
               >
                 <item.icon className="h-4 w-4" />
@@ -57,7 +57,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="p-3 border-t">
           <Link
             href="/competitions"
-            className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors"
+            className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
           >
             <ArrowRight className="h-4 w-4" />
             חזרה לאפליקציה
@@ -70,7 +70,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         {NAV_ITEMS.map((item) => {
           const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
           return (
-            <Link key={item.href} href={item.href} className={cn('flex-1 flex flex-col items-center py-2 text-xs gap-1', isActive ? 'text-indigo-600' : 'text-gray-500')}>
+            <Link key={item.href} href={item.href} className={cn('flex-1 flex flex-col items-center py-2 text-xs gap-1', isActive ? 'text-emerald-600' : 'text-gray-500')}>
               <item.icon className="h-5 w-5" />
               {item.label}
             </Link>

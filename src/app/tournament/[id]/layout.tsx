@@ -34,9 +34,9 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
   useEffect(() => { setLogoError(false) }, [tournament?.logoUrl])
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col">
+    <div className="min-h-screen bg-[#0a0e1a] flex flex-col">
       {/* Header */}
-      <div className="bg-gradient-to-l from-indigo-700 to-purple-700 text-white sticky top-0 z-20">
+      <div className="bg-gradient-to-l from-slate-900 via-indigo-900 to-slate-900 text-white sticky top-0 z-20">
         <div className="max-w-[1600px] mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
             <button onClick={() => router.push('/competitions')} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-white/10 transition-colors">
@@ -78,8 +78,8 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     'px-3 py-1.5 text-sm font-medium rounded-t transition-colors',
                     isActive
-                      ? 'bg-white text-indigo-700'
-                      : 'text-indigo-200 hover:text-white hover:bg-white/10'
+                      ? 'bg-white text-emerald-700'
+                      : 'text-emerald-200 hover:text-white hover:bg-white/10'
                   )}
                 >
                   {tab.label}
