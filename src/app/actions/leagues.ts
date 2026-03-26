@@ -2,15 +2,18 @@
 
 const BASE_URL = 'https://v3.football.api-sports.io'
 
-async function apiFetch<T>(path: string): Promise<T> {
+async function apiFetch<T>(path: string, revalidate = 3600): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! },
-    next: { revalidate: 3600 }, // cache 1hr
+    next: { revalidate },
   })
   if (!res.ok) throw new Error(`API-Football ${res.status}`)
   const data = await res.json()
   return data.response as T
 }
+
+// in-memory cache — נשמר כל עוד ה-server instance חי
+let allLeaguesCache: LeagueItem[] | null = null
 
 export interface ApiSeason {
   year: number
@@ -36,12 +39,16 @@ export interface LeagueItem {
 }
 
 // מחזיר את כל הליגות והגביעים (Nations League מסווג כ-Cup ב-API)
+// cache 24h ב-Next.js + in-memory cache בין קריאות באותו server instance
 export async function fetchAllLeagues(): Promise<LeagueItem[]> {
+  if (allLeaguesCache) return allLeaguesCache
+
   const [leagues, cups] = await Promise.all([
-    apiFetch<ApiLeagueResponse[]>('/leagues?type=league'),
-    apiFetch<ApiLeagueResponse[]>('/leagues?type=cup'),
+    apiFetch<ApiLeagueResponse[]>('/leagues?type=league', 86400),
+    apiFetch<ApiLeagueResponse[]>('/leagues?type=cup', 86400),
   ])
-  return [...leagues, ...cups]
+
+  allLeaguesCache = [...leagues, ...cups]
     .map((r) => ({
       id: r.league.id,
       name: r.league.name,
@@ -51,6 +58,8 @@ export async function fetchAllLeagues(): Promise<LeagueItem[]> {
       type: r.league.type as 'League' | 'Cup',
     }))
     .sort((a, b) => a.country.localeCompare(b.country) || a.name.localeCompare(b.name))
+
+  return allLeaguesCache
 }
 
 // מחזיר עונות + לוגו הליגה
