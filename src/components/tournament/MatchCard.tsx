@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock, Check, Save, AlertCircle, Users, X } from 'lucide-react'
 import { Match, Bet } from '@/types'
@@ -262,73 +263,117 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
           </div>
         )}
 
-        {/* Modal צף */}
-        <AnimatePresence>
-          {showOthers && (
-            <>
-              {/* backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-                onClick={() => setShowOthers(false)}
-              />
-              {/* panel */}
-              <motion.div
-                initial={{ opacity: 0, y: 40, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 40, scale: 0.96 }}
-                transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-                className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-sm rounded-2xl bg-[#0d1b14] border border-emerald-800/40 shadow-2xl overflow-hidden"
-              >
-                {/* header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-emerald-800/30">
-                  <div className="text-sm font-semibold text-slate-200">
-                    {match.homeTeam.name} – {match.awayTeam.name}
-                  </div>
-                  <button
-                    onClick={() => setShowOthers(false)}
-                    className="p-1 rounded-full hover:bg-white/10 transition-colors text-slate-400"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="px-4 py-1 text-[11px] text-slate-500 border-b border-emerald-800/20">
-                  ניחושי המשתתפים ({otherBets.length})
-                </div>
-                {/* list */}
-                <div className="overflow-y-auto max-h-72 divide-y divide-emerald-900/30">
-                  {otherBets.map((bet) => {
-                    const betUser = participants.find((u) => u.id === bet.userId)
-                    const result = isFinished && match.actualScore ? calculateScore(bet, match) : null
-                    return (
-                      <div key={bet.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                        <span className="text-slate-300 font-medium">{betUser?.displayName ?? 'משתתף'}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-slate-200 tabular-nums">
-                            {bet.predictedScore.home} – {bet.predictedScore.away}
-                          </span>
-                          {result && <PointsBadge result={result.result} points={result.points} />}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div className="px-4 py-3">
-                  <button
-                    onClick={() => setShowOthers(false)}
-                    className="w-full text-xs text-slate-400 hover:text-slate-200 transition-colors py-1"
-                  >
-                    סגור
-                  </button>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
       </Card>
+
+      {/* מודל צף — portal מחוץ ל-Card */}
+      <OtherBetsModal
+        open={showOthers}
+        onClose={() => setShowOthers(false)}
+        match={match}
+        bets={otherBets}
+        participants={participants}
+        isFinished={isFinished}
+      />
     </motion.div>
+  )
+}
+
+// ── מודל ניחושי משתתפים ──────────────────────────────────────────────
+interface ModalProps {
+  open: boolean
+  onClose: () => void
+  match: Match
+  bets: Bet[]
+  participants: { id: string; displayName: string }[]
+  isFinished: boolean
+}
+
+function OtherBetsModal({ open, onClose, match, bets, participants, isFinished }: ModalProps) {
+  // נסגר ב-Escape
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [open, onClose])
+
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          {/* panel — bottom sheet */}
+          <motion.div
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 60 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-[#0d1420] border border-slate-700/50 shadow-2xl overflow-hidden"
+            dir="rtl"
+          >
+            {/* handle */}
+            <div className="flex justify-center pt-2 pb-1">
+              <div className="w-10 h-1 rounded-full bg-slate-600" />
+            </div>
+
+            {/* header */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/40">
+              <div>
+                <p className="text-sm font-bold text-slate-100">
+                  {match.homeTeam.name} <span className="text-slate-500 font-normal">נגד</span> {match.awayTeam.name}
+                </p>
+                <p className="text-[11px] text-slate-500 mt-0.5">ניחושי המשתתפים · {bets.length}</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-slate-400"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* list */}
+            <div className="overflow-y-auto max-h-64 divide-y divide-slate-800/60">
+              {bets.map((bet) => {
+                const betUser = participants.find((u) => u.id === bet.userId)
+                const result = isFinished && match.actualScore ? calculateScore(bet, match) : null
+                return (
+                  <div key={bet.id} className="flex items-center justify-between px-4 py-3">
+                    <span className="text-sm text-slate-300">{betUser?.displayName ?? 'משתתף'}</span>
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-mono font-bold text-slate-100 tabular-nums text-sm">
+                        {bet.predictedScore.home} – {bet.predictedScore.away}
+                      </span>
+                      {result && <PointsBadge result={result.result} points={result.points} />}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* footer */}
+            <div className="px-4 py-3 border-t border-slate-800/60">
+              <button
+                onClick={onClose}
+                className="w-full text-xs text-slate-400 hover:text-slate-200 transition-colors py-1"
+              >
+                סגור
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body
   )
 }
 
