@@ -56,6 +56,20 @@ export async function adminToggleHide(
   return { ok: true }
 }
 
+export async function uploadLogo(formData: FormData): Promise<{ url?: string; error?: string }> {
+  const file = formData.get('file') as File | null
+  if (!file || !file.size) return { error: 'לא נבחר קובץ' }
+  const ext = file.name.split('.').pop() ?? 'png'
+  const path = `logos/${Date.now()}.${ext}`
+  const bytes = await file.arrayBuffer()
+  const { error } = await supabaseAdmin.storage
+    .from('logos')
+    .upload(path, bytes, { contentType: file.type, upsert: true })
+  if (error) return { error: error.message }
+  const { data } = supabaseAdmin.storage.from('logos').getPublicUrl(path)
+  return { url: data.publicUrl }
+}
+
 export async function adminCreateTournament(data: {
   name: string
   description: string

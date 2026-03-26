@@ -1,12 +1,12 @@
 'use client'
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2, Upload, Link2 } from 'lucide-react'
 import Link from 'next/link'
 import { useTournament } from '@/context/TournamentContext'
 import { fetchLeagueSeasons } from '@/app/actions/leagues'
-import { adminUpdateTournament, fetchLogoForTournament } from '@/app/actions/tournaments'
+import { adminUpdateTournament, fetchLogoForTournament, uploadLogo } from '@/app/actions/tournaments'
 import { Tournament } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -69,6 +69,10 @@ export default function AdminTournamentsPage() {
   const [editSaved, setEditSaved]                   = useState(false)
   const [editSaving, setEditSaving]                 = useState(false)
   const [fetchingLogo, setFetchingLogo]             = useState(false)
+  const [uploadingLogo, setUploadingLogo]           = useState(false)
+  const [uploadingCreateLogo, setUploadingCreateLogo] = useState(false)
+  const editFileRef   = useRef<HTMLInputElement>(null)
+  const createFileRef = useRef<HTMLInputElement>(null)
 
   const openEdit = (t: Tournament) => {
     setEditTournament(t)
@@ -228,8 +232,29 @@ export default function AdminTournamentsPage() {
                 </div>
 
                 <div>
-                  <Label>קישור לוגו (אופציונלי)</Label>
-                  <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." />
+                  <Label>לוגו (אופציונלי)</Label>
+                  <div className="flex gap-2">
+                    <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." className="flex-1" />
+                    <Button type="button" variant="outline" size="sm" disabled={uploadingCreateLogo}
+                      onClick={() => createFileRef.current?.click()}>
+                      {uploadingCreateLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Upload className="h-4 w-4 ml-1" />העלה</>}
+                    </Button>
+                  </div>
+                  <input ref={createFileRef} type="file" accept="image/*" className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      setUploadingCreateLogo(true)
+                      const fd = new FormData(); fd.append('file', file)
+                      const res = await uploadLogo(fd)
+                      if (res.url) setLogoUrl(res.url)
+                      setUploadingCreateLogo(false)
+                      e.target.value = ''
+                    }} />
+                  {logoUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={logoUrl} alt="preview" className="mt-2 h-10 w-10 object-contain rounded border" />
+                  )}
                 </div>
               </div>
 
@@ -340,9 +365,13 @@ export default function AdminTournamentsPage() {
               <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} />
             </div>
             <div>
-              <Label>קישור לוגו</Label>
+              <Label>לוגו</Label>
               <div className="flex gap-2">
-                <Input value={editLogo} onChange={(e) => setEditLogo(e.target.value)} placeholder="https://..." />
+                <Input value={editLogo} onChange={(e) => setEditLogo(e.target.value)} placeholder="https://..." className="flex-1" />
+                <Button type="button" variant="outline" size="sm" disabled={uploadingLogo}
+                  onClick={() => editFileRef.current?.click()}>
+                  {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Upload className="h-4 w-4 ml-1" />העלה</>}
+                </Button>
                 <Button type="button" variant="outline" size="sm" disabled={fetchingLogo}
                   onClick={async () => {
                     if (!editTournament) return
@@ -351,13 +380,24 @@ export default function AdminTournamentsPage() {
                     if (url) setEditLogo(url)
                     setFetchingLogo(false)
                   }}>
-                  {fetchingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'שלוף'}
+                  {fetchingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Link2 className="h-4 w-4 ml-1" />שלוף</>}
                 </Button>
               </div>
+              <input ref={editFileRef} type="file" accept="image/*" className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setUploadingLogo(true)
+                  const fd = new FormData(); fd.append('file', file)
+                  const res = await uploadLogo(fd)
+                  if (res.url) setEditLogo(res.url)
+                  setUploadingLogo(false)
+                  e.target.value = ''
+                }} />
               {editLogo && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={editLogo} alt="preview"
-                  className="mt-2 h-12 w-12 object-contain rounded-full border"
+                  className="mt-2 h-12 w-12 object-contain rounded border"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
               )}
             </div>
