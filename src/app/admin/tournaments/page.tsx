@@ -71,6 +71,8 @@ export default function AdminTournamentsPage() {
   const [fetchingLogo, setFetchingLogo]             = useState(false)
   const [uploadingLogo, setUploadingLogo]           = useState(false)
   const [uploadingCreateLogo, setUploadingCreateLogo] = useState(false)
+  const [uploadError, setUploadError]               = useState('')
+  const [editLogoError, setEditLogoError]           = useState(false)
   const editFileRef   = useRef<HTMLInputElement>(null)
   const createFileRef = useRef<HTMLInputElement>(null)
 
@@ -81,6 +83,8 @@ export default function AdminTournamentsPage() {
     setEditDescription(t.description)
     setEditStatus(t.status)
     setEditSaved(false)
+    setUploadError('')
+    setEditLogoError(false)
   }
 
   // ── Select a popular league → fetch seasons from API ─────────────
@@ -388,17 +392,28 @@ export default function AdminTournamentsPage() {
                   const file = e.target.files?.[0]
                   if (!file) return
                   setUploadingLogo(true)
+                  setUploadError('')
+                  setEditLogoError(false)
                   const fd = new FormData(); fd.append('file', file)
                   const res = await uploadLogo(fd)
                   if (res.url) setEditLogo(res.url)
+                  else setUploadError(res.error ?? 'שגיאה בהעלאה')
                   setUploadingLogo(false)
                   e.target.value = ''
                 }} />
+              {uploadError && <p className="mt-1 text-xs text-red-500">{uploadError}</p>}
               {editLogo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={editLogo} alt="preview"
-                  className="mt-2 h-12 w-12 object-contain rounded border"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                <div className="mt-2 flex items-center gap-3">
+                  {editLogoError ? (
+                    <p className="text-xs text-red-500">לא ניתן לטעון את התמונה — וודא שה-bucket ב-Supabase מוגדר כ-Public</p>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={editLogo} alt="preview"
+                      className="h-12 w-12 object-contain rounded border"
+                      onError={() => setEditLogoError(true)} />
+                  )}
+                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">{editLogo}</p>
+                </div>
               )}
             </div>
             <div>
