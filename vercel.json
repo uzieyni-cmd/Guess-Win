@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/sync",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/refresh-leagues",
+      "schedule": "0 0 * * 0"
     }
   ]
 }

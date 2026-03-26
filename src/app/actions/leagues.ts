@@ -1,11 +1,13 @@
 'use server'
 
+import { supabaseAdmin } from '@/lib/supabase-admin'
+
 const BASE_URL = 'https://v3.football.api-sports.io'
 
-async function apiFetch<T>(path: string, revalidate = 3600): Promise<T> {
+async function apiFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! },
-    next: { revalidate },
+    next: { revalidate: 3600 },
   })
   if (!res.ok) throw new Error(`API-Football ${res.status}`)
   const data = await res.json()
@@ -38,17 +40,40 @@ export interface LeagueItem {
   type: 'League' | 'Cup'
 }
 
-// מחזיר את כל הליגות והגביעים (Nations League מסווג כ-Cup ב-API)
-// cache 24h ב-Next.js + in-memory cache בין קריאות באותו server instance
+// מחזיר את כל הליגות והגביעים
+// סדר עדיפויות: in-memory → Supabase DB → API Football (fallback ראשוני בלבד)
 export async function fetchAllLeagues(): Promise<LeagueItem[]> {
+  // 1. in-memory cache (מהיר ביותר)
   if (allLeaguesCache) return allLeaguesCache
 
-  const [leagues, cups] = await Promise.all([
-    apiFetch<ApiLeagueResponse[]>('/leagues?type=league', 86400),
-    apiFetch<ApiLeagueResponse[]>('/leagues?type=cup', 86400),
-  ])
+  // 2. קרא מה-DB
+  const { data } = await supabaseAdmin
+    .from('leagues_cache')
+    .select('leagues')
+    .eq('id', 1)
+    .single()
 
-  allLeaguesCache = [...leagues, ...cups]
+  if (data?.leagues?.length) {
+    allLeaguesCache = data.leagues as LeagueItem[]
+    return allLeaguesCache
+  }
+
+  // 3. Fallback: קרא מה-API ושמור ב-DB (רק בפעם הראשונה)
+  allLeaguesCache = await fetchLeaguesFromApi()
+  await supabaseAdmin
+    .from('leagues_cache')
+    .upsert({ id: 1, leagues: allLeaguesCache, updated_at: new Date().toISOString() })
+
+  return allLeaguesCache
+}
+
+// פונקציה פנימית — שולפת מה-API ומחזירה רשימה מסודרת
+export async function fetchLeaguesFromApi(): Promise<LeagueItem[]> {
+  const [leagues, cups] = await Promise.all([
+    apiFetch<ApiLeagueResponse[]>('/leagues?type=league'),
+    apiFetch<ApiLeagueResponse[]>('/leagues?type=cup'),
+  ])
+  return [...leagues, ...cups]
     .map((r) => ({
       id: r.league.id,
       name: r.league.name,
@@ -58,8 +83,6 @@ export async function fetchAllLeagues(): Promise<LeagueItem[]> {
       type: r.league.type as 'League' | 'Cup',
     }))
     .sort((a, b) => a.country.localeCompare(b.country) || a.name.localeCompare(b.name))
-
-  return allLeaguesCache
 }
 
 // מחזיר עונות + לוגו הליגה
