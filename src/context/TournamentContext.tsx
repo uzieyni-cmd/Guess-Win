@@ -82,6 +82,7 @@ const TournamentContext = createContext<TournamentContextType | null>(null)
 
 export function TournamentProvider({ children }: { children: React.ReactNode }) {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
+  const [tournamentsLoaded, setTournamentsLoaded] = useState(false)
   const [activeTournamentId, setActiveTournamentIdState] = useState<string | null>(null)
   const [bets, setBets] = useState<Bet[]>([])
   const [participants, setParticipants] = useState<User[]>([])
@@ -127,6 +128,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       updatedAt: t.updated_at,
     }))
     setTournaments(result)
+    setTournamentsLoaded(true)
   }, [])
 
   // ── Load matches — Route Handler עם cache ─────────────────────
@@ -161,11 +163,13 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => { loadTournaments() }, [loadTournaments])
 
-  // ── Load full matches when active tournament changes ──────────
+  // ── Load full matches — רק אחרי שהטורנירים נטענו ────────────
+  // מונע race condition שבו loadActiveMatches מסיים לפני loadTournaments
+  // ו-setTournaments מוצא מערך ריק ומאבד את המשחקים
   useEffect(() => {
-    if (!activeTournamentId) return
+    if (!activeTournamentId || !tournamentsLoaded) return
     loadActiveMatches(activeTournamentId)
-  }, [activeTournamentId, loadActiveMatches])
+  }, [activeTournamentId, tournamentsLoaded, loadActiveMatches])
 
   // ── Load bets + participants when active tournament changes ────
   useEffect(() => {

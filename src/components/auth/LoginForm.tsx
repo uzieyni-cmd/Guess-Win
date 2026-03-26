@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, Mail, Lock, Trophy, User, Eye, EyeOff } from 'lucide-react'
@@ -13,8 +13,13 @@ import { cn } from '@/lib/utils'
 type Tab = 'login' | 'register'
 
 export function LoginForm() {
-  const { login, register } = useAuth()
+  const { login, register, currentUser } = useAuth()
   const router = useRouter()
+
+  // נווט אחרי שה-currentUser אכן נטען — לא מיד אחרי signIn
+  useEffect(() => {
+    if (currentUser) router.push('/competitions')
+  }, [currentUser, router])
 
   const [tab, setTab] = useState<Tab>('login')
   const [email, setEmail]           = useState('')
@@ -39,7 +44,7 @@ export function LoginForm() {
     setError(''); setIsLoading(true)
     try {
       await login(email, password)
-      router.push('/competitions')
+      // ניווט דרך useEffect לעיל — ממתינים ש-currentUser יתעדכן
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בכניסה')
     } finally {
