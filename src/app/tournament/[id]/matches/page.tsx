@@ -50,10 +50,18 @@ export default function MatchesPage() {
   const [hideFinished, setHideFinished]   = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  // ── Polling כל 30 שניות כשיש משחקים חיים ──────────────────────
+  // ── Polling כל 30 שניות כשיש משחקים חיים (או כנראה חיים) ────────
   useEffect(() => {
     if (!activeTournament) return
-    const hasLive = activeTournament.matches.some((m) => m.status === 'live')
+    const nowMs = Date.now()
+    const TWO_HALF_HOURS = 2.5 * 60 * 60 * 1000
+    // מצית פולינג גם כשה-DB עוד לא עודכן ל-live
+    const hasLive = activeTournament.matches.some((m) => {
+      if (m.status === 'live') return true
+      if (m.status === 'finished') return false
+      const startMs = new Date(m.matchStartTime).getTime()
+      return startMs < nowMs && startMs > nowMs - TWO_HALF_HOURS
+    })
     if (!hasLive) return
 
     const poll = async () => {

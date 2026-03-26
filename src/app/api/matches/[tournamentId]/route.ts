@@ -54,14 +54,17 @@ export async function GET(
     })
   }
 
-  // ── מצב 3: טעינה ראשונית — רק משחקים שעוד לא שוחקו ────────────
+  // ── מצב 3: טעינה ראשונית — משחקי היום + עתידיים ────────────────
+  const todayStart = new Date(now)
+  todayStart.setHours(0, 0, 0, 0)
   const to = new Date(now.getTime() + WINDOW_FUTURE * 86400_000).toISOString()
 
+  // כולל: (לא גמורים) OR (גמורים אבל התחילו היום)
   let { data, error } = await supabaseAdmin
     .from('matches')
     .select(COLS)
     .eq('tournament_id', tournamentId)
-    .neq('status', 'finished')
+    .or(`status.neq.finished,match_start_time.gte.${todayStart.toISOString()}`)
     .lte('match_start_time', to)
     .order('match_start_time', { ascending: true })
 

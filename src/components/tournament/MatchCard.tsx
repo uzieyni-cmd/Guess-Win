@@ -81,8 +81,12 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showOthers, setShowOthers] = useState(false)
 
-  const isLive     = match.status === 'live'
   const isFinished = match.status === 'finished'
+  // isLive = DB עדכן ל-live, OR: המשחק התחיל בשעתיים האחרונות ועדיין לא גמור
+  const isLive = match.status === 'live' || (
+    !isFinished && isLocked &&
+    new Date(match.matchStartTime).getTime() > Date.now() - 2.5 * 60 * 60 * 1000
+  )
   const isInputLocked = isLocked || isFinished || isLive
 
   // סנכרן מהשרת כשהבט מגיע אסינכרונית
