@@ -48,6 +48,7 @@ export default function AdminTournamentsPage() {
   const [confirmDelete, setConfirmDelete] = useState<Tournament | null>(null)
   const router = useRouter()
   const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
 
   // ── Create state ─────────────────────────────────────────────────
   const [createOpen, setCreateOpen]         = useState(false)
@@ -133,18 +134,24 @@ export default function AdminTournamentsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
-    const newId = await createTournament({
-      name, description, logoUrl,
-      apiLeagueId: leagueId ? parseInt(leagueId) : undefined,
-      apiSeason:   season   ? parseInt(season)   : undefined,
-    })
-    setCreating(false)
-    setCreateOpen(false)
-    setName(''); setDescription(''); setLogoUrl('')
-    setLeagueId(''); setSeason(''); setSeasons([])
-    setSelectedLeagueName('')
-    // נווט ישירות לדף הניהול — שם ה-sync יקרה אוטומטית עם progress bar
-    if (newId) router.push(`/admin/tournaments/${newId}`)
+    setCreateError('')
+    try {
+      const newId = await createTournament({
+        name, description, logoUrl,
+        apiLeagueId: leagueId ? parseInt(leagueId) : undefined,
+        apiSeason:   season   ? parseInt(season)   : undefined,
+      })
+      if (!newId) { setCreateError('שגיאה ביצירת התחרות — נסה שוב'); return }
+      setCreateOpen(false)
+      setName(''); setDescription(''); setLogoUrl('')
+      setLeagueId(''); setSeason(''); setSeasons([])
+      setSelectedLeagueName('')
+      router.push(`/admin/tournaments/${newId}`)
+    } catch (err) {
+      setCreateError(String(err))
+    } finally {
+      setCreating(false)
+    }
   }
 
   const handleEdit = async (e: React.FormEvent) => {
@@ -351,9 +358,10 @@ export default function AdminTournamentsPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isPending || creating}>
-                {(isPending || creating)
-                  ? <><Loader2 className="h-4 w-4 ml-1 animate-spin" />{creating ? 'יוצר...' : 'טוען עונות...'}</>
+              {createError && <p className="text-sm text-red-500">{createError}</p>}
+              <Button type="submit" className="w-full" disabled={creating}>
+                {creating
+                  ? <><Loader2 className="h-4 w-4 ml-1 animate-spin" />יוצר...</>
                   : <><Plus className="h-4 w-4 ml-1" />צור תחרות</>}
               </Button>
             </form>
