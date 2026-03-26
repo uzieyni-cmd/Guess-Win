@@ -43,3 +43,11 @@ next-env.d.ts
 # Environment variables – אל תעלה לעולם ל-Git!
 .env.local
 .env.*.local
+
+# Claude Code internal files
+.claude/
+
+# Temp files
+C:Temp*
+*.tmp
+*.temp
