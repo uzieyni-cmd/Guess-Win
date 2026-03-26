@@ -13,6 +13,7 @@ export type DbProfile = {
   display_name: string
   email: string
   role: 'user' | 'admin'
+  avatar_url: string | null
   created_at: string
 }
 

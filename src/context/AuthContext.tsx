@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, displayName: string) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -32,6 +33,7 @@ async function loadProfile(userId: string): Promise<User | null> {
     id: profile.id,
     email: profile.email,
     displayName: profile.display_name,
+    avatarUrl: profile.avatar_url ?? undefined,
     role: profile.role,
     competitionIds: participations?.map((p: { tournament_id: string }) => p.tournament_id) ?? [],
   }
@@ -40,6 +42,7 @@ async function loadProfile(userId: string): Promise<User | null> {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
 
   useEffect(() => {
     // onAuthStateChange fires INITIAL_SESSION immediately with current session —
@@ -50,9 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         if (session?.user) {
+          setUserId(session.user.id)
           const user = await loadProfile(session.user.id)
           setCurrentUser(user)
         } else {
+          setUserId(null)
           setCurrentUser(null)
         }
       } catch {
@@ -83,10 +88,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await supabase.auth.signOut()
     setCurrentUser(null)
+    setUserId(null)
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    if (!userId) return
+    const user = await loadProfile(userId)
+    setCurrentUser(user)
+  }, [userId])
+
   return (
-    <AuthContext.Provider value={{ currentUser, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ currentUser, isLoading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

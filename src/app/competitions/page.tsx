@@ -8,6 +8,7 @@ import { useTournament } from '@/context/TournamentContext'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { CompetitionCard } from '@/components/competitions/CompetitionCard'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 function CompetitionsContent() {
   const { currentUser, logout } = useAuth()
@@ -40,6 +41,14 @@ function CompetitionsContent() {
                 ניהול
               </Button>
             )}
+            <button onClick={() => router.push('/profile')} className="rounded-full hover:ring-2 hover:ring-indigo-400 transition-all">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={currentUser?.avatarUrl} />
+                <AvatarFallback className="bg-indigo-600 text-white text-sm font-bold">
+                  {currentUser?.displayName?.charAt(0)?.toUpperCase() ?? '?'}
+                </AvatarFallback>
+              </Avatar>
+            </button>
             <Button variant="ghost" size="sm" className="text-white hover:text-white hover:bg-white/10" onClick={() => { logout(); router.push('/login') }}>
               <LogOut className="h-4 w-4 ml-1" />
               יציאה
