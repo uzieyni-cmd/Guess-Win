@@ -82,6 +82,7 @@ export default function MatchesPage() {
 
   const realMatches = activeTournament.matches.filter(m => !!m.homeTeam)
   const finishedCount = realMatches.filter(m => m.status === 'finished' || m.actualScore !== null).length
+  const totalMatchCount = activeTournament.matches.length // כולל stubs
   const visibleMatches = hideFinished
     ? realMatches.filter(m => m.status !== 'finished' && m.actualScore === null)
     : realMatches
@@ -112,16 +113,16 @@ export default function MatchesPage() {
             </button>
           )}
 
-          {/* כפתור לטעינת כל המשחקים הישנים */}
-          {!allPastLoaded && (
+          {/* כפתור לטעינת משחקים שהסתיימו */}
+          {!allPastLoaded && totalMatchCount > realMatches.length && (
             <button
               onClick={handleLoadPast}
               disabled={loadingAll}
-              className="flex items-center gap-1.5 text-xs text-emerald-500 hover:text-emerald-300 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-colors border border-slate-600 rounded-full px-2.5 py-1 hover:border-slate-400"
             >
               {loadingAll
                 ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />טוען...</>
-                : <><ChevronDown className="h-3.5 w-3.5" />טען משחקים ישנים</>}
+                : <><ChevronDown className="h-3.5 w-3.5" />טען משחקים ישנים ({totalMatchCount - realMatches.length})</>}
             </button>
           )}
         </div>

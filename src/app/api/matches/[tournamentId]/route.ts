@@ -8,7 +8,6 @@ const COLS =
   'away_team_id,away_team_name,away_team_short,away_team_flag,' +
   'match_start_time,status,actual_home_score,actual_away_score,api_fixture_id,round'
 
-const WINDOW_PAST   = 7   // ימים אחורה לחלון הראשוני
 const WINDOW_FUTURE = 30  // ימים קדימה לחלון הראשוני
 const PAGE_SIZE     = 20  // גודל דף infinite scroll
 
@@ -40,13 +39,13 @@ export async function GET(
     })
   }
 
-  // ── מצב 2: טעינת כל המשחקים (כפתור "טען הכל") ────────────────
+  // ── מצב 2: טעינת משחקים ישנים (כפתור "טען משחקים ישנים") ───────
   if (all) {
     const { data, error } = await supabaseAdmin
       .from('matches')
       .select(COLS)
       .eq('tournament_id', tournamentId)
-      .lte('match_start_time', now.toISOString()) // ישנים בלבד
+      .eq('status', 'finished')
       .order('match_start_time', { ascending: true })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -55,27 +54,26 @@ export async function GET(
     })
   }
 
-  // ── מצב 3: חלון ראשוני — עבר קרוב + עתיד קרוב ────────────────
-  const from = new Date(now.getTime() - WINDOW_PAST   * 86400_000).toISOString()
-  const to   = new Date(now.getTime() + WINDOW_FUTURE * 86400_000).toISOString()
+  // ── מצב 3: טעינה ראשונית — רק משחקים שעוד לא שוחקו ────────────
+  const to = new Date(now.getTime() + WINDOW_FUTURE * 86400_000).toISOString()
 
   let { data, error } = await supabaseAdmin
     .from('matches')
     .select(COLS)
     .eq('tournament_id', tournamentId)
-    .gte('match_start_time', from)
+    .neq('status', 'finished')
     .lte('match_start_time', to)
     .order('match_start_time', { ascending: true })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // fallback: אין משחקים בחלון — החזר 20 הקרובים ביותר
+  // fallback: אין משחקים בחלון — החזר 20 הקרובים ביותר שלא שוחקו
   if (!data || data.length === 0) {
     const { data: fallback } = await supabaseAdmin
       .from('matches')
       .select(COLS)
       .eq('tournament_id', tournamentId)
-      .gte('match_start_time', now.toISOString())
+      .neq('status', 'finished')
       .order('match_start_time', { ascending: true })
       .limit(PAGE_SIZE)
     data = fallback ?? []
