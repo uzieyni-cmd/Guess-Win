@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock, ChevronDown, ChevronUp, Check, Save, AlertCircle } from 'lucide-react'
+import { Lock, Check, Save, AlertCircle, Users, X } from 'lucide-react'
 import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
@@ -177,20 +177,19 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                 /* ── ציון LIVE / תוצאה סופית ─── */
                 <div className="flex flex-col items-center gap-1 min-h-[36px] justify-center">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold tabular-nums w-7 text-center text-slate-100">
+                    <span className={cn('text-2xl font-bold tabular-nums w-7 text-center', isLive ? 'text-white' : 'text-slate-800')}>
                       {match.actualScore?.home ?? 0}
                     </span>
-                    <span className="text-base font-bold text-slate-400">–</span>
-                    <span className="text-2xl font-bold tabular-nums w-7 text-center text-slate-100">
+                    <span className={cn('text-base font-bold', isLive ? 'text-slate-400' : 'text-slate-500')}>–</span>
+                    <span className={cn('text-2xl font-bold tabular-nums w-7 text-center', isLive ? 'text-white' : 'text-slate-800')}>
                       {match.actualScore?.away ?? 0}
                     </span>
                   </div>
                   {/* ניחוש המשתמש + נקודות מתחת לתוצאה */}
                   {userBet ? (
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={cn('text-[11px]', isLive ? 'text-slate-300' : 'text-slate-500')}>ניחוש שלי:</span>
-                      <span className={cn('text-[11px] font-mono font-semibold tabular-nums', isLive ? 'text-slate-200' : 'text-slate-400')}>
-                        {userBet.predictedScore.home}–{userBet.predictedScore.away}
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap justify-center">
+                      <span className={cn('text-[11px]', isLive ? 'text-slate-300' : 'text-slate-500')}>
+                        ניחוש: <span className={cn('font-mono font-semibold tabular-nums', isLive ? 'text-slate-200' : 'text-slate-600')}>{userBet.predictedScore.home}–{userBet.predictedScore.away}</span>
                       </span>
                       {userResult && <PointsBadge result={userResult.result} points={userResult.points} />}
                     </div>
@@ -247,39 +246,87 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
           )}
         </div>
 
-        {/* ניחושי שאר משתתפים */}
+        {/* כפתור ניחושי שאר משתתפים */}
         {(isLocked || isFinished || isLive) && otherBets.length > 0 && (
           <div className="border-t">
             <button
               className="w-full px-4 py-3 text-xs text-muted-foreground flex items-center justify-between hover:bg-muted/50 transition-colors min-h-[44px]"
-              onClick={() => setShowOthers(!showOthers)}
+              onClick={() => setShowOthers(true)}
             >
-              <span>ניחושי שאר המשתתפים ({otherBets.length})</span>
-              {showOthers ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              <span className="flex items-center gap-1.5">
+                <Users className="h-3 w-3" />
+                ניחושי שאר המשתתפים ({otherBets.length})
+              </span>
+              <span className="text-[10px] opacity-60">לחץ לפתיחה</span>
             </button>
-            <AnimatePresence>
-              {showOthers && (
-                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                  <div className="px-4 pb-3 space-y-1.5">
-                    {otherBets.map((bet) => {
-                      const betUser = participants.find((u) => u.id === bet.userId)
-                      const result = isFinished && match.actualScore ? calculateScore(bet, match) : null
-                      return (
-                        <div key={bet.id} className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">{betUser?.displayName ?? 'משתתף'}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold">{bet.predictedScore.home} – {bet.predictedScore.away}</span>
-                            {result && <PointsBadge result={result.result} points={result.points} />}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         )}
+
+        {/* Modal צף */}
+        <AnimatePresence>
+          {showOthers && (
+            <>
+              {/* backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+                onClick={() => setShowOthers(false)}
+              />
+              {/* panel */}
+              <motion.div
+                initial={{ opacity: 0, y: 40, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 40, scale: 0.96 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 300 }}
+                className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-sm rounded-2xl bg-[#0d1b14] border border-emerald-800/40 shadow-2xl overflow-hidden"
+              >
+                {/* header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-emerald-800/30">
+                  <div className="text-sm font-semibold text-slate-200">
+                    {match.homeTeam.name} – {match.awayTeam.name}
+                  </div>
+                  <button
+                    onClick={() => setShowOthers(false)}
+                    className="p-1 rounded-full hover:bg-white/10 transition-colors text-slate-400"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="px-4 py-1 text-[11px] text-slate-500 border-b border-emerald-800/20">
+                  ניחושי המשתתפים ({otherBets.length})
+                </div>
+                {/* list */}
+                <div className="overflow-y-auto max-h-72 divide-y divide-emerald-900/30">
+                  {otherBets.map((bet) => {
+                    const betUser = participants.find((u) => u.id === bet.userId)
+                    const result = isFinished && match.actualScore ? calculateScore(bet, match) : null
+                    return (
+                      <div key={bet.id} className="flex items-center justify-between px-4 py-3 text-sm">
+                        <span className="text-slate-300 font-medium">{betUser?.displayName ?? 'משתתף'}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-200 tabular-nums">
+                            {bet.predictedScore.home} – {bet.predictedScore.away}
+                          </span>
+                          {result && <PointsBadge result={result.result} points={result.points} />}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="px-4 py-3">
+                  <button
+                    onClick={() => setShowOthers(false)}
+                    className="w-full text-xs text-slate-400 hover:text-slate-200 transition-colors py-1"
+                  >
+                    סגור
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </Card>
     </motion.div>
   )
