@@ -37,7 +37,7 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
       <div className="bg-gradient-to-l from-indigo-700 to-purple-700 text-white sticky top-0 z-20">
         <div className="max-w-[1600px] mx-auto px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push('/competitions')} className="p-1 rounded hover:bg-white/10 transition-colors">
+            <button onClick={() => router.push('/competitions')} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-white/10 transition-colors">
               <ArrowRight className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -46,11 +46,11 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-1">
               {currentUser?.role === 'admin' && (
-                <button onClick={() => router.push(`/admin/tournaments/${id}`)} className="p-1.5 rounded hover:bg-white/10 transition-colors">
+                <button onClick={() => router.push(`/admin/tournaments/${id}`)} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-white/10 transition-colors">
                   <Settings className="h-4 w-4" />
                 </button>
               )}
-              <button onClick={() => { logout(); router.push('/login') }} className="p-1.5 rounded hover:bg-white/10 transition-colors">
+              <button onClick={() => { logout(); router.push('/login') }} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-white/10 transition-colors">
                 <LogOut className="h-4 w-4" />
               </button>
             </div>

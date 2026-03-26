@@ -38,7 +38,7 @@ export function ScoreInput({ value, onChange, disabled, className }: Props) {
         type="button"
         onClick={increment}
         disabled={disabled || current >= MAX}
-        className="p-1 rounded hover:bg-muted disabled:opacity-20 transition-colors"
+        className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-muted disabled:opacity-20 transition-colors"
         tabIndex={-1}
       >
         <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -60,7 +60,7 @@ export function ScoreInput({ value, onChange, disabled, className }: Props) {
         type="button"
         onClick={decrement}
         disabled={disabled || current <= MIN}
-        className="p-1 rounded hover:bg-muted disabled:opacity-20 transition-colors"
+        className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-muted disabled:opacity-20 transition-colors"
         tabIndex={-1}
       >
         <ChevronDown className="h-4 w-4 text-muted-foreground" />
