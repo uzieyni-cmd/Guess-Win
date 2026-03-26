@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter, usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowRight, Trophy, BarChart2, User, Target, LogOut, Settings } from 'lucide-react'
@@ -29,6 +29,9 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
   }, [id, setActiveTournamentId])
 
   const tournament = activeTournament ?? tournaments.find((t) => t.id === id)
+  const [logoError, setLogoError] = useState(false)
+  // Reset error state when navigating to a different tournament
+  useEffect(() => { setLogoError(false) }, [tournament?.logoUrl])
 
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col">
@@ -40,13 +43,13 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
               <ArrowRight className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {tournament?.logoUrl ? (
+              {tournament?.logoUrl && !logoError ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={tournament.logoUrl}
                   alt={tournament.name}
                   className="h-7 w-7 object-contain rounded shrink-0"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  onError={() => setLogoError(true)}
                 />
               ) : (
                 <Trophy className="h-5 w-5 shrink-0" />
