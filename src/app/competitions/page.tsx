@@ -31,8 +31,12 @@ function CompetitionsContent() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0a0e1a]/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-2xl mx-auto px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-3">
             <Image src="/logo.svg" alt="Guess&Win" width={64} height={75} priority />
+            <div className="flex flex-col leading-tight">
+              <span className="text-white font-black text-lg tracking-widest uppercase">GUESS</span>
+              <span className="text-yellow-400 font-black text-base tracking-widest uppercase">&amp; WIN</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {currentUser?.role === 'admin' && (
