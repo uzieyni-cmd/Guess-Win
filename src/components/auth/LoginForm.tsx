@@ -2,12 +2,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Mail, Lock, Trophy, User, Eye, EyeOff } from 'lucide-react'
+import { Loader2, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
+import Image from 'next/image'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 type Tab = 'login' | 'register'
@@ -70,92 +70,76 @@ export function LoginForm() {
     }
   }
 
+  const inputCls = "bg-slate-800/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:ring-emerald-500 focus-visible:border-emerald-500 pr-9"
+  const iconCls  = "absolute right-3 top-2.5 h-4 w-4 text-slate-500"
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-md px-4"
+      transition={{ duration: 0.45 }}
+      className="w-full max-w-sm px-4"
     >
-      <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-        <CardHeader className="text-center pb-2">
-          <div className="flex justify-center mb-4">
-            <div className="rounded-full bg-primary/10 p-4">
-              <Trophy className="h-10 w-10 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="font-suez text-3xl text-gray-900">Guess&amp;Win</CardTitle>
+      {/* Logo */}
+      <div className="flex flex-col items-center mb-6">
+        <Image src="/logo.svg" alt="Guess&Win" width={110} height={128} priority />
+      </div>
 
-          {/* Tabs */}
-          <div className="flex mt-4 rounded-lg bg-muted p-1 gap-1">
-            {(['login', 'register'] as Tab[]).map(t => (
-              <button
-                key={t}
-                onClick={() => switchTab(t)}
-                className={cn(
-                  'flex-1 rounded-md py-1.5 text-sm font-medium transition-all cursor-pointer',
-                  tab === t
-                    ? 'bg-white shadow text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {t === 'login' ? 'כניסה' : 'הרשמה'}
-              </button>
-            ))}
-          </div>
-        </CardHeader>
+      {/* Card */}
+      <div className="rounded-2xl bg-slate-900/80 backdrop-blur-md border border-slate-700/50 shadow-2xl overflow-hidden">
 
-        <CardContent className="pt-4">
+        {/* Tabs */}
+        <div className="flex border-b border-slate-700/50">
+          {(['login', 'register'] as Tab[]).map(t => (
+            <button
+              key={t}
+              onClick={() => switchTab(t)}
+              className={cn(
+                'flex-1 py-3 text-sm font-medium transition-all cursor-pointer',
+                tab === t
+                  ? 'text-emerald-400 border-b-2 border-emerald-400 -mb-px bg-emerald-500/5'
+                  : 'text-slate-500 hover:text-slate-300'
+              )}
+            >
+              {t === 'login' ? 'כניסה' : 'הרשמה'}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6">
           <AnimatePresence mode="wait">
             {tab === 'login' ? (
               <motion.form
                 key="login"
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.18 }}
                 onSubmit={handleLogin}
                 className="space-y-4"
               >
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">דוא"ל</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="login-email" className="text-slate-300">דוא&quot;ל</Label>
                   <div className="relative">
-                    <Mail className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      className="pr-9"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                    />
+                    <Mail className={iconCls} />
+                    <Input id="login-email" type="email" placeholder="you@example.com"
+                      className={inputCls} value={email} onChange={e => setEmail(e.target.value)} required />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">סיסמה</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="login-password" className="text-slate-300">סיסמה</Label>
                   <div className="relative">
-                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="login-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      className="pr-9 pl-9"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(v => !v)}
-                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                    <Lock className={iconCls} />
+                    <Input id="login-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••"
+                      className={cn(inputCls, 'pl-9')} value={password} onChange={e => setPassword(e.target.value)} required />
+                    <button type="button" onClick={() => setShowPassword(v => !v)}
+                      className="absolute left-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
-                {error && <p className="text-sm text-destructive text-center">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold mt-2" disabled={isLoading}>
                   {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                   כניסה
                 </Button>
@@ -163,98 +147,64 @@ export function LoginForm() {
             ) : (
               <motion.form
                 key="register"
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.18 }}
                 onSubmit={handleRegister}
                 className="space-y-4"
               >
-                <div className="space-y-2">
-                  <Label htmlFor="reg-name">שם תצוגה</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-name" className="text-slate-300">שם תצוגה</Label>
                   <div className="relative">
-                    <User className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="reg-name"
-                      type="text"
-                      placeholder="השם שיופיע בלוח תוצאות"
-                      className="pr-9"
-                      value={displayName}
-                      onChange={e => setDisplayName(e.target.value)}
-                      required
-                    />
+                    <User className={iconCls} />
+                    <Input id="reg-name" type="text" placeholder="השם שיופיע בלוח התוצאות"
+                      className={inputCls} value={displayName} onChange={e => setDisplayName(e.target.value)} required />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-email">דוא"ל</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-email" className="text-slate-300">דוא&quot;ל</Label>
                   <div className="relative">
-                    <Mail className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="reg-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      className="pr-9"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                    />
+                    <Mail className={iconCls} />
+                    <Input id="reg-email" type="email" placeholder="you@example.com"
+                      className={inputCls} value={email} onChange={e => setEmail(e.target.value)} required />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">סיסמה</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-password" className="text-slate-300">סיסמה</Label>
                   <div className="relative">
-                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="reg-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="לפחות 6 תווים"
-                      className="pr-9 pl-9"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(v => !v)}
-                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                    <Lock className={iconCls} />
+                    <Input id="reg-password" type={showPassword ? 'text' : 'password'} placeholder="לפחות 6 תווים"
+                      className={cn(inputCls, 'pl-9')} value={password} onChange={e => setPassword(e.target.value)} required />
+                    <button type="button" onClick={() => setShowPassword(v => !v)}
+                      className="absolute left-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="reg-confirm">אימות סיסמה</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-confirm" className="text-slate-300">אימות סיסמה</Label>
                   <div className="relative">
-                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="reg-confirm"
-                      type={showConfirm ? 'text' : 'password'}
-                      placeholder="הזן שוב את הסיסמה"
-                      className="pr-9 pl-9"
-                      value={confirmPass}
-                      onChange={e => setConfirmPass(e.target.value)}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(v => !v)}
-                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                    <Lock className={iconCls} />
+                    <Input id="reg-confirm" type={showConfirm ? 'text' : 'password'} placeholder="הזן שוב את הסיסמה"
+                      className={cn(inputCls, 'pl-9')} value={confirmPass} onChange={e => setConfirmPass(e.target.value)} required />
+                    <button type="button" onClick={() => setShowConfirm(v => !v)}
+                      className="absolute left-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors">
                       {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
-                {error   && <p className="text-sm text-destructive text-center">{error}</p>}
-                {success && <p className="text-sm text-green-600 text-center">{success}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                {error   && <p className="text-sm text-red-400 text-center">{error}</p>}
+                {success && <p className="text-sm text-emerald-400 text-center">{success}</p>}
+                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold mt-2" disabled={isLoading}>
                   {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                   הרשמה
                 </Button>
               </motion.form>
             )}
           </AnimatePresence>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </motion.div>
   )
 }
