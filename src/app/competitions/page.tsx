@@ -2,7 +2,8 @@
 import { useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { LogOut, Trophy, Settings } from 'lucide-react'
+import { LogOut, Settings, Trophy } from 'lucide-react'
+import Image from 'next/image'
 import { useAuth } from '@/context/AuthContext'
 import { useTournament } from '@/context/TournamentContext'
 import { AuthGuard } from '@/components/auth/AuthGuard'
@@ -29,10 +30,9 @@ function CompetitionsContent() {
     <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] to-[#0d1b14]">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0a0e1a]/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-emerald-400" />
-            <span className="font-suez text-xl text-white">Guess&amp;Win</span>
+        <div className="max-w-2xl mx-auto px-4 py-2 flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <Image src="/logo.svg" alt="Guess&Win" width={64} height={75} priority />
           </div>
           <div className="flex items-center gap-2">
             {currentUser?.role === 'admin' && (
