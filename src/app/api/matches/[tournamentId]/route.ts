@@ -70,16 +70,28 @@ export async function GET(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // fallback: אין משחקים בחלון — החזר 20 הקרובים ביותר שלא שוחקו
+  // fallback: אין משחקים בחלון (למשל תחרות שהסתיימה) — הצג 20 האחרונים
   if (!data || data.length === 0) {
     const { data: fallback } = await supabaseAdmin
       .from('matches')
       .select(COLS)
       .eq('tournament_id', tournamentId)
-      .neq('status', 'finished')
-      .order('match_start_time', { ascending: true })
+      .order('match_start_time', { ascending: false })
       .limit(PAGE_SIZE)
-    data = fallback ?? []
+    data = (fallback ?? []).reverse() // מהישן לחדש
+  }
+
+  // בדוק כמה משחקים finished ישנים לא נכללו בחלון
+  const oldestInWindow = (data as unknown as { match_start_time: string }[])[0]?.match_start_time
+  let hasPast = false
+  if (oldestInWindow) {
+    const { count } = await supabaseAdmin
+      .from('matches')
+      .select('*', { count: 'exact', head: true })
+      .eq('tournament_id', tournamentId)
+      .eq('status', 'finished')
+      .lt('match_start_time', oldestInWindow)
+    hasPast = (count ?? 0) > 0
   }
 
   // בדוק אם יש משחקים עתידיים מעבר לחלון
@@ -94,7 +106,7 @@ export async function GET(
     hasMore = (count ?? 0) > 0
   }
 
-  return NextResponse.json({ matches: data, hasMore }, {
+  return NextResponse.json({ matches: data, hasMore, hasPast }, {
     headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
   })
 }

@@ -77,7 +77,7 @@ interface TournamentContextType {
   addMatch: (tournamentId: string, match: Omit<Match, 'id' | 'tournamentId'>) => Promise<void>
   updateUserPermissions: (userId: string, competitionIds: string[]) => Promise<void>
   reload: () => void
-  reloadMatches: (tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean }) => Promise<string | null>
+  reloadMatches: (tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean }) => Promise<{ cursor: string | null; hasPast: boolean } | null>
   patchMatches: (tournamentId: string, updatedMatches: Match[]) => void
 }
 
@@ -147,7 +147,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) return null
 
-    const json: { matches: DbMatch[]; hasMore: boolean } = await res.json()
+    const json: { matches: DbMatch[]; hasMore: boolean; hasPast?: boolean } = await res.json()
     const newMatches = json.matches.map(dbMatchToMatch)
 
     setTournaments((prev) => prev.map((t) => {
@@ -159,19 +159,18 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       return { ...t, matches: merged }
     }))
 
-    return json.hasMore
-      ? newMatches.at(-1)?.matchStartTime ?? null
-      : null
+    return {
+      cursor: json.hasMore ? newMatches.at(-1)?.matchStartTime ?? null : null,
+      hasPast: json.hasPast ?? false,
+    }
   }, [])
 
   useEffect(() => { loadTournaments() }, [loadTournaments])
 
   // ── Load full matches — רק אחרי שהטורנירים נטענו ────────────
-  // מונע race condition שבו loadActiveMatches מסיים לפני loadTournaments
-  // ו-setTournaments מוצא מערך ריק ומאבד את המשחקים
   useEffect(() => {
     if (!activeTournamentId || !tournamentsLoaded) return
-    loadActiveMatches(activeTournamentId)
+    loadActiveMatches(activeTournamentId) // fire-and-forget; hasPast handled in page
   }, [activeTournamentId, tournamentsLoaded, loadActiveMatches])
 
   // ── Load bets + participants when active tournament changes ────

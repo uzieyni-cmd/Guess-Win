@@ -45,6 +45,7 @@ export default function MatchesPage() {
   // ── state ───────────────────────────────────────────────────────
   const [loadingAll, setLoadingAll]       = useState(false)
   const [allPastLoaded, setAllPastLoaded] = useState(false)
+  const [hasPast, setHasPast]             = useState(false)
   const [loadingMore, setLoadingMore]     = useState(false)
   const [hasMore, setHasMore]             = useState(false)
   const [cursor, setCursor]               = useState<string | null>(null)
@@ -80,35 +81,24 @@ export default function MatchesPage() {
     return () => clearInterval(timer)
   }, [activeTournament, id, patchMatches])
 
-  // ── טעינה ראשונית — חלון שוטף ──────────────────────────────────
+  // ── טעינה ראשונית — קבל cursor + hasPast מה-API ────────────────
   useEffect(() => {
-    if (!activeTournament) return
-    const realMatches = activeTournament.matches.filter(m => !!m.homeTeam)
-    if (realMatches.length === 0) return
-
-    // קבע cursor לפי המשחק העתידי האחרון שנטען;
-    // אם אין משחקים עתידיים בחלון (למשל הבא הוא >14 יום קדימה),
-    // השתמש במשחק האחרון שנטען כנקודת המשך — ה-API יחזיר את הבאים אחריו
-    const now = new Date()
-    const lastFuture = [...realMatches]
-      .filter(m => new Date(m.matchStartTime) > now)
-      .at(-1)
-    const lastMatch = [...realMatches].at(-1)
-    const pivotMatch = lastFuture ?? lastMatch
-    if (pivotMatch) {
-      setCursor(pivotMatch.matchStartTime)
-      setHasMore(true) // IntersectionObserver יבדוק אם יש עוד
-    }
-  }, [activeTournament?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!id) return
+    reloadMatches(id).then((result) => {
+      if (!result) return
+      if (result.cursor) { setCursor(result.cursor); setHasMore(true) }
+      if (result.hasPast) setHasPast(true)
+    })
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── infinite scroll — טעינת 20 משחקים עתידיים נוספים ───────────
   const loadMore = useCallback(async () => {
     if (!cursor || loadingMore || !hasMore) return
     setLoadingMore(true)
-    const nextCursor = await reloadMatches(id, { after: cursor, append: true })
+    const result = await reloadMatches(id, { after: cursor, append: true })
     setLoadingMore(false)
-    if (nextCursor) {
-      setCursor(nextCursor)
+    if (result?.cursor) {
+      setCursor(result.cursor)
     } else {
       setHasMore(false)
     }
@@ -176,7 +166,7 @@ export default function MatchesPage() {
           )}
 
           {/* כפתור לטעינת משחקים שהסתיימו */}
-          {!allPastLoaded && totalMatchCount > realMatches.length && (
+          {!allPastLoaded && hasPast && (
             <button
               onClick={handleLoadPast}
               disabled={loadingAll}
@@ -184,7 +174,7 @@ export default function MatchesPage() {
             >
               {loadingAll
                 ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />טוען...</>
-                : <><ChevronDown className="h-3.5 w-3.5" />טען משחקים ישנים ({totalMatchCount - realMatches.length})</>}
+                : <><ChevronDown className="h-3.5 w-3.5" />טען משחקים ישנים</>}
             </button>
           )}
         </div>
