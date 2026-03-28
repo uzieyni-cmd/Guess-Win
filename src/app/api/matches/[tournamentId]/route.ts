@@ -81,30 +81,31 @@ export async function GET(
     data = (fallback ?? []).reverse() // מהישן לחדש
   }
 
-  // בדוק כמה משחקים finished ישנים לא נכללו בחלון
-  const oldestInWindow = (data as unknown as { match_start_time: string }[])[0]?.match_start_time
-  let hasPast = false
-  if (oldestInWindow) {
-    const { count } = await supabaseAdmin
-      .from('matches')
-      .select('*', { count: 'exact', head: true })
-      .eq('tournament_id', tournamentId)
-      .eq('status', 'finished')
-      .lt('match_start_time', oldestInWindow)
-    hasPast = (count ?? 0) > 0
-  }
+  // בדוק hasPast + hasMore במקביל (לא סדרתי)
+  const rows = data as unknown as { match_start_time: string }[]
+  const oldestInWindow = rows[0]?.match_start_time
+  const lastDate       = rows.at(-1)?.match_start_time
 
-  // בדוק אם יש משחקים עתידיים מעבר לחלון
-  const lastDate = (data as unknown as { match_start_time: string }[]).at(-1)?.match_start_time
-  let hasMore = false
-  if (lastDate) {
-    const { count } = await supabaseAdmin
-      .from('matches')
-      .select('*', { count: 'exact', head: true })
-      .eq('tournament_id', tournamentId)
-      .gt('match_start_time', lastDate)
-    hasMore = (count ?? 0) > 0
-  }
+  const [hasPastResult, hasMoreResult] = await Promise.all([
+    oldestInWindow
+      ? supabaseAdmin
+          .from('matches')
+          .select('id', { count: 'exact', head: true })
+          .eq('tournament_id', tournamentId)
+          .eq('status', 'finished')
+          .lt('match_start_time', oldestInWindow)
+      : Promise.resolve({ count: 0 }),
+    lastDate
+      ? supabaseAdmin
+          .from('matches')
+          .select('id', { count: 'exact', head: true })
+          .eq('tournament_id', tournamentId)
+          .gt('match_start_time', lastDate)
+      : Promise.resolve({ count: 0 }),
+  ])
+
+  const hasPast = (hasPastResult.count ?? 0) > 0
+  const hasMore = (hasMoreResult.count ?? 0) > 0
 
   return NextResponse.json({ matches: data, hasMore, hasPast }, {
     headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },

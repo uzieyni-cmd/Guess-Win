@@ -144,7 +144,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     if (all)  url += '?all=1'
     if (after) url += `?after=${encodeURIComponent(after)}`
 
-    const res = await fetch(url, { cache: 'no-store' })
+    // all=1 ו-after= יכולים להשתמש ב-cache קצר (30s) — רק live צריך no-store
+    const res = await fetch(url, { next: { revalidate: 30 } })
     if (!res.ok) return null
 
     const json: { matches: DbMatch[]; hasMore: boolean; hasPast?: boolean } = await res.json()
