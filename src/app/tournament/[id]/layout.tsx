@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
+import { SiteHeader } from '@/components/shared/SiteHeader'
 import { cn } from '@/lib/utils'
 
 const NAV_TABS = [
@@ -34,61 +35,60 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
   useEffect(() => { setLogoError(false) }, [tournament?.logoUrl])
 
   return (
-    <div className="min-h-screen bg-[#0a0e1a] flex flex-col">
-      {/* Header */}
-      <div className="bg-gradient-to-l from-slate-900 via-indigo-900 to-slate-900 text-white sticky top-0 z-20">
-        <div className="max-w-[1600px] mx-auto px-4 py-3">
-          <div className="flex items-center gap-3">
-            <button onClick={() => router.push('/competitions')} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-white/10 transition-colors">
-              <ArrowRight className="h-5 w-5" />
+    <div className="min-h-screen bg-[#070b14] flex flex-col">
+      <SiteHeader
+        left={
+          <button onClick={() => router.push('/competitions')}
+            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/8 min-h-[36px]">
+            <ArrowRight className="h-4 w-4" />
+            <span className="hidden sm:inline text-sm">חזרה</span>
+          </button>
+        }
+        right={
+          <div className="flex items-center gap-1">
+            {currentUser?.role === 'admin' && (
+              <button onClick={() => router.push(`/admin/tournaments/${id}`)}
+                className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/8 min-h-[36px]">
+                <Settings className="h-4 w-4" />
+              </button>
+            )}
+            <button onClick={() => { logout(); router.push('/login') }}
+              className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/8 min-h-[36px]">
+              <LogOut className="h-4 w-4" />
             </button>
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+          </div>
+        }
+        below={
+          <div className="flex gap-0.5 border-t border-white/5">
+            {/* tournament name */}
+            <div className="flex items-center gap-2 px-1 py-2 mr-1">
               {tournament?.logoUrl && !logoError ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={tournament.logoUrl}
-                  alt={tournament.name}
-                  className="h-7 w-7 object-contain rounded shrink-0"
-                  onError={() => setLogoError(true)}
-                />
+                <img src={tournament.logoUrl} alt={tournament.name}
+                  className="h-5 w-5 object-contain rounded shrink-0" onError={() => setLogoError(true)} />
               ) : (
-                <Trophy className="h-5 w-5 shrink-0" />
+                <Trophy className="h-4 w-4 text-slate-500 shrink-0" />
               )}
-              <span className="font-suez text-lg truncate">{tournament?.name ?? 'טורניר'}</span>
+              <span className="text-xs font-medium text-slate-400 truncate max-w-[120px]">{tournament?.name}</span>
+              <span className="text-slate-700">|</span>
             </div>
-            <div className="flex items-center gap-1">
-              {currentUser?.role === 'admin' && (
-                <button onClick={() => router.push(`/admin/tournaments/${id}`)} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-white/10 transition-colors">
-                  <Settings className="h-4 w-4" />
-                </button>
-              )}
-              <button onClick={() => { logout(); router.push('/login') }} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-white/10 transition-colors">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-          {/* Tabs */}
-          <div className="flex gap-1 mt-2 -mb-px">
             {NAV_TABS.map((tab) => {
               const isActive = pathname.endsWith(`/${tab.href}`)
               return (
-                <Link
-                  key={tab.href}
-                  href={`/tournament/${id}/${tab.href}`}
+                <Link key={tab.href} href={`/tournament/${id}/${tab.href}`}
                   className={cn(
-                    'px-3 py-1.5 text-sm font-medium rounded-t transition-colors',
+                    'px-3 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap',
                     isActive
-                      ? 'bg-white text-emerald-700'
-                      : 'text-emerald-200 hover:text-white hover:bg-white/10'
-                  )}
-                >
+                      ? 'text-emerald-400 border-emerald-400'
+                      : 'text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600'
+                  )}>
                   {tab.label}
                 </Link>
               )
             })}
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Content */}
       <motion.div

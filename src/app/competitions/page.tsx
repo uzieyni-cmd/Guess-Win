@@ -3,12 +3,11 @@ import { useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LogOut, Settings, Trophy } from 'lucide-react'
-import Image from 'next/image'
 import { useAuth } from '@/context/AuthContext'
 import { useTournament } from '@/context/TournamentContext'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { CompetitionCard } from '@/components/competitions/CompetitionCard'
-import { Button } from '@/components/ui/button'
+import { SiteHeader } from '@/components/shared/SiteHeader'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 function CompetitionsContent() {
@@ -27,39 +26,36 @@ function CompetitionsContent() {
   }, [tournaments, currentUser])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] to-[#0d1b14]">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0e1a]/80 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-2xl mx-auto px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image src="/logo.svg" alt="Guess&Win" width={64} height={75} priority />
-            <div className="flex flex-col leading-tight">
-              <span className="text-white font-black text-lg tracking-widest uppercase">GUESS</span>
-              <span className="text-yellow-400 font-black text-base tracking-widest uppercase">&amp; WIN</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-b from-[#070b14] to-[#0d1b14]">
+      <SiteHeader
+        left={
+          <button onClick={() => { logout(); router.push('/login') }}
+            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-white/8 min-h-[36px]">
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">יציאה</span>
+          </button>
+        }
+        right={
           <div className="flex items-center gap-2">
             {currentUser?.role === 'admin' && (
-              <Button variant="ghost" size="sm" className="text-white hover:text-white hover:bg-white/10" onClick={() => router.push('/admin')}>
-                <Settings className="h-4 w-4 ml-1" />
-                ניהול
-              </Button>
+              <button onClick={() => router.push('/admin')}
+                className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-white/8 min-h-[36px]">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">ניהול</span>
+              </button>
             )}
-            <button onClick={() => router.push('/profile')} className="rounded-full hover:ring-2 hover:ring-emerald-400 transition-all">
+            <button onClick={() => router.push('/profile')}
+              className="rounded-full hover:ring-2 hover:ring-emerald-400 transition-all">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={currentUser?.avatarUrl} />
-                <AvatarFallback delayMs={0} className="bg-emerald-600 text-white text-sm font-bold">
+                <AvatarFallback delayMs={0} className="bg-emerald-700 text-white text-sm font-bold">
                   {currentUser?.displayName?.charAt(0)?.toUpperCase() ?? '?'}
                 </AvatarFallback>
               </Avatar>
             </button>
-            <Button variant="ghost" size="sm" className="text-white hover:text-white hover:bg-white/10" onClick={() => { logout(); router.push('/login') }}>
-              <LogOut className="h-4 w-4 ml-1" />
-              יציאה
-            </Button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Body */}
       <div className="max-w-2xl mx-auto px-4 py-8">

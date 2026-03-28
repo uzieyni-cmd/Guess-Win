@@ -5,12 +5,13 @@ import Link from 'next/link'
 import { Trophy, Users, LayoutDashboard, ArrowRight } from 'lucide-react'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useAuth } from '@/context/AuthContext'
+import { SiteHeader } from '@/components/shared/SiteHeader'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { label: 'סקירה', href: '/admin', icon: LayoutDashboard },
-  { label: 'תחרויות', href: '/admin/tournaments', icon: Trophy },
-  { label: 'משתמשים', href: '/admin/users', icon: Users },
+  { label: 'סקירה',     href: '/admin',              icon: LayoutDashboard },
+  { label: 'תחרויות',  href: '/admin/tournaments',  icon: Trophy },
+  { label: 'משתמשים',  href: '/admin/users',         icon: Users },
 ]
 
 function AdminShell({ children }: { children: React.ReactNode }) {
@@ -27,58 +28,38 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   if (currentUser?.role !== 'admin') return null
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <aside className="hidden md:flex w-56 bg-white border-l flex-col">
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-emerald-600" />
-            <span className="font-suez text-lg">לוח ניהול</span>
-          </div>
-        </div>
-        <nav className="flex-1 p-3 space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  isActive ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-50'
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
-        <div className="p-3 border-t">
-          <Link
-            href="/competitions"
-            className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
-          >
+    <div className="min-h-screen bg-[#070b14] flex flex-col">
+      <SiteHeader
+        left={
+          <Link href="/competitions"
+            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-white/8 min-h-[36px]">
             <ArrowRight className="h-4 w-4" />
-            חזרה לאפליקציה
+            <span className="hidden sm:inline">חזרה</span>
           </Link>
-        </div>
-      </aside>
+        }
+        below={
+          <div className="flex gap-0.5 border-t border-white/5">
+            {NAV_ITEMS.map((item) => {
+              const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
+              return (
+                <Link key={item.href} href={item.href}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap',
+                    isActive
+                      ? 'text-emerald-400 border-emerald-400'
+                      : 'text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600'
+                  )}>
+                  <item.icon className="h-3.5 w-3.5" />
+                  {item.label}
+                </Link>
+              )
+            })}
+          </div>
+        }
+      />
 
-      {/* Mobile nav */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t flex z-20">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
-          return (
-            <Link key={item.href} href={item.href} className={cn('flex-1 flex flex-col items-center py-2 text-xs gap-1', isActive ? 'text-emerald-600' : 'text-gray-500')}>
-              <item.icon className="h-5 w-5" />
-              {item.label}
-            </Link>
-          )
-        })}
-      </div>
-
-      <main className="flex-1 overflow-auto pb-16 md:pb-0">
+      {/* Content */}
+      <main className="flex-1 overflow-auto">
         {children}
       </main>
     </div>
