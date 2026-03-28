@@ -16,16 +16,16 @@ export function SiteHeader({ left, right, className, below }: Props) {
       className
     )}>
       <div className="max-w-[1600px] mx-auto px-4">
-        <div className="flex items-center justify-between h-14">
+        <div className="flex items-center justify-between h-[68px]">
           {/* שמאל: actions (back, settings…) */}
           <div className="flex items-center gap-1 min-w-[80px]">
             {left}
           </div>
 
           {/* מרכז: לוגו + כותרת */}
-          <div className="flex items-center gap-2.5 select-none">
-            <Image src="/logo.svg" alt="Guess&Win" width={40} height={47} priority />
-            <span className="font-black text-xl tracking-widest leading-none whitespace-nowrap">
+          <div className="flex items-center gap-3 select-none">
+            <Image src="/logo.svg" alt="Guess&Win" width={48} height={56} priority />
+            <span className="font-black text-2xl tracking-widest leading-none whitespace-nowrap">
               <span className="text-white">GUESS</span>
               <span className="text-yellow-400"> &amp; WIN</span>
             </span>
