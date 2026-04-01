@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { LogOut, Settings, Trophy } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useTournament } from '@/context/TournamentContext'
@@ -11,19 +10,19 @@ import { SiteHeader } from '@/components/shared/SiteHeader'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 function CompetitionsContent() {
-  const { currentUser, logout } = useAuth()
+  const { currentUser, logout, isProfileReady } = useAuth()
   const { tournaments, reload } = useTournament()
   const router = useRouter()
 
   useEffect(() => { reload() }, [reload])
 
   const myTournaments = useMemo(() => {
-    if (!currentUser) return []
+    if (!currentUser || !isProfileReady) return null
     // אדמין רואה את כל התחרויות (כולל מוסתרות)
     if (currentUser.role === 'admin') return tournaments
     // משתמש רגיל: רק תחרויות גלויות שהוא משתתף בהן
     return tournaments.filter((t) => !t.isHidden && currentUser.competitionIds.includes(t.id))
-  }, [tournaments, currentUser])
+  }, [tournaments, currentUser, isProfileReady])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#070b14] to-[#0d1b14]">
@@ -59,7 +58,7 @@ function CompetitionsContent() {
 
       {/* Body */}
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <div className="animate-fade-in">
           <div className="mb-6">
             <h2 className="font-suez text-2xl text-white mb-1">
               שלום, {currentUser?.displayName}!
@@ -67,7 +66,11 @@ function CompetitionsContent() {
             <p className="text-emerald-300">בחרו תחרות לניחוש</p>
           </div>
 
-          {myTournaments.length === 0 ? (
+          {myTournaments === null ? (
+            <div className="flex justify-center py-16">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
+            </div>
+          ) : myTournaments.length === 0 ? (
             <div className="text-center py-16 text-emerald-300">
               <Trophy className="h-12 w-12 mx-auto mb-4 opacity-40" />
               <p>אין לך תחרויות עדיין.</p>
@@ -79,7 +82,7 @@ function CompetitionsContent() {
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
     </div>
   )

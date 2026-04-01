@@ -1,12 +1,14 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { User } from '@/types'
 
 interface AuthContextType {
   currentUser: User | null
   isLoading: boolean
+  /** true once the full DB profile (role, competitionIds, etc.) has been fetched */
+  isProfileReady: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, displayName: string) => Promise<void>
   logout: () => void
@@ -42,38 +44,104 @@ async function loadProfile(userId: string): Promise<User | null> {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isProfileReady, setIsProfileReady] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const hasInitialized = useRef(false)
 
   useEffect(() => {
-    // onAuthStateChange fires INITIAL_SESSION immediately with current session —
-    // no need for a separate getSession() call. This avoids double loadProfile races.
+    let mounted = true
+
+    // Safety valve: unblock UI if auth events never fire (network issue, etc.)
+    const safetyTimeout = setTimeout(() => {
+      if (!hasInitialized.current && mounted) {
+        hasInitialized.current = true
+        setIsLoading(false)
+      }
+    }, 5_000)
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Silent token refresh — profile hasn't changed, skip reload
+      if (!mounted) return
       if (event === 'TOKEN_REFRESHED') return
 
-      try {
+      if (!hasInitialized.current) {
+        // ── First event (INITIAL_SESSION on page load / refresh) ──────────
+        // Unblock the UI immediately — do NOT wait for DB profile queries.
+        clearTimeout(safetyTimeout)
+        hasInitialized.current = true
+
+        if (!session?.user) {
+          setCurrentUser(null)
+          setUserId(null)
+          setIsProfileReady(true) // no profile to load
+          setIsLoading(false)
+          return
+        }
+
+        // Authenticated: construct a minimal user from the session so the UI
+        // can render instantly while the full profile loads in the background.
+        const { user } = session
+        setUserId(user.id)
+        setCurrentUser({
+          id: user.id,
+          email: user.email ?? '',
+          displayName:
+            (user.user_metadata?.display_name as string | undefined) ??
+            user.email?.split('@')[0] ??
+            '',
+          avatarUrl: undefined,
+          role: 'user',       // conservative default — overwritten by profile
+          competitionIds: [], // populated once profile loads
+        })
+        setIsLoading(false) // ← spinner gone, page renders immediately
+
+        // Enrich with full profile data (role, avatar, competitionIds) in background
+        loadProfile(user.id)
+          .then(full => {
+            if (mounted && full) setCurrentUser(full)
+          })
+          .catch(() => { /* keep minimal user on error */ })
+          .finally(() => { if (mounted) setIsProfileReady(true) })
+
+      } else {
+        // ── Subsequent events (SIGNED_IN after login, SIGNED_OUT, etc.) ───
         if (session?.user) {
           setUserId(session.user.id)
-          const user = await loadProfile(session.user.id)
-          setCurrentUser(user)
+          setIsProfileReady(false)
+          try {
+            const user = await loadProfile(session.user.id)
+            if (mounted) setCurrentUser(user)
+          } catch {
+            if (mounted) setCurrentUser(null)
+          } finally {
+            if (mounted) setIsProfileReady(true)
+          }
         } else {
           setUserId(null)
           setCurrentUser(null)
+          setIsProfileReady(true)
         }
-      } catch {
-        // Network / Supabase error — treat as logged out, never hang
-        setCurrentUser(null)
-      } finally {
-        setIsLoading(false)
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      clearTimeout(safetyTimeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error('דוא"ל או סיסמה שגויים')
+    // Guard: if auth succeeded but profile row is missing, sign out and surface a clear error
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('profiles').select('id').eq('id', data.user.id).single()
+      if (!profile) {
+        await supabase.auth.signOut()
+        throw new Error('החשבון אינו מוגדר במערכת. פנה למנהל.')
+      }
+    }
   }, [])
 
   const register = useCallback(async (email: string, password: string, displayName: string) => {
@@ -98,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [userId])
 
   return (
-    <AuthContext.Provider value={{ currentUser, isLoading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ currentUser, isLoading, isProfileReady, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

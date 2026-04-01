@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { useRouter } from 'next/navigation'
 import { Lock, Check, Save, AlertCircle, Users, X } from 'lucide-react'
 import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
@@ -73,6 +73,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const { isLocked } = useCountdown(match.matchStartTime)
   const { placeBet } = useTournament()
   const { currentUser } = useAuth()
+  const router = useRouter()
   const [homeScore, setHomeScore] = useState<number | null>(userBet?.predictedScore.home ?? 0)
   const [awayScore, setAwayScore] = useState<number | null>(userBet?.predictedScore.away ?? 0)
   const [saved, setSaved] = useState(false)
@@ -119,6 +120,10 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     savedTimerRef.current = setTimeout(() => setSaved(false), 2500)
   }
 
+  const submittedTime = userBet
+    ? new Date(userBet.submittedAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+    : null
+
   const matchDate = new Date(match.matchStartTime)
   const dateStr = matchDate.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })
   const timeStr = matchDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
@@ -134,19 +139,23 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     : null
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+    <div className="animate-fade-up h-full">
       <Card className={cn(
-        'overflow-hidden',
+        'overflow-hidden h-full flex flex-col',
         isFinished && 'border-green-300 bg-green-50/60',
         isLive && 'border-red-500/40 bg-red-950/10',
+        !isFinished && !isLive && userBet && 'border-emerald-500/30',
       )}>
-        {/* ── Header bar ─────────────────────────────────────────── */}
-        <div className={cn(
-          'flex items-center justify-between px-4 py-2 text-xs',
-          isFinished  ? 'bg-green-100/70 text-muted-foreground' :
-          isLive      ? 'bg-red-950/30 text-red-300' :
-                        'bg-muted/50 text-muted-foreground',
-        )}>
+        {/* ── Header bar — לחיצה פותחת מסך פרטי משחק ──────────── */}
+        <div
+          className={cn(
+            'flex items-center justify-between px-4 py-2 text-xs cursor-pointer',
+            isFinished  ? 'bg-green-100/70 text-muted-foreground hover:bg-green-200/40' :
+            isLive      ? 'bg-red-950/30 text-red-300 hover:bg-red-950/50' :
+                          'bg-muted/50 text-muted-foreground hover:bg-muted/70',
+          )}
+          onClick={() => router.push(`/tournament/${match.tournamentId}/match/${match.id}`)}
+        >
           {/* שמאל: timer / LIVE indicator */}
           {isLive ? (
             <LiveIndicator minute={liveMinute} period={match.matchPeriod} />
@@ -155,20 +164,23 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
           )}
 
           {/* ימין: סיבוב + תאריך */}
-          <div className="flex items-center gap-1.5 text-left">
+          <div className="flex items-center gap-1.5 text-left min-w-0 overflow-hidden">
             {roundStr && <span className={cn('font-medium', isLive ? 'text-red-300' : 'text-emerald-400')}>{roundStr}</span>}
             {roundStr && <span>·</span>}
             <span>{dateStr} · {timeStr}</span>
           </div>
         </div>
 
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 flex-1">
           {/* שורה ראשית: קבוצה בית | ציון/ניחוש | קבוצה חוץ */}
           <div className="flex items-center gap-3 sm:gap-4">
             {/* קבוצת בית */}
             <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
-              <TeamFlag team={match.homeTeam} size="xl" />
-              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>{match.homeTeam.name}</span>
+              <TeamFlag team={match.homeTeam} className="h-14 w-14 sm:h-20 sm:w-20" />
+              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>
+                <span className="hidden sm:inline">{match.homeTeam.name}</span>
+                <span className="sm:hidden">{match.homeTeam.shortCode ?? match.homeTeam.name}</span>
+              </span>
             </div>
 
             {/* מרכז */}
@@ -202,9 +214,9 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                 /* ── קלט ניחוש / ניחוש נעול ─── */
                 <>
                   <div className="flex items-center gap-1.5">
-                    <ScoreInput value={homeScore} onChange={handleHomeChange} disabled={isInputLocked} />
+                    <ScoreInput value={homeScore} onChange={handleHomeChange} disabled={isInputLocked} ariaLabel={`ניקוד ${match.homeTeam.name}`} />
                     <span className="text-xl font-bold text-muted-foreground">:</span>
-                    <ScoreInput value={awayScore} onChange={handleAwayChange} disabled={isInputLocked} />
+                    <ScoreInput value={awayScore} onChange={handleAwayChange} disabled={isInputLocked} ariaLabel={`ניקוד ${match.awayTeam.name}`} />
                   </div>
 
                   {!isInputLocked && (
@@ -227,14 +239,23 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                         : <><Save className="h-3 w-3" />שמור</>}
                     </button>
                   )}
+                  {submittedTime && !isInputLocked && !dirty && (
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-500">
+                      <Check className="h-2.5 w-2.5" />
+                      הוגש ב-{submittedTime}
+                    </span>
+                  )}
                 </>
               )}
             </div>
 
             {/* קבוצת חוץ */}
             <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
-              <TeamFlag team={match.awayTeam} size="xl" />
-              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>{match.awayTeam.name}</span>
+              <TeamFlag team={match.awayTeam} className="h-14 w-14 sm:h-20 sm:w-20" />
+              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>
+                <span className="hidden sm:inline">{match.awayTeam.name}</span>
+                <span className="sm:hidden">{match.awayTeam.shortCode ?? match.awayTeam.name}</span>
+              </span>
             </div>
           </div>
 
@@ -265,8 +286,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 
       </Card>
 
-      {/* מודל צף — portal מחוץ ל-Card */}
-      <OtherBetsModal
+      <OtherBetsDialog
         open={showOthers}
         onClose={() => setShowOthers(false)}
         match={match}
@@ -274,11 +294,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
         participants={participants}
         isFinished={isFinished}
       />
-    </motion.div>
+    </div>
   )
 }
 
-// ── מודל ניחושי משתתפים ──────────────────────────────────────────────
+// ── דיאלוג ניחושי משתתפים (Radix) ────────────────────────────────────
 interface ModalProps {
   open: boolean
   onClose: () => void
@@ -288,92 +308,64 @@ interface ModalProps {
   isFinished: boolean
 }
 
-function OtherBetsModal({ open, onClose, match, bets, participants, isFinished }: ModalProps) {
-  // נסגר ב-Escape
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [open, onClose])
+function OtherBetsDialog({ open, onClose, match, bets, participants, isFinished }: ModalProps) {
+  return (
+    <DialogPrimitive.Root open={open} onOpenChange={(v) => { if (!v) onClose() }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Content
+          dir="rtl"
+          className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-[#0d1420] border border-slate-700/50 shadow-2xl overflow-hidden focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4 data-[state=closed]:slide-out-to-bottom-4 duration-200"
+        >
+          <DialogPrimitive.Title className="sr-only">ניחושי משתתפים</DialogPrimitive.Title>
+          <DialogPrimitive.Description className="sr-only">ניחושי שאר המשתתפים למשחק</DialogPrimitive.Description>
 
-  if (typeof document === 'undefined') return null
+          {/* handle */}
+          <div className="flex justify-center pt-2 pb-1">
+            <div className="w-10 h-1 rounded-full bg-slate-600" />
+          </div>
 
-  return createPortal(
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          {/* panel — bottom sheet */}
-          <motion.div
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 60 }}
-            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-[#0d1420] border border-slate-700/50 shadow-2xl overflow-hidden"
-            dir="rtl"
-          >
-            {/* handle */}
-            <div className="flex justify-center pt-2 pb-1">
-              <div className="w-10 h-1 rounded-full bg-slate-600" />
+          {/* header */}
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/40">
+            <div>
+              <p className="text-sm font-bold text-slate-100">
+                {match.homeTeam.name} <span className="text-slate-500 font-normal">נגד</span> {match.awayTeam.name}
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5">ניחושי המשתתפים · {bets.length}</p>
             </div>
+            <DialogPrimitive.Close className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-slate-400">
+              <X className="h-4 w-4" />
+            </DialogPrimitive.Close>
+          </div>
 
-            {/* header */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/40">
-              <div>
-                <p className="text-sm font-bold text-slate-100">
-                  {match.homeTeam.name} <span className="text-slate-500 font-normal">נגד</span> {match.awayTeam.name}
-                </p>
-                <p className="text-[11px] text-slate-500 mt-0.5">ניחושי המשתתפים · {bets.length}</p>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-slate-400"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* list */}
-            <div className="overflow-y-auto max-h-64 divide-y divide-slate-800/60">
-              {bets.map((bet) => {
-                const betUser = participants.find((u) => u.id === bet.userId)
-                const result = isFinished && match.actualScore ? calculateScore(bet, match) : null
-                return (
-                  <div key={bet.id} className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm text-slate-300">{betUser?.displayName ?? 'משתתף'}</span>
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-mono font-bold text-slate-100 tabular-nums text-sm">
-                        {bet.predictedScore.home} – {bet.predictedScore.away}
-                      </span>
-                      {result && <PointsBadge result={result.result} points={result.points} />}
-                    </div>
+          {/* list */}
+          <div className="overflow-y-auto max-h-64 divide-y divide-slate-800/60">
+            {bets.map((bet) => {
+              const betUser = participants.find((u) => u.id === bet.userId)
+              const result = isFinished && match.actualScore ? calculateScore(bet, match) : null
+              return (
+                <div key={bet.id} className="flex items-center justify-between px-4 py-3">
+                  <span className="text-sm text-slate-300">{betUser?.displayName ?? 'משתתף'}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="font-mono font-bold text-slate-100 tabular-nums text-sm">
+                      {bet.predictedScore.home} – {bet.predictedScore.away}
+                    </span>
+                    {result && <PointsBadge result={result.result} points={result.points} />}
                   </div>
-                )
-              })}
-            </div>
+                </div>
+              )
+            })}
+          </div>
 
-            {/* footer */}
-            <div className="px-4 py-3 border-t border-slate-800/60">
-              <button
-                onClick={onClose}
-                className="w-full text-xs text-slate-400 hover:text-slate-200 transition-colors py-1"
-              >
-                סגור
-              </button>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>,
-    document.body
+          {/* footer */}
+          <div className="px-4 py-3 border-t border-slate-800/60">
+            <DialogPrimitive.Close className="w-full text-xs text-slate-400 hover:text-slate-200 transition-colors py-1">
+              סגור
+            </DialogPrimitive.Close>
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   )
 }
 
