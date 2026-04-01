@@ -69,7 +69,7 @@ interface TournamentContextType {
   participants: User[]
   standings: ParticipantStanding[]
   setActiveTournamentId: (id: string) => void
-  placeBet: (matchId: string, score: Score, userId: string) => Promise<boolean>
+  placeBet: (matchId: string, score: Score, userId: string) => Promise<string | null>
   setActualScore: (tournamentId: string, matchId: string, score: Score) => Promise<void>
   createTournament: (data: CreateTournamentInput) => Promise<string | undefined>
   updateTournament: (id: string, data: UpdateTournamentInput) => Promise<void>
@@ -317,11 +317,14 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   // ── Place / update a bet — דרך Server Action (ולידציה server-side) ──
-  const placeBet = useCallback(async (matchId: string, score: Score, _userId: string): Promise<boolean> => {
-    if (!activeTournamentId) return false
+  const placeBet = useCallback(async (matchId: string, score: Score, _userId: string): Promise<string | null> => {
+    if (!activeTournamentId) return 'שגיאה פנימית'
     const result = await placeBetAction(matchId, activeTournamentId, score.home, score.away)
-    if (!result.ok) { console.error('placeBet error:', result.error); return false }
-    return true
+    if (!result.ok) {
+      console.error('placeBet error:', result.error)
+      return result.error ?? 'שגיאה לא ידועה'
+    }
+    return null
   }, [activeTournamentId])
 
   // ── Set actual score (Admin) ───────────────────────────────────

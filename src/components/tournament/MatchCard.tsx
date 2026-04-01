@@ -77,7 +77,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const [homeScore, setHomeScore] = useState<number | null>(userBet?.predictedScore.home ?? 0)
   const [awayScore, setAwayScore] = useState<number | null>(userBet?.predictedScore.away ?? 0)
   const [saved, setSaved] = useState(false)
-  const [saveError, setSaveError] = useState(false)
+  const [saveError, setSaveError] = useState<string | false>(false)
   const [dirty, setDirty] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showOthers, setShowOthers] = useState(false)
@@ -112,8 +112,12 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 
   const handleSave = async () => {
     if (homeScore === null || awayScore === null || !currentUser) return
-    const ok = await placeBet(match.id, { home: homeScore, away: awayScore }, currentUser.id)
-    if (!ok) { setSaveError(true); setTimeout(() => setSaveError(false), 3000); return }
+    const error = await placeBet(match.id, { home: homeScore, away: awayScore }, currentUser.id)
+    if (error) {
+      setSaveError(error)
+      setTimeout(() => setSaveError(false), 4000)
+      return
+    }
     setDirty(false)
     setSaved(true)
     if (savedTimerRef.current) clearTimeout(savedTimerRef.current)
@@ -220,24 +224,29 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                   </div>
 
                   {!isInputLocked && (
-                    <button
-                      onClick={handleSave}
-                      disabled={!dirty || saved}
-                      className={cn(
-                        'flex items-center gap-1 text-xs px-3 py-2 rounded-full font-medium transition-all min-h-[36px]',
-                        saveError
-                          ? 'bg-red-100 text-red-600 cursor-default'
-                          : dirty && !saved
-                          ? 'bg-orange-500 text-white hover:bg-orange-600'
-                          : 'bg-muted text-muted-foreground cursor-default'
+                    <div className="flex flex-col items-center gap-0.5">
+                      <button
+                        onClick={handleSave}
+                        disabled={!dirty || saved}
+                        className={cn(
+                          'flex items-center gap-1 text-xs px-3 py-2 rounded-full font-medium transition-all min-h-[36px]',
+                          saveError
+                            ? 'bg-red-100 text-red-600 cursor-default'
+                            : dirty && !saved
+                            ? 'bg-orange-500 text-white hover:bg-orange-600'
+                            : 'bg-muted text-muted-foreground cursor-default'
+                        )}
+                      >
+                        {saveError
+                          ? <><AlertCircle className="h-3 w-3" />שגיאה</>
+                          : saved
+                          ? <><Check className="h-3 w-3" />נשמר</>
+                          : <><Save className="h-3 w-3" />שמור</>}
+                      </button>
+                      {saveError && (
+                        <span className="text-[10px] text-red-500 text-center leading-tight max-w-[120px]">{saveError}</span>
                       )}
-                    >
-                      {saveError
-                        ? <><AlertCircle className="h-3 w-3" />שגיאה</>
-                        : saved
-                        ? <><Check className="h-3 w-3" />נשמר</>
-                        : <><Save className="h-3 w-3" />שמור</>}
-                    </button>
+                    </div>
                   )}
                   {submittedTime && !isInputLocked && !dirty && (
                     <span className="flex items-center gap-1 text-[10px] text-emerald-500">
