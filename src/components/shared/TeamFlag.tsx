@@ -19,7 +19,7 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
   return (
     <div
       className={cn(
-        'relative rounded-full shrink-0 overflow-hidden bg-slate-600',
+        'relative rounded-full shrink-0 overflow-hidden bg-slate-600 transform-gpu',
         className ?? sizes[size],
       )}
       style={{
