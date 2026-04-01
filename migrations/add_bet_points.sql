@@ -1,8 +1,16 @@
 -- Add points + result columns to bets table
 ALTER TABLE public.bets ADD COLUMN IF NOT EXISTS points integer;
 ALTER TABLE public.bets ADD COLUMN IF NOT EXISTS result text;
-ALTER TABLE public.bets ADD CONSTRAINT IF NOT EXISTS bets_result_check
-  CHECK (result IN ('exact', 'outcome', 'miss'));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'bets_result_check' AND conrelid = 'public.bets'::regclass
+  ) THEN
+    ALTER TABLE public.bets ADD CONSTRAINT bets_result_check
+      CHECK (result IN ('exact', 'outcome', 'miss'));
+  END IF;
+END $$;
 
 -- Backfill points for all existing finished matches
 UPDATE public.bets
