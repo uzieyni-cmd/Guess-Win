@@ -19,15 +19,14 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
   return (
     <div
       className={cn(
-        'relative rounded-full shrink-0 overflow-hidden bg-slate-700',
+        'relative rounded-full shrink-0 overflow-hidden bg-slate-600',
         className ?? sizes[size],
       )}
       style={{
-        boxShadow:
-          '0 8px 24px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.35), inset 0 -4px 10px rgba(0,0,0,0.30)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.25)',
       }}
     >
-      {/* ── Flag image fills the sphere ── */}
+      {/* ── Flag image fills the circle ── */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={team.flagUrl}
@@ -46,15 +45,12 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
         {team.shortCode}
       </span>
 
-      {/* ── Single overlay: depth darkening + gloss crescent ── */}
+      {/* ── Subtle top highlight + border ── */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none rounded-full"
         style={{
-          background: `
-            radial-gradient(ellipse 62% 48% at 35% 18%, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.30) 38%, transparent 62%),
-            radial-gradient(ellipse at 58% 68%, transparent 28%, rgba(0,0,0,0.22) 60%, rgba(0,0,0,0.65) 100%)
-          `,
-          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.25)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 50%)',
+          boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.20)',
         }}
       />
     </div>
