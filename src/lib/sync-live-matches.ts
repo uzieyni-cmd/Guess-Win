@@ -1,6 +1,39 @@
 // SEC-04: מייבא supabaseAdmin מ-lib/supabase-admin במקום ליצור instance חדש בכל קריאה.
 import { supabaseAdmin } from './supabase-admin'
 
+async function saveMatchPoints(
+  matchId: string,
+  actualScore: { home: number; away: number }
+) {
+  const { data: bets } = await supabaseAdmin
+    .from('bets')
+    .select('id, predicted_home, predicted_away')
+    .eq('match_id', matchId)
+    .is('points', null)
+
+  if (!bets?.length) return
+
+  for (const bet of bets as { id: string; predicted_home: number; predicted_away: number }[]) {
+    const p = { home: bet.predicted_home, away: bet.predicted_away }
+    let result: 'exact' | 'outcome' | 'miss'
+    let points: number
+
+    if (p.home === actualScore.home && p.away === actualScore.away) {
+      result = 'exact'; points = 10
+    } else {
+      const predOut = p.home > p.away ? 'home' : p.away > p.home ? 'away' : 'draw'
+      const actOut = actualScore.home > actualScore.away ? 'home' : actualScore.away > actualScore.home ? 'away' : 'draw'
+      if (predOut === actOut) { result = 'outcome'; points = 5 }
+      else { result = 'miss'; points = 0 }
+    }
+
+    await supabaseAdmin
+      .from('bets')
+      .update({ points, result })
+      .eq('id', bet.id)
+  }
+}
+
 // PERF-06: rate limit ב-DB — מונע sync כפול כשיש מספר serverless instances
 const SYNC_INTERVAL_MS = 55_000
 
@@ -104,6 +137,17 @@ export async function syncLiveMatches(opts: {
         .update(fields)
         .eq('api_fixture_id', f.fixture.id)
       synced++
+
+      // Save points when match just transitioned to finished
+      const dbMatch = batch.find(
+        (m: { id: string; api_fixture_id: number; status: string }) =>
+          m.api_fixture_id === f.fixture.id
+      )
+      if (dbMatch && isFinished && dbMatch.status !== 'finished') {
+        const home = f.score.fulltime.home ?? f.goals.home ?? 0
+        const away = f.score.fulltime.away ?? f.goals.away ?? 0
+        await saveMatchPoints(dbMatch.id, { home, away })
+      }
     }
   }
 

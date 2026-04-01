@@ -1,8 +1,7 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, DbMatch, DbBet, DbTournament } from '@/lib/supabase'
-import { deriveLeaderboard } from '@/lib/scoring'
 import { translateTeam } from '@/lib/teams-he'
 import { Bet, Match, ParticipantStanding, Score, Tournament, User } from '@/types'
 import {
@@ -11,6 +10,7 @@ import {
   adminDeleteTournament,
   adminToggleHide,
 } from '@/app/actions/tournaments'
+import { placeBetAction } from '@/app/actions/bets'
 
 // ── Adapters: DB row → App type ──────────────────────────────────
 
@@ -37,6 +37,7 @@ function dbMatchToMatch(m: DbMatch): Match {
     round: m.round ?? undefined,
     liveMinute: m.elapsed_minutes ?? undefined,
     matchPeriod: m.match_period ?? undefined,
+    apiFixtureId: m.api_fixture_id ?? undefined,
     actualScore:
       m.actual_home_score !== null && m.actual_away_score !== null
         ? { home: m.actual_home_score, away: m.actual_away_score }
@@ -89,6 +90,10 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [activeTournamentId, setActiveTournamentIdState] = useState<string | null>(null)
   const [bets, setBets] = useState<Bet[]>([])
   const [participants, setParticipants] = useState<User[]>([])
+  const [standings, setStandings] = useState<ParticipantStanding[]>([])
+
+  // Ref לשמירת זמני התחלת משחקים — לשימוש ב-Realtime callback ללא closure stale
+  const matchTimesRef = useRef<Map<string, string>>(new Map())
 
   // ── Load tournaments (metadata only — no matches) ─────────────
   const loadTournaments = useCallback(async () => {
@@ -98,22 +103,25 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       .order('created_at', { ascending: false })
     if (!rows) return
 
-    // ספירת משחקים ומשתתפים בלי שאיבת כל השורות
     const tournamentIds = rows.map((t: DbTournament) => t.id)
-    const [matchCountsRes, participantRowsRes] = await Promise.all([
-      supabase.from('matches')
-        .select('tournament_id', { count: 'exact' })
-        .in('tournament_id', tournamentIds),
+
+    // PERF-03: ספירת משחקים עם HEAD requests (ללא שליפת שורות) + שליפת משתתפים במקביל
+    const [matchCountResults, participantRowsRes] = await Promise.all([
+      Promise.all(
+        tournamentIds.map(async (tid: string) => {
+          const { count } = await supabase
+            .from('matches')
+            .select('*', { count: 'exact', head: true })
+            .eq('tournament_id', tid)
+          return [tid, count ?? 0] as const
+        })
+      ),
       supabase.from('tournament_participants')
         .select('tournament_id, user_id')
         .in('tournament_id', tournamentIds),
     ])
 
-    // בנה מפת ספירת משחקים per tournament
-    const matchCountMap: Record<string, number> = {}
-    ;(matchCountsRes.data ?? []).forEach((m: { tournament_id: string }) => {
-      matchCountMap[m.tournament_id] = (matchCountMap[m.tournament_id] ?? 0) + 1
-    })
+    const matchCountMap = Object.fromEntries(matchCountResults)
 
     const result: Tournament[] = rows.map((t: DbTournament) => ({
       id: t.id,
@@ -144,8 +152,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     if (all)  url += '?all=1'
     if (after) url += `?after=${encodeURIComponent(after)}`
 
-    // all=1 ו-after= יכולים להשתמש ב-cache קצר (30s) — רק live צריך no-store
-    const res = await fetch(url, { next: { revalidate: 30 } })
+    // PERF-04: next: { revalidate } הוא no-op בתוך Client Component — הוסר
+    const res = await fetch(url)
     if (!res.ok) return null
 
     const json: { matches: DbMatch[]; hasMore: boolean; hasPast?: boolean } = await res.json()
@@ -154,7 +162,6 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     setTournaments((prev) => prev.map((t) => {
       if (t.id !== tournamentId) return t
       const existing = append ? t.matches.filter(m => !!m.homeTeam) : []
-      // מיזוג ללא כפילויות לפי id
       const ids = new Set(existing.map(m => m.id))
       const merged = [...existing, ...newMatches.filter(m => !ids.has(m.id))]
       return { ...t, matches: merged }
@@ -168,18 +175,31 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => { loadTournaments() }, [loadTournaments])
 
-  // ── Load full matches — רק אחרי שהטורנירים נטענו ────────────
   useEffect(() => {
     if (!activeTournamentId || !tournamentsLoaded) return
-    loadActiveMatches(activeTournamentId) // fire-and-forget; hasPast handled in page
+    loadActiveMatches(activeTournamentId)
   }, [activeTournamentId, tournamentsLoaded, loadActiveMatches])
+
+  // ── עדכון ref זמני המשחקים כשה-activeTournament משתנה ─────────
+  const activeTournament = useMemo(
+    () => tournaments.find((t) => t.id === activeTournamentId) ?? null,
+    [tournaments, activeTournamentId]
+  )
+
+  useEffect(() => {
+    if (!activeTournament) { matchTimesRef.current = new Map(); return }
+    const map = new Map<string, string>()
+    activeTournament.matches.forEach(m => {
+      if (m.matchStartTime) map.set(m.id, m.matchStartTime)
+    })
+    matchTimesRef.current = map
+  }, [activeTournament])
 
   // ── Load bets + participants when active tournament changes ────
   useEffect(() => {
     if (!activeTournamentId) return
 
     const loadBetsAndParticipants = async () => {
-      // Bets with match times (for lock detection)
       const { data: betRows } = await supabase
         .from('bets')
         .select('*, matches(match_start_time)')
@@ -198,28 +218,53 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       }))
       setBets(mappedBets)
 
-      // Participants
       const tournament = tournaments.find((t) => t.id === activeTournamentId)
       if (tournament?.participantIds.length) {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('*')
           .in('id', tournament.participantIds)
-        setParticipants(
-          (profiles ?? []).map((p: { id: string; email: string; display_name: string; role: string }) => ({
-            id: p.id,
-            email: p.email,
-            displayName: p.display_name,
-            role: p.role as User['role'],
-            competitionIds: [],
+
+        const profileUsers = (profiles ?? []).map((p: { id: string; email: string; display_name: string; role: string }) => ({
+          id: p.id,
+          email: p.email,
+          displayName: p.display_name,
+          role: p.role as User['role'],
+          competitionIds: [],
+        }))
+        setParticipants(profileUsers)
+
+        // Load standings from pre-computed points in DB
+        const { data: scoredBets } = await supabase
+          .from('bets')
+          .select('user_id, points')
+          .eq('tournament_id', activeTournamentId)
+          .not('points', 'is', null)
+
+        const pointsByUser: Record<string, number> = {}
+        const countByUser: Record<string, number> = {}
+        for (const row of (scoredBets ?? []) as { user_id: string; points: number }[]) {
+          pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points
+          countByUser[row.user_id] = (countByUser[row.user_id] ?? 0) + 1
+        }
+
+        const newStandings: ParticipantStanding[] = profileUsers
+          .map((user: User) => ({
+            user,
+            totalPoints: pointsByUser[user.id] ?? 0,
+            rank: 0,
+            betResults: [],
+            scoredBetsCount: countByUser[user.id] ?? 0,
           }))
-        )
+          .sort((a: ParticipantStanding, b: ParticipantStanding) => b.totalPoints - a.totalPoints)
+        newStandings.forEach((s: ParticipantStanding, i: number) => { s.rank = i + 1 })
+        setStandings(newStandings)
       }
     }
 
     loadBetsAndParticipants()
 
-    // Real-time subscription על bets
+    // PERF-02: Realtime — surgical upsert במקום re-fetch מלא של כל הbets
     const channel = supabase
       .channel(`bets-${activeTournamentId}`)
       .on('postgres_changes', {
@@ -227,42 +272,51 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         schema: 'public',
         table: 'bets',
         filter: `tournament_id=eq.${activeTournamentId}`,
-      }, () => {
-        loadBetsAndParticipants()
+      }, (payload) => {
+        if (payload.eventType === 'DELETE') {
+          const old = payload.old as { id: string }
+          setBets(prev => prev.filter(b => b.id !== old.id))
+          return
+        }
+        const raw = payload.new as DbBet
+        // גלה isLocked מה-ref העדכני — ללא DB round-trip
+        const matchStart = matchTimesRef.current.get(raw.match_id)
+        const isLocked = matchStart
+          ? Date.now() >= new Date(matchStart).getTime() - 10 * 60 * 1000
+          : false
+        const newBet: Bet = {
+          id: raw.id,
+          userId: raw.user_id,
+          matchId: raw.match_id,
+          tournamentId: raw.tournament_id,
+          predictedScore: { home: raw.predicted_home, away: raw.predicted_away },
+          submittedAt: raw.submitted_at,
+          isLocked,
+        }
+        setBets(prev => {
+          const idx = prev.findIndex(b => b.userId === raw.user_id && b.matchId === raw.match_id)
+          if (idx >= 0) {
+            const updated = [...prev]
+            updated[idx] = newBet
+            return updated
+          }
+          return [...prev, newBet]
+        })
       })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, [activeTournamentId, tournaments])
 
-  const activeTournament = useMemo(
-    () => tournaments.find((t) => t.id === activeTournamentId) ?? null,
-    [tournaments, activeTournamentId]
-  )
-
-  const standings = useMemo((): ParticipantStanding[] => {
-    if (!activeTournament || !participants.length) return []
-    return deriveLeaderboard(participants, bets, activeTournament.matches, activeTournament.id)
-  }, [activeTournament, bets, participants])
-
   const setActiveTournamentId = useCallback((id: string) => {
     setActiveTournamentIdState(id)
   }, [])
 
-  // ── Place / update a bet ───────────────────────────────────────
-  const placeBet = useCallback(async (matchId: string, score: Score, userId: string): Promise<boolean> => {
-    const { error } = await supabase
-      .from('bets')
-      .upsert({
-        user_id: userId,
-        match_id: matchId,
-        tournament_id: activeTournamentId,
-        predicted_home: score.home,
-        predicted_away: score.away,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,match_id' })
-
-    if (error) { console.error('placeBet error:', error); return false }
+  // ── Place / update a bet — דרך Server Action (ולידציה server-side) ──
+  const placeBet = useCallback(async (matchId: string, score: Score, _userId: string): Promise<boolean> => {
+    if (!activeTournamentId) return false
+    const result = await placeBetAction(matchId, activeTournamentId, score.home, score.away)
+    if (!result.ok) { console.error('placeBet error:', result.error); return false }
     return true
   }, [activeTournamentId])
 
@@ -275,7 +329,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     await loadTournaments()
   }, [loadTournaments])
 
-  // ── Create tournament (Admin) — via Server Action ──────────────
+  // ── Create tournament (Admin) ──────────────────────────────────
   const createTournament = useCallback(async (data: CreateTournamentInput) => {
     const result = await adminCreateTournament(data)
     if (result.error || !result.id) { console.error('createTournament:', result.error); return }
@@ -283,7 +337,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     return result.id
   }, [loadTournaments])
 
-  // ── Update tournament (Admin) — via Server Action ──────────────
+  // ── Update tournament (Admin) ──────────────────────────────────
   const updateTournament = useCallback(async (id: string, data: UpdateTournamentInput) => {
     const result = await adminUpdateTournament(id, data)
     if (!result.ok) { console.error('updateTournament:', result.error); return }
@@ -310,13 +364,11 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
   // ── Update user permissions (Admin) ───────────────────────────
   const updateUserPermissions = useCallback(async (userId: string, competitionIds: string[]) => {
-    // מחק את כל ההרשאות הקיימות
     await supabase
       .from('tournament_participants')
       .delete()
       .eq('user_id', userId)
 
-    // הוסף את החדשות
     if (competitionIds.length > 0) {
       await supabase
         .from('tournament_participants')
@@ -325,18 +377,17 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     await loadTournaments()
   }, [loadTournaments])
 
-  // ── Delete tournament (Admin) — via Server Action ─────────────
+  // ── Delete tournament (Admin) ──────────────────────────────────
   const deleteTournament = useCallback(async (id: string) => {
     const result = await adminDeleteTournament(id)
     if (!result.ok) { console.error('deleteTournament:', result.error); return }
     await loadTournaments()
   }, [loadTournaments])
 
-  // ── Toggle visibility (Admin) — via Server Action ──────────────
+  // ── Toggle visibility (Admin) ──────────────────────────────────
   const toggleHideTournament = useCallback(async (id: string, hidden: boolean) => {
     const result = await adminToggleHide(id, hidden)
     if (!result.ok) { console.error('toggleHide:', result.error); return }
-    // עדכון מיידי ב-state ללא reload מלא
     setTournaments((prev) => prev.map((t) => t.id === id ? { ...t, isHidden: hidden } : t))
   }, [])
 
@@ -345,7 +396,6 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     return loadActiveMatches(tournamentId, options ?? {})
   }, [loadActiveMatches])
 
-  // עדכון חלקי — רק הmatches שהשתנו (לspolling של live)
   const patchMatches = useCallback((tournamentId: string, updatedMatches: Match[]) => {
     if (!updatedMatches.length) return
     const patchMap = new Map(updatedMatches.map((m) => [m.id, m]))
@@ -357,6 +407,41 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       )
     )
   }, [])
+
+  // ── Realtime: עדכוני ציון / סטטוס חי (WebSocket push) ────────
+  useEffect(() => {
+    if (!activeTournamentId) return
+    const channel = supabase
+      .channel(`matches-live-${activeTournamentId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'matches',
+        filter: `tournament_id=eq.${activeTournamentId}`,
+      }, (payload) => {
+        patchMatches(activeTournamentId, [dbMatchToMatch(payload.new as DbMatch)])
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [activeTournamentId, patchMatches])
+
+  // ── Live polling fallback — כל 60 שניות (גיבוי ל-Realtime) ────
+  useEffect(() => {
+    if (!activeTournamentId) return
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/live/${activeTournamentId}`, { cache: 'no-store' })
+        if (!res.ok) return
+        const { matches: liveRows }: { matches: DbMatch[] } = await res.json()
+        if (liveRows?.length) {
+          patchMatches(activeTournamentId, liveRows.map(dbMatchToMatch))
+        }
+      } catch { /* שקט בשגיאות רשת */ }
+    }
+    poll()
+    const interval = setInterval(poll, 60_000)
+    return () => clearInterval(interval)
+  }, [activeTournamentId, patchMatches])
 
   return (
     <TournamentContext.Provider value={{

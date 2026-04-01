@@ -50,7 +50,7 @@ export function deriveLeaderboard(
     }
 
     const totalPoints = betResults.reduce((sum, r) => sum + r.points, 0)
-    return { user, totalPoints, rank: 0, betResults }
+    return { user, totalPoints, rank: 0, betResults, scoredBetsCount: betResults.length }
   })
 
   standings.sort((a, b) => b.totalPoints - a.totalPoints)

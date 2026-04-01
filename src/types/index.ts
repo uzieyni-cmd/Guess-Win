@@ -44,6 +44,7 @@ export interface Match {
   round?: string
   liveMinute?: number
   matchPeriod?: string   // '1H' | '2H' | 'HT' | 'ET' | 'P' | 'BT'
+  apiFixtureId?: number
 }
 
 export interface Score {
@@ -75,4 +76,5 @@ export interface ParticipantStanding {
   totalPoints: number
   rank: number
   betResults: BetResult[]
+  scoredBetsCount: number
 }

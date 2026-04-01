@@ -1,14 +1,14 @@
 'use client'
-import { motion } from 'framer-motion'
-import { BarChart2 } from 'lucide-react'
+import { Trophy } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { EmptyState } from '@/components/shared/EmptyState'
 import { cn } from '@/lib/utils'
 
 const rankStyles = [
-  { text: 'text-yellow-400', bg: 'bg-yellow-400/20 border border-yellow-400/40', label: '1' },
-  { text: 'text-slate-300',  bg: 'bg-slate-300/20 border border-slate-300/40',   label: '2' },
-  { text: 'text-amber-500',  bg: 'bg-amber-500/20 border border-amber-500/40',   label: '3' },
+  { badge: 'bg-yellow-400/15 border border-yellow-400/50 text-yellow-300', card: 'border-yellow-400/30', points: 'text-yellow-300' },
+  { badge: 'bg-slate-400/15 border border-slate-400/50 text-slate-300',   card: 'border-slate-400/30',  points: 'text-slate-300'  },
+  { badge: 'bg-amber-600/15 border border-amber-500/50 text-amber-400',   card: 'border-amber-500/30',  points: 'text-amber-400'  },
 ]
 
 export default function LeaderboardPage() {
@@ -17,53 +17,43 @@ export default function LeaderboardPage() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <BarChart2 className="h-5 w-5 text-emerald-500" />
+        <Trophy className="h-5 w-5 text-emerald-500" />
         <h2 className="font-suez text-xl text-slate-100">טבלת דירוג</h2>
       </div>
       {standings.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">אין תוצאות עדיין.</div>
+        <EmptyState icon={Trophy} title="אין תוצאות עדיין" subtitle="הדירוג יופיע לאחר סיום משחקים" />
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 stagger">
           {standings.map((s, i) => (
-            <motion.div
+            <div
               key={s.user.id}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
               className={cn(
-                'flex items-center gap-3 p-3 rounded-xl bg-white border',
-                i === 0 && 'border-yellow-300 bg-yellow-50',
-                i === 1 && 'border-slate-300 bg-slate-50',
-                i === 2 && 'border-amber-300 bg-amber-50'
+                'flex items-center gap-3 p-3 rounded-xl bg-[#0d1420] border border-slate-700/40 animate-fade-up',
+                i < 3 && rankStyles[i].card
               )}
             >
               <div className={cn(
                 'w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold shrink-0',
-                i < 3 ? rankStyles[i].bg + ' ' + rankStyles[i].text : 'text-muted-foreground'
+                i < 3 ? rankStyles[i].badge : 'text-slate-500'
               )}>
-                {i < 3 ? rankStyles[i].label : `${s.rank}`}
+                {i < 3 ? i + 1 : s.rank}
               </div>
               <Avatar className="h-9 w-9">
-                <AvatarFallback className="bg-indigo-100 text-indigo-700 text-sm font-bold">
+                <AvatarFallback className="bg-slate-700 text-slate-200 text-sm font-bold">
                   {s.user.displayName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate">{s.user.displayName}</p>
-                <p className="text-xs text-muted-foreground">{s.betResults.length} ניחושים עם ניקוד</p>
+                <p className="font-semibold text-sm truncate text-slate-100">{s.user.displayName}</p>
+                <p className="text-xs text-slate-500">{s.scoredBetsCount} ניחושים עם ניקוד</p>
               </div>
               <div className="text-left">
-                <motion.p
-                  key={s.totalPoints}
-                  initial={{ scale: 1.2 }}
-                  animate={{ scale: 1 }}
-                  className="text-xl font-bold text-indigo-700"
-                >
+                <p className={cn('text-xl font-bold animate-score-bump', i < 3 ? rankStyles[i].points : 'text-emerald-400')}>
                   {s.totalPoints}
-                </motion.p>
-                <p className="text-xs text-muted-foreground">נק׳</p>
+                </p>
+                <p className="text-xs text-slate-500">נק׳</p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
