@@ -60,6 +60,8 @@ export interface Bet {
   predictedScore: Score
   submittedAt: string
   isLocked: boolean
+  points: number | null
+  betResult: ScoreResult | null
 }
 
 export type ScoreResult = 'exact' | 'outcome' | 'miss'

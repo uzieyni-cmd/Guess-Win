@@ -1,7 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 
 // ── Client-side Supabase (uses anon key + user JWT, respects RLS) ──
-export const supabase = createClient(
+// Uses @supabase/ssr so the session is stored in cookies (readable by Server Actions & middleware)
+export const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
@@ -59,6 +60,8 @@ export type DbBet = {
   tournament_id: string
   predicted_home: number
   predicted_away: number
+  points: number | null
+  result: 'exact' | 'outcome' | 'miss' | null
   submitted_at: string
   updated_at: string
 }

@@ -215,6 +215,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         isLocked: b.matches
           ? Date.now() >= new Date(b.matches.match_start_time).getTime() - 10 * 60 * 1000
           : false,
+        points: b.points ?? null,
+        betResult: b.result ?? null,
       }))
       setBets(mappedBets)
 
@@ -292,6 +294,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
           predictedScore: { home: raw.predicted_home, away: raw.predicted_away },
           submittedAt: raw.submitted_at,
           isLocked,
+          points: raw.points ?? null,
+          betResult: raw.result ?? null,
         }
         setBets(prev => {
           const idx = prev.findIndex(b => b.userId === raw.user_id && b.matchId === raw.match_id)

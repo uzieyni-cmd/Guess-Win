@@ -1,11 +1,10 @@
 'use client'
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
 import { TrendingUp, Target, Zap } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
-import { calculateScore } from '@/lib/scoring'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { LoadingState, EmptyState } from '@/components/shared/EmptyState'
 
 export default function StatsPage() {
   const { activeTournament, bets } = useTournament()
@@ -13,7 +12,6 @@ export default function StatsPage() {
 
   const stats = useMemo(() => {
     if (!activeTournament || !currentUser) return null
-    const finishedMatches = activeTournament.matches.filter((m) => m.actualScore !== null)
     const userBets = bets.filter((b) => b.userId === currentUser.id && b.tournamentId === activeTournament.id)
 
     let exactHits = 0
@@ -22,22 +20,21 @@ export default function StatsPage() {
     let totalPoints = 0
 
     for (const bet of userBets) {
-      const match = finishedMatches.find((m) => m.id === bet.matchId)
-      if (!match) continue
-      const result = calculateScore(bet, match)
-      if (result.result === 'exact') exactHits++
-      else if (result.result === 'outcome') outcomeHits++
+      if (bet.points == null || bet.betResult == null) continue
+      totalPoints += bet.points
+      if (bet.betResult === 'exact') exactHits++
+      else if (bet.betResult === 'outcome') outcomeHits++
       else misses++
-      totalPoints += result.points
     }
 
     const scored = exactHits + outcomeHits + misses
     const accuracy = scored > 0 ? Math.round(((exactHits + outcomeHits) / scored) * 100) : 0
 
-    return { exactHits, outcomeHits, misses, totalPoints, scored, accuracy, pending: userBets.length - scored }
+    return { exactHits, outcomeHits, misses, totalPoints, scored, accuracy, pending: userBets.length - scored, totalBets: userBets.length }
   }, [activeTournament, bets, currentUser])
 
-  if (!stats) return <div className="text-center py-16 text-muted-foreground">טוען...</div>
+  if (!activeTournament) return <LoadingState />
+  if (!stats || stats.totalBets === 0) return <EmptyState icon={TrendingUp} title="אין סטטיסטיקות עדיין" subtitle="הגש ניחושים כדי לראות את הסטטיסטיקה שלך" />
 
   return (
     <div>
@@ -45,14 +42,14 @@ export default function StatsPage() {
         <TrendingUp className="h-5 w-5 text-emerald-500" />
         <h2 className="font-suez text-xl text-slate-100">הסטטיסטיקה שלי</h2>
       </div>
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-4 stagger">
         {[
           { label: 'סך הנקודות', value: stats.totalPoints, icon: Zap, color: 'text-emerald-500' },
-          { label: 'דיוק', value: `${stats.accuracy}%`, icon: Target, color: 'text-green-600' },
-          { label: 'פגיעות מדויקות', value: stats.exactHits, icon: Target, color: 'text-yellow-600' },
-          { label: 'כיוון נכון', value: stats.outcomeHits, icon: Target, color: 'text-blue-600' },
-        ].map((item, i) => (
-          <motion.div key={item.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }}>
+          { label: 'דיוק', value: `${stats.accuracy}%`, icon: Target, color: 'text-green-400' },
+          { label: 'פגיעות מדויקות', value: stats.exactHits, icon: Target, color: 'text-yellow-400' },
+          { label: 'כיוון נכון', value: stats.outcomeHits, icon: Target, color: 'text-blue-400' },
+        ].map((item) => (
+          <div key={item.label} className="animate-pop-in">
             <Card>
               <CardHeader className="pb-1 pt-4 px-4">
                 <CardTitle className="text-xs text-muted-foreground font-medium">{item.label}</CardTitle>
@@ -61,7 +58,7 @@ export default function StatsPage() {
                 <p className={`text-3xl font-bold ${item.color}`}>{item.value}</p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
       </div>
 
@@ -80,11 +77,9 @@ export default function StatsPage() {
                   <span className="font-medium">{bar.value}</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(bar.value / bar.total) * 100}%` }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                    className={`h-full rounded-full ${bar.color}`}
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${bar.color}`}
+                    style={{ width: `${(bar.value / bar.total) * 100}%` }}
                   />
                 </div>
               </div>
