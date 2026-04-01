@@ -19,16 +19,12 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
   return (
     <div
       className={cn(
-        'relative rounded-full shrink-0 overflow-hidden',
+        'relative rounded-full shrink-0 overflow-hidden bg-slate-700',
         className ?? sizes[size],
       )}
       style={{
-        /* Base sphere shadow */
-        boxShadow: `
-          0 6px 20px rgba(0,0,0,0.45),
-          0 2px 6px  rgba(0,0,0,0.30),
-          inset 0 -3px 8px rgba(0,0,0,0.25)
-        `,
+        boxShadow:
+          '0 8px 24px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.35), inset 0 -4px 10px rgba(0,0,0,0.30)',
       }}
     >
       {/* ── Flag image fills the sphere ── */}
@@ -46,41 +42,19 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
       />
 
       {/* ── Fallback initials ── */}
-      <span className="hidden absolute inset-0 flex items-center justify-center text-xs font-bold text-white bg-slate-600">
+      <span className="hidden absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
         {team.shortCode}
       </span>
 
-      {/* ── Radial depth gradient — darkens edges for 3-D curvature ── */}
+      {/* ── Single overlay: depth darkening + gloss crescent ── */}
       <div
-        className="absolute inset-0 rounded-full pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          background: `radial-gradient(
-            ellipse at 60% 65%,
-            transparent        35%,
-            rgba(0,0,0,0.18)   65%,
-            rgba(0,0,0,0.55)  100%
-          )`,
-        }}
-      />
-
-      {/* ── Gloss highlight — crescent on the upper-left ── */}
-      <div
-        className="absolute inset-0 rounded-full pointer-events-none"
-        style={{
-          background: `radial-gradient(
-            ellipse 70% 55% at 38% 22%,
-            rgba(255,255,255,0.72) 0%,
-            rgba(255,255,255,0.22) 40%,
-            transparent           70%
-          )`,
-        }}
-      />
-
-      {/* ── Rim light — faint bright ring on the very edge ── */}
-      <div
-        className="absolute inset-0 rounded-full pointer-events-none"
-        style={{
-          boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.18)',
+          background: `
+            radial-gradient(ellipse 62% 48% at 35% 18%, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.30) 38%, transparent 62%),
+            radial-gradient(ellipse at 58% 68%, transparent 28%, rgba(0,0,0,0.22) 60%, rgba(0,0,0,0.65) 100%)
+          `,
+          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.25)',
         }}
       />
     </div>
