@@ -32,7 +32,7 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
       <img
         src={team.flagUrl}
         alt={team.name}
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover scale-[1.18]"
         onError={(e) => {
           const img = e.target as HTMLImageElement
           img.style.display = 'none'
