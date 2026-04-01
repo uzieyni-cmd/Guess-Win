@@ -74,8 +74,8 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const { placeBet } = useTournament()
   const { currentUser } = useAuth()
   const router = useRouter()
-  const [homeScore, setHomeScore] = useState<number | null>(userBet?.predictedScore.home ?? 0)
-  const [awayScore, setAwayScore] = useState<number | null>(userBet?.predictedScore.away ?? 0)
+  const [homeScore, setHomeScore] = useState<number | null>(userBet?.predictedScore.home ?? null)
+  const [awayScore, setAwayScore] = useState<number | null>(userBet?.predictedScore.away ?? null)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | false>(false)
   const [dirty, setDirty] = useState(false)
@@ -227,7 +227,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                     <div className="flex flex-col items-center gap-0.5">
                       <button
                         onClick={handleSave}
-                        disabled={!dirty || saved}
+                        disabled={!dirty || saved || homeScore === null || awayScore === null}
                         className={cn(
                           'flex items-center gap-1 text-xs px-3 py-2 rounded-full font-medium transition-all min-h-[36px]',
                           saveError
