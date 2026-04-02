@@ -1,16 +1,22 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdmin } from '@/lib/auth-server'
 import { fetchFixtures, fetchFixtureById, mapFixtureStatus } from '@/lib/api-football'
 
 // סנכרון משחקים מ-API-Football לתחרות קיימת
+// fromDate (YYYY-MM-DD) — אופציונלי: אם מוגדר, שולף רק משחקים מתאריך זה והלאה (לcron יומי)
 export async function syncFixtures(
   tournamentId: string,
   leagueId: number,
-  season: number
+  season: number,
+  fromDate?: string,
 ): Promise<{ synced: number; error?: string }> {
+  await requireAdmin()
   try {
-    const fixtures = await fetchFixtures(leagueId, season)
+    // noCache=true כשמסנכרן ידנית מניהול — חייבים נתונים טריים מה-API
+    const noCache = !fromDate
+    const fixtures = await fetchFixtures(leagueId, season, fromDate, noCache)
 
     const rows = fixtures.map((f) => ({
       tournament_id: tournamentId,
@@ -45,6 +51,7 @@ export async function syncFixtures(
 export async function refreshMatchResult(
   fixtureId: number
 ): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin()
   try {
     const fixture = await fetchFixtureById(fixtureId)
     if (!fixture) return { ok: false, error: 'Fixture not found' }
@@ -71,6 +78,7 @@ export async function setMatchScore(
   homeScore: number,
   awayScore: number
 ): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin()
   try {
     const { error } = await supabaseAdmin
       .from('matches')

@@ -1,7 +1,6 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
@@ -37,46 +36,11 @@ export default function AdminTournamentDetailPage() {
 
   // ── טעינת משחקים אמיתיים תמיד בכניסה לדף ─────────────────────
   const [matchesLoaded, setMatchesLoaded] = useState(false)
-  const autoSynced = useRef(false)
 
   useEffect(() => {
     if (!id) return
-    // תמיד טען משחקים מלאים (לא stubs) בכניסה לדף
-    reloadMatches(id)
-    setMatchesLoaded(true)
+    reloadMatches(id, { all: true }).then(() => setMatchesLoaded(true))
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Auto-sync: אחרי טעינה, אם אין משחקים ויש League ID ────────
-  useEffect(() => {
-    if (!matchesLoaded || !tournament || autoSynced.current) return
-    // בדוק האם המשחקים הם stubs (חסרי homeTeam)
-    const hasRealMatches = tournament.matches.length > 0 && tournament.matches[0].homeTeam
-    if (hasRealMatches) return
-    if (tournament.matches.length > 0 && !tournament.matches[0].homeTeam) {
-      // עדיין stubs — נחכה לריענון
-      return
-    }
-    supabase
-      .from('tournaments')
-      .select('api_league_id, api_season')
-      .eq('id', id)
-      .single()
-      .then(async ({ data: row }) => {
-        if (row?.api_league_id && row?.api_season) {
-          autoSynced.current = true
-          setSyncing(true)
-          setSyncMsg(`⏳ מסנכרן משחקים מ-API-Football...`)
-          const result = await syncFixtures(id, row.api_league_id, row.api_season)
-          setSyncing(false)
-          if (result.error) {
-            setSyncMsg(`שגיאה: ${result.error}`)
-          } else {
-            setSyncMsg(`✓ ${result.synced} משחקים נטענו בהצלחה!`)
-            reloadMatches(id)
-          }
-        }
-      })
-  }, [matchesLoaded, tournament, id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!tournament) return <div className="p-6 text-muted-foreground">התחרות לא נמצאה.</div>
 
@@ -106,7 +70,7 @@ export default function AdminTournamentDetailPage() {
       setSyncMsg(`שגיאה: ${result.error}`)
     } else {
       setSyncMsg(`✓ סונכרנו ${result.synced} משחקים מ-API-Football`)
-      reload()
+      await reloadMatches(id, { all: true })
     }
   }
 
@@ -241,9 +205,9 @@ export default function AdminTournamentDetailPage() {
         </div>
       )}
 
-      <div className="space-y-4">
-        {!isLoadingMatches && visibleMatches.map((match: Match, i: number) => (
-          <motion.div key={match.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+      <div className="space-y-4 stagger">
+        {!isLoadingMatches && visibleMatches.map((match: Match) => (
+          <div key={match.id} className="animate-fade-up">
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -305,7 +269,7 @@ export default function AdminTournamentDetailPage() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
 
         {!isLoadingMatches && visibleMatches.length === 0 && realMatches.length === 0 && (

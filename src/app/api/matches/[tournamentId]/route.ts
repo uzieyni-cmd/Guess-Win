@@ -39,18 +39,17 @@ export async function GET(
     })
   }
 
-  // ── מצב 2: טעינת משחקים ישנים (כפתור "טען משחקים ישנים") ───────
+  // ── מצב 2: all=1 — כל המשחקים (ניהול / כפתור "טען ישנים") ──────
   if (all) {
     const { data, error } = await supabaseAdmin
       .from('matches')
       .select(COLS)
       .eq('tournament_id', tournamentId)
-      .eq('status', 'finished')
       .order('match_start_time', { ascending: true })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ matches: data ?? [], hasMore: false }, {
-      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+      headers: { 'Cache-Control': 'no-store' },
     })
   }
 
@@ -70,15 +69,28 @@ export async function GET(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // fallback: אין משחקים בחלון (למשל תחרות שהסתיימה) — הצג 20 האחרונים
+  // fallback: אין משחקים בחלון — קודם נסה ראשוני (טורניר עתידי), אחר כך אחרונים (טורניר שהסתיים)
   if (!data || data.length === 0) {
-    const { data: fallback } = await supabaseAdmin
+    const { data: upcoming } = await supabaseAdmin
       .from('matches')
       .select(COLS)
       .eq('tournament_id', tournamentId)
-      .order('match_start_time', { ascending: false })
+      .neq('status', 'finished')
+      .order('match_start_time', { ascending: true })
       .limit(PAGE_SIZE)
-    data = (fallback ?? []).reverse() // מהישן לחדש
+
+    if (upcoming && upcoming.length > 0) {
+      data = upcoming
+    } else {
+      // כל המשחקים הסתיימו — הצג 20 האחרונים
+      const { data: lastMatches } = await supabaseAdmin
+        .from('matches')
+        .select(COLS)
+        .eq('tournament_id', tournamentId)
+        .order('match_start_time', { ascending: false })
+        .limit(PAGE_SIZE)
+      data = (lastMatches ?? []).reverse()
+    }
   }
 
   // בדוק hasPast + hasMore במקביל (לא סדרתי)
@@ -107,7 +119,13 @@ export async function GET(
   const hasPast = (hasPastResult.count ?? 0) > 0
   const hasMore = (hasMoreResult.count ?? 0) > 0
 
+  // PERF-04: כשיש משחק חי — cache קצר; אחרת 30s
+  const hasLive = (data as unknown as { status: string }[]).some(m => m.status === 'live')
+  const cacheControl = hasLive
+    ? 'public, s-maxage=5, stale-while-revalidate=10'
+    : 'public, s-maxage=30, stale-while-revalidate=60'
+
   return NextResponse.json({ matches: data, hasMore, hasPast }, {
-    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
+    headers: { 'Cache-Control': cacheControl },
   })
 }

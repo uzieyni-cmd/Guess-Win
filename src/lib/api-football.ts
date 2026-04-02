@@ -2,14 +2,24 @@
 
 const BASE_URL = 'https://v3.football.api-sports.io'
 
-async function apiFetch<T>(path: string): Promise<T> {
+interface ApiResponse<T> {
+  results: number
+  paging: { current: number; total: number }
+  response: T[]
+}
+
+async function apiFetchRaw<T>(path: string, noCache = false): Promise<ApiResponse<T>> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY! },
-    next: { revalidate: 60 }, // cache 60s
+    ...(noCache ? { cache: 'no-store' } : { next: { revalidate: 60 } }),
   })
   if (!res.ok) throw new Error(`API-Football error: ${res.status} ${path}`)
-  const data = await res.json()
-  return data.response as T
+  return res.json() as Promise<ApiResponse<T>>
+}
+
+async function apiFetch<T>(path: string): Promise<T[]> {
+  const data = await apiFetchRaw<T>(path)
+  return data.response
 }
 
 // ── Types ────────────────────────────────────────────────────────
@@ -44,17 +54,34 @@ export interface ApiLeague {
 
 // ── Fetch Helpers ────────────────────────────────────────────────
 
-export async function fetchFixtures(leagueId: number, season: number): Promise<ApiFixture[]> {
-  return apiFetch<ApiFixture[]>(`/fixtures?league=${leagueId}&season=${season}`)
+export async function fetchFixtures(
+  leagueId: number,
+  season: number,
+  fromDate?: string, // YYYY-MM-DD — לסינון API, מייעל את הCRON היומי
+  noCache = false,
+): Promise<ApiFixture[]> {
+  const all: ApiFixture[] = []
+  let page = 1
+  const dateParam = fromDate ? `&from=${fromDate}` : ''
+  while (true) {
+    const data = await apiFetchRaw<ApiFixture>(
+      `/fixtures?league=${leagueId}&season=${season}${dateParam}&page=${page}`,
+      noCache,
+    )
+    all.push(...data.response)
+    if (data.paging.current >= data.paging.total) break
+    page++
+  }
+  return all
 }
 
 export async function fetchFixtureById(fixtureId: number): Promise<ApiFixture | null> {
-  const results = await apiFetch<ApiFixture[]>(`/fixtures?id=${fixtureId}`)
+  const results = await apiFetch<ApiFixture>(`/fixtures?id=${fixtureId}`)
   return results[0] ?? null
 }
 
 export async function fetchLeagues(): Promise<ApiLeague[]> {
-  return apiFetch<ApiLeague[]>('/leagues?type=cup&type=league')
+  return apiFetch<ApiLeague>('/leagues?type=cup&type=league')
 }
 
 // ── Status Mapper ────────────────────────────────────────────────
