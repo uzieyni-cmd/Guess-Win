@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
-import { syncFixtures, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
+import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,7 @@ export default function AdminTournamentDetailPage() {
   const [scores, setScores] = useState<Record<string, { home: string; away: string }>>({})
   const [saved, setSaved] = useState<string[]>([])
   const [syncing, setSyncing] = useState(false)
+  const [syncingOdds, setSyncingOdds] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
   const [hideFinished, setHideFinished] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -70,6 +71,20 @@ export default function AdminTournamentDetailPage() {
       setSyncMsg(`שגיאה: ${result.error}`)
     } else {
       setSyncMsg(`✓ סונכרנו ${result.synced} משחקים מ-API-Football`)
+      await reloadMatches(id, { all: true })
+    }
+  }
+
+  // ── Sync Odds ─────────────────────────────────────────────────
+  const handleSyncOdds = async () => {
+    setSyncingOdds(true)
+    setSyncMsg('')
+    const result = await syncOdds(id)
+    setSyncingOdds(false)
+    if (result.error) {
+      setSyncMsg(`שגיאה: ${result.error}`)
+    } else {
+      setSyncMsg(`✓ עודכנו יחסי הימורים ל-${result.synced} משחקים`)
       await reloadMatches(id, { all: true })
     }
   }
@@ -144,6 +159,12 @@ export default function AdminTournamentDetailPage() {
                 : <><EyeOff className="h-4 w-4 ml-1" />הסתר שהסתיימו ({finishedCount})</>}
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={handleSyncOdds} disabled={syncingOdds}>
+            {syncingOdds
+              ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+              : <RefreshCw className="h-4 w-4 ml-1" />}
+            סנכרן Odds
+          </Button>
           <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
             {syncing
               ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
