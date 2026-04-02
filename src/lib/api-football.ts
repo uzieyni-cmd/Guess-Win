@@ -68,6 +68,7 @@ export async function fetchFixtures(
       `/fixtures?league=${leagueId}&season=${season}${dateParam}&page=${page}`,
       noCache,
     )
+    console.log(`[fetchFixtures] page ${data.paging.current}/${data.paging.total} → ${data.response.length} fixtures`)
     all.push(...data.response)
     if (data.paging.current >= data.paging.total) break
     page++

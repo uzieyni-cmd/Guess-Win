@@ -18,6 +18,12 @@ export async function syncFixtures(
     const noCache = !fromDate
     const fixtures = await fetchFixtures(leagueId, season, fromDate, noCache)
 
+    console.log(`[syncFixtures] league=${leagueId} season=${season} → ${fixtures.length} fixtures from API`)
+    if (fixtures.length > 0) {
+      const dates = fixtures.map(f => f.fixture.date.slice(0, 10)).sort()
+      console.log(`[syncFixtures] date range: ${dates[0]} → ${dates[dates.length - 1]}`)
+    }
+
     const rows = fixtures.map((f) => ({
       tournament_id: tournamentId,
       home_team_id: String(f.teams.home.id),
