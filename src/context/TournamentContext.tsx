@@ -212,6 +212,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         tournamentId: b.tournament_id,
         predictedScore: { home: b.predicted_home, away: b.predicted_away },
         submittedAt: b.submitted_at,
+        updatedAt: b.updated_at,
         isLocked: b.matches
           ? Date.now() >= new Date(b.matches.match_start_time).getTime() - 10 * 60 * 1000
           : false,
@@ -294,6 +295,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
           tournamentId: raw.tournament_id,
           predictedScore: { home: raw.predicted_home, away: raw.predicted_away },
           submittedAt: raw.submitted_at,
+          updatedAt: raw.updated_at,
           isLocked,
           points: raw.points ?? null,
           betResult: raw.result ?? null,

@@ -124,9 +124,18 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     savedTimerRef.current = setTimeout(() => setSaved(false), 2500)
   }
 
-  const submittedTime = userBet
-    ? new Date(userBet.submittedAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-    : null
+  const submittedLabel = (() => {
+    if (!userBet) return null
+    const ts = new Date(userBet.updatedAt ?? userBet.submittedAt)
+    const isUpdated = userBet.updatedAt && userBet.updatedAt !== userBet.submittedAt
+    const today = new Date()
+    const isToday = ts.toDateString() === today.toDateString()
+    const dateStr = isToday
+      ? ''
+      : ts.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }) + ' · '
+    const timeStr = ts.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+    return { text: `${dateStr}${timeStr}`, isUpdated }
+  })()
 
   const matchDate = new Date(match.matchStartTime)
   const dateStr = matchDate.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -253,10 +262,10 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                       )}
                     </div>
                   )}
-                  {submittedTime && !isInputLocked && !dirty && (
+                  {submittedLabel && !isInputLocked && !dirty && (
                     <span className="flex items-center gap-1 text-[10px] text-emerald-500">
                       <Check className="h-2.5 w-2.5" />
-                      הוגש ב-{submittedTime}
+                      {submittedLabel.isUpdated ? 'עודכן' : 'הוגש'} ב-{submittedLabel.text}
                     </span>
                   )}
                   {isUrgent && (

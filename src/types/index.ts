@@ -61,6 +61,7 @@ export interface Bet {
   tournamentId: string
   predictedScore: Score
   submittedAt: string
+  updatedAt: string
   isLocked: boolean
   points: number | null
   betResult: ScoreResult | null
