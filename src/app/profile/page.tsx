@@ -159,6 +159,29 @@ function ProfileContent() {
     }
   }
 
+  async function resizeImage(file: File, maxSize = 256): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const scale = Math.min(maxSize / img.width, maxSize / img.height, 1)
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+        canvas.toBlob(
+          (blob) => blob ? resolve(blob) : reject(new Error('canvas toBlob failed')),
+          'image/jpeg', 0.88
+        )
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('load failed')) }
+      img.src = url
+    })
+  }
+
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !currentUser) return
@@ -166,8 +189,9 @@ function ProfileContent() {
     setAvatarLoading(true)
     setAvatarError('')
     try {
+      const resized = await resizeImage(file)
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', new File([resized], 'avatar.jpg', { type: 'image/jpeg' }))
       const result = await uploadAvatar(formData)
       if (result.error) { setAvatarError(result.error); return }
       await refreshUser()
