@@ -60,19 +60,12 @@ export async function fetchFixtures(
   fromDate?: string, // YYYY-MM-DD — לסינון API, מייעל את הCRON היומי
   noCache = false,
 ): Promise<ApiFixture[]> {
-  const all: ApiFixture[] = []
-  let page = 1
   const dateParam = fromDate ? `&from=${fromDate}` : ''
-  while (true) {
-    const data = await apiFetchRaw<ApiFixture>(
-      `/fixtures?league=${leagueId}&season=${season}${dateParam}&page=${page}`,
-      noCache,
-    )
-    all.push(...data.response)
-    if (data.paging.current >= data.paging.total) break
-    page++
-  }
-  return all
+  const data = await apiFetchRaw<ApiFixture>(
+    `/fixtures?league=${leagueId}&season=${season}${dateParam}`,
+    noCache,
+  )
+  return data.response
 }
 
 export async function fetchFixtureById(fixtureId: number): Promise<ApiFixture | null> {
