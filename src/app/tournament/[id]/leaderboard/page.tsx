@@ -32,27 +32,31 @@ export default function LeaderboardPage() {
                 i < 3 && rankStyles[i].card
               )}
             >
+              {/* מספר דירוג */}
               <div className={cn(
                 'w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold shrink-0',
                 i < 3 ? rankStyles[i].badge : 'text-slate-500'
               )}>
-                {i < 3 ? i + 1 : s.rank}
+                {s.rank}
               </div>
-              <Avatar className="h-9 w-9 shrink-0">
-                <AvatarImage src={s.user.avatarUrl} />
+
+              {/* תמונת פרופיל */}
+              <Avatar className="h-10 w-10 shrink-0">
+                <AvatarImage src={s.user.avatarUrl} className="object-cover" />
                 <AvatarFallback delayMs={0} className="bg-indigo-600 text-white text-sm font-bold">
                   {s.user.displayName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm truncate text-slate-100">{s.user.displayName}</p>
-                <p className="text-xs text-slate-500">{s.scoredBetsCount} ניחושים עם ניקוד</p>
-              </div>
-              <div className="text-left">
-                <p className={cn('text-xl font-bold animate-score-bump', i < 3 ? rankStyles[i].points : 'text-emerald-400')}>
+
+              {/* שם */}
+              <p className="flex-1 font-semibold text-sm truncate text-slate-100">{s.user.displayName}</p>
+
+              {/* ניקוד */}
+              <div className="text-left shrink-0">
+                <p className={cn('text-xl font-bold tabular-nums', i < 3 ? rankStyles[i].points : 'text-emerald-400')}>
                   {s.totalPoints}
                 </p>
-                <p className="text-xs text-slate-500">נק׳</p>
+                <p className="text-xs text-slate-500 text-center">נק׳</p>
               </div>
             </div>
           ))}
