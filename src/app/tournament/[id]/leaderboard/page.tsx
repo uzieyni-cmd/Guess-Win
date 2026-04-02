@@ -38,10 +38,10 @@ export default function LeaderboardPage() {
               )}>
                 {i < 3 ? i + 1 : s.rank}
               </div>
-              <Avatar className="h-9 w-9">
+              <Avatar className="h-9 w-9 shrink-0">
                 <AvatarImage src={s.user.avatarUrl} />
-                <AvatarFallback className="bg-slate-700 text-slate-200 text-sm font-bold">
-                  {s.user.displayName.charAt(0)}
+                <AvatarFallback delayMs={0} className="bg-indigo-600 text-white text-sm font-bold">
+                  {s.user.displayName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
