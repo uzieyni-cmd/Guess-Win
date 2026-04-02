@@ -142,13 +142,18 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     ? calculateScore(userBet, match)
     : null
 
+  const matchBetsAll = allBets.filter(b => b.matchId === match.id)
+  const msToStart = new Date(match.matchStartTime).getTime() - Date.now()
+  const isUrgent = !isLocked && !isFinished && !isLive && !userBet && msToStart > 0 && msToStart < 2 * 60 * 60 * 1000
+
   return (
     <div className="animate-fade-up h-full">
       <Card className={cn(
         'overflow-hidden h-full flex flex-col',
         isFinished && 'border-green-300 bg-green-50/60',
         isLive && 'border-red-500/40 bg-red-950/10',
-        !isFinished && !isLive && userBet && 'border-emerald-500/30',
+        isUrgent && 'border-orange-400/60',
+        !isFinished && !isLive && !isUrgent && userBet && 'border-emerald-500/30',
       )}>
         {/* ── Header bar — לחיצה פותחת מסך פרטי משחק ──────────── */}
         <div
@@ -254,6 +259,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                       הוגש ב-{submittedTime}
                     </span>
                   )}
+                  {isUrgent && (
+                    <span className="text-[10px] text-orange-500 font-medium animate-pulse">
+                      ⚡ פחות מ-2 שעות לקיקאוף
+                    </span>
+                  )}
                 </>
               )}
             </div>
@@ -267,6 +277,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
               </span>
             </div>
           </div>
+
+          {/* פס חלוקת ניחושים — גלוי אחרי נעילה */}
+          {(isLocked || isLive || isFinished) && matchBetsAll.length > 0 && (
+            <BetDistributionBar bets={matchBetsAll} totalParticipants={participants.length} />
+          )}
 
           {/* ממתינים לתוצאה — רק כשנעול ולא live ולא גמור */}
           {isLocked && !isFinished && !isLive && (
@@ -303,6 +318,44 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
         participants={participants}
         isFinished={isFinished}
       />
+    </div>
+  )
+}
+
+// ── פס חלוקת ניחושים ──────────────────────────────────────────────────
+function BetDistributionBar({ bets, totalParticipants }: { bets: Bet[]; totalParticipants: number }) {
+  const total = bets.length
+  const homeWins = bets.filter(b => b.predictedScore.home > b.predictedScore.away).length
+  const draws    = bets.filter(b => b.predictedScore.home === b.predictedScore.away).length
+  const awayWins = bets.filter(b => b.predictedScore.home < b.predictedScore.away).length
+
+  const homePct = Math.round((homeWins / total) * 100)
+  const drawPct = Math.round((draws    / total) * 100)
+  const awayPct = 100 - homePct - drawPct
+
+  return (
+    <div className="mt-3 space-y-1.5">
+      <div className="flex justify-between items-center text-[10px] font-medium px-0.5">
+        <span className="text-emerald-600 dark:text-emerald-400">{homePct}% בית</span>
+        <span className="text-muted-foreground/60 text-[9px]">{total}/{totalParticipants} ניחשו</span>
+        <span className="text-blue-500 dark:text-blue-400">{awayPct}% חוץ</span>
+      </div>
+      <div className="h-1.5 rounded-full overflow-hidden flex bg-muted/40">
+        {homePct > 0 && (
+          <div className="h-full bg-emerald-500/70 transition-all duration-700" style={{ width: `${homePct}%` }} />
+        )}
+        {drawPct > 0 && (
+          <div className="h-full bg-slate-400/50 transition-all duration-700" style={{ width: `${drawPct}%` }} />
+        )}
+        {awayPct > 0 && (
+          <div className="h-full bg-blue-500/70 transition-all duration-700" style={{ width: `${awayPct}%` }} />
+        )}
+      </div>
+      {drawPct > 0 && (
+        <div className="flex justify-center text-[9px] text-muted-foreground/50">
+          {drawPct}% תיקו
+        </div>
+      )}
     </div>
   )
 }
