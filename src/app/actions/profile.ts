@@ -45,7 +45,7 @@ export async function uploadAvatar(
   const { error: uploadError } = await supabaseAdmin.storage
     .from('avatars')
     .upload(path, buffer, { contentType: detectedMime, upsert: true })
-  if (uploadError) return { error: uploadError.message }
+  if (uploadError) return { error: `upload: ${uploadError.message} (${uploadError.name})` }
 
   const { data } = supabaseAdmin.storage.from('avatars').getPublicUrl(path)
 
