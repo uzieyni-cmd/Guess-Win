@@ -336,7 +336,7 @@ function OddsBar({ odds }: { odds: { home: number; draw: number; away: number } 
   return (
     <div className="mt-3 space-y-1.5 text-[11px]">
       <div className="flex justify-end">
-        <Image src="/bet365-logo.png" alt="Bet365" width={48} height={18} className="mix-blend-multiply dark:mix-blend-screen" />
+        <Image src="/bet365-logo.png" alt="Bet365" width={48} height={18} className="opacity-90" />
       </div>
     <div className="flex items-center justify-between gap-1">
       <div className="flex-1 flex flex-col items-center gap-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-1.5 px-2">
