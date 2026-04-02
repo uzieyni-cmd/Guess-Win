@@ -1,7 +1,8 @@
+// SEC-05: endpoint זה הוא DB read בלבד — ללא קריאות ל-API-Football.
+// הסנכרון החי מטופל על ידי /api/cron/sync-live (רץ כל דקה בVercel Cron).
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 
-// endpoint זה מחזיר רק משחקים שנמצאים כעת ב-LIVE — ללא cache
 export const dynamic = 'force-dynamic'
 
 const COLS =

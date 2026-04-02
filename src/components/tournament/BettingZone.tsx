@@ -1,9 +1,10 @@
 'use client'
 import { useMemo } from 'react'
-import { AnimatePresence } from 'framer-motion'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { MatchCard } from './MatchCard'
+import { EmptyState } from '@/components/shared/EmptyState'
+import { Target } from 'lucide-react'
 import { Match } from '@/types'
 
 interface Props {
@@ -31,7 +32,7 @@ export function BettingZone({ matches }: Props) {
   }, [sorted])
 
   if (matches.length === 0) {
-    return <div className="text-center py-16 text-muted-foreground"><p>לא נקבעו משחקים עדיין.</p></div>
+    return <EmptyState icon={Target} title="לא נקבעו משחקים עדיין" />
   }
 
   return (
@@ -40,20 +41,18 @@ export function BettingZone({ matches }: Props) {
         <div key={date}>
           <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-1">{date}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-            <AnimatePresence>
-              {dayMatches.map((match) => {
-                const userBet = bets.find((b) => b.matchId === match.id && b.userId === currentUser?.id) ?? null
-                return (
-                  <MatchCard
-                    key={match.id}
-                    match={match}
-                    userBet={userBet}
-                    allBets={bets}
-                    participants={participants}
-                  />
-                )
-              })}
-            </AnimatePresence>
+            {dayMatches.map((match) => {
+              const userBet = bets.find((b) => b.matchId === match.id && b.userId === currentUser?.id) ?? null
+              return (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  userBet={userBet}
+                  allBets={bets}
+                  participants={participants}
+                />
+              )
+            })}
           </div>
         </div>
       ))}

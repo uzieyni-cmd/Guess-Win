@@ -1,5 +1,4 @@
 'use client'
-import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Trophy, Users, ChevronLeft } from 'lucide-react'
 import { Tournament } from '@/types'
@@ -34,13 +33,7 @@ export function CompetitionCard({ tournament, index }: Props) {
   const router = useRouter()
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
+    <div className="animate-fade-up transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]">
       <Card
         className={cn('cursor-pointer border-2 transition-all duration-200 overflow-hidden', statusBorders[tournament.status])}
         onClick={() => router.push(`/tournament/${tournament.id}/matches`)}
@@ -83,6 +76,6 @@ export function CompetitionCard({ tournament, index }: Props) {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   )
 }

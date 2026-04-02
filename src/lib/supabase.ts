@@ -50,6 +50,10 @@ export type DbMatch = {
   round: string | null
   elapsed_minutes: number | null
   match_period: string | null
+  odds_home: number | null
+  odds_draw: number | null
+  odds_away: number | null
+  odds_updated_at: string | null
   created_at: string
 }
 

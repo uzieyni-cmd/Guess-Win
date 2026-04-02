@@ -38,6 +38,9 @@ function dbMatchToMatch(m: DbMatch): Match {
     liveMinute: m.elapsed_minutes ?? undefined,
     matchPeriod: m.match_period ?? undefined,
     apiFixtureId: m.api_fixture_id ?? undefined,
+    odds: m.odds_home && m.odds_draw && m.odds_away
+      ? { home: m.odds_home, draw: m.odds_draw, away: m.odds_away }
+      : undefined,
     actualScore:
       m.actual_home_score !== null && m.actual_away_score !== null
         ? { home: m.actual_home_score, away: m.actual_away_score }

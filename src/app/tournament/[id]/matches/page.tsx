@@ -3,44 +3,12 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useTournament } from '@/context/TournamentContext'
 import { BettingZone } from '@/components/tournament/BettingZone'
-import { Target, ChevronDown, Loader2, EyeOff, Eye } from 'lucide-react'
-import { DbMatch } from '@/lib/supabase'
-import { translateTeam } from '@/lib/teams-he'
-import { Match } from '@/types'
-
-const LIVE_POLL_MS = 30_000
-
-function dbMatchToMatchPartial(m: DbMatch): Match {
-  return {
-    id: m.id,
-    tournamentId: m.tournament_id,
-    homeTeam: {
-      id: m.home_team_id,
-      name: translateTeam(m.home_team_name),
-      shortCode: m.home_team_short ?? m.home_team_name.slice(0, 3).toUpperCase(),
-      flagUrl: m.home_team_flag ?? '',
-    },
-    awayTeam: {
-      id: m.away_team_id,
-      name: translateTeam(m.away_team_name),
-      shortCode: m.away_team_short ?? m.away_team_name.slice(0, 3).toUpperCase(),
-      flagUrl: m.away_team_flag ?? '',
-    },
-    matchStartTime: m.match_start_time,
-    status: m.status as Match['status'],
-    round: m.round ?? undefined,
-    liveMinute: m.elapsed_minutes ?? undefined,
-    matchPeriod: m.match_period ?? undefined,
-    actualScore:
-      m.actual_home_score !== null && m.actual_away_score !== null
-        ? { home: m.actual_home_score, away: m.actual_away_score }
-        : null,
-  }
-}
+import { BettingZoneSkeleton } from '@/components/tournament/MatchCardSkeleton'
+import { Target, ChevronDown, Loader2, EyeOff, Eye, Trophy } from 'lucide-react'
 
 export default function MatchesPage() {
   const { id } = useParams() as { id: string }
-  const { activeTournament, reloadMatches, patchMatches } = useTournament()
+  const { activeTournament, reloadMatches } = useTournament()
 
   // ── state ───────────────────────────────────────────────────────
   const [loadingAll, setLoadingAll]       = useState(false)
@@ -51,35 +19,6 @@ export default function MatchesPage() {
   const [cursor, setCursor]               = useState<string | null>(null)
   const [hideFinished, setHideFinished]   = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
-
-  // ── Polling כל 30 שניות כשיש משחקים חיים (או כנראה חיים) ────────
-  useEffect(() => {
-    if (!activeTournament) return
-    const nowMs = Date.now()
-    const TWO_HALF_HOURS = 2.5 * 60 * 60 * 1000
-    // מצית פולינג גם כשה-DB עוד לא עודכן ל-live
-    const hasLive = activeTournament.matches.some((m) => {
-      if (m.status === 'live') return true
-      if (m.status === 'finished') return false
-      const startMs = new Date(m.matchStartTime).getTime()
-      return startMs < nowMs && startMs > nowMs - TWO_HALF_HOURS
-    })
-    if (!hasLive) return
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`/api/live/${id}`, { cache: 'no-store' })
-        if (!res.ok) return
-        const json: { matches: DbMatch[] } = await res.json()
-        patchMatches(id, json.matches.map(dbMatchToMatchPartial))
-      } catch {
-        // שקט — שגיאת רשת לא תקרוס את הדף
-      }
-    }
-
-    const timer = setInterval(poll, LIVE_POLL_MS)
-    return () => clearInterval(timer)
-  }, [activeTournament, id, patchMatches])
 
   // ── טעינה ראשונית — קבל cursor + hasPast מה-API ────────────────
   useEffect(() => {
@@ -125,13 +64,10 @@ export default function MatchesPage() {
   }
 
   if (!activeTournament) {
-    return (
-      <div className="flex justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
+    return <BettingZoneSkeleton />
   }
 
+  const isLoadingMatches = activeTournament.matches.length > 0 && activeTournament.matches.every(m => !m.homeTeam)
   const realMatches = activeTournament.matches.filter(m => !!m.homeTeam)
   const finishedCount = realMatches.filter(m => m.status === 'finished' || m.actualScore !== null).length
   const totalMatchCount = activeTournament.matches.length // כולל stubs
@@ -141,6 +77,18 @@ export default function MatchesPage() {
 
   return (
     <div>
+      {/* שם הטורניר + לוגו */}
+      <div className="flex items-center gap-3 mb-6 pb-5 border-b border-slate-700/50">
+        {activeTournament.logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={activeTournament.logoUrl} alt={activeTournament.name}
+            className="h-14 w-14 object-contain rounded-lg shrink-0" />
+        ) : (
+          <Trophy className="h-10 w-10 text-slate-500 shrink-0" />
+        )}
+        <h1 className="font-suez text-2xl text-slate-100 leading-tight">{activeTournament.name}</h1>
+      </div>
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Target className="h-5 w-5 text-emerald-500" />
@@ -180,7 +128,7 @@ export default function MatchesPage() {
         </div>
       </div>
 
-      <BettingZone matches={visibleMatches} />
+      {isLoadingMatches ? <BettingZoneSkeleton /> : <BettingZone matches={visibleMatches} />}
 
       {/* Sentinel — IntersectionObserver מזהה כשמגיעים לכאן */}
       <div ref={sentinelRef} className="h-4" />

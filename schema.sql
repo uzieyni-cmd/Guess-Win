@@ -58,8 +58,8 @@ create table if not exists public.bets (
   user_id uuid references public.profiles(id) on delete cascade,
   match_id uuid references public.matches(id) on delete cascade,
   tournament_id uuid references public.tournaments(id) on delete cascade,
-  predicted_home integer not null check (predicted_home >= 0),
-  predicted_away integer not null check (predicted_away >= 0),
+  predicted_home integer not null check (predicted_home >= 0 and predicted_home <= 30),
+  predicted_away integer not null check (predicted_away >= 0 and predicted_away <= 30),
   submitted_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique(user_id, match_id)
@@ -137,7 +137,7 @@ begin
     new.id,
     coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1)),
     new.email,
-    coalesce(new.raw_user_meta_data->>'role', 'user')
+    'user'  -- תמיד 'user' — role לעולם לא מגיע מ-metadata של הלקוח
   )
   on conflict (id) do nothing;
   return new;

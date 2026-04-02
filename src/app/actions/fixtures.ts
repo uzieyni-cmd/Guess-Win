@@ -2,7 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth-server'
-import { fetchFixtures, fetchFixtureById, mapFixtureStatus } from '@/lib/api-football'
+import { fetchFixtures, fetchFixtureById, fetchOdds, mapFixtureStatus } from '@/lib/api-football'
 
 // סנכרון משחקים מ-API-Football לתחרות קיימת
 // fromDate (YYYY-MM-DD) — אופציונלי: אם מוגדר, שולף רק משחקים מתאריך זה והלאה (לcron יומי)
@@ -47,6 +47,37 @@ export async function syncFixtures(
     }
 
     return { synced: rows.length }
+  } catch (err) {
+    return { synced: 0, error: String(err) }
+  }
+}
+
+// סנכרון יחסי הימורים (Bet365) לכל המשחקים הקרובים בטורניר
+export async function syncOdds(
+  tournamentId: string,
+): Promise<{ synced: number; error?: string }> {
+  await requireAdmin()
+  try {
+    const { data: matches } = await supabaseAdmin
+      .from('matches')
+      .select('id, api_fixture_id')
+      .eq('tournament_id', tournamentId)
+      .eq('status', 'scheduled')
+      .not('api_fixture_id', 'is', null)
+
+    if (!matches?.length) return { synced: 0 }
+
+    let synced = 0
+    for (const m of matches as { id: string; api_fixture_id: number }[]) {
+      const odds = await fetchOdds(m.api_fixture_id)
+      if (!odds) continue
+      await supabaseAdmin
+        .from('matches')
+        .update({ odds_home: odds.home, odds_draw: odds.draw, odds_away: odds.away, odds_updated_at: new Date().toISOString() })
+        .eq('id', m.id)
+      synced++
+    }
+    return { synced }
   } catch (err) {
     return { synced: 0, error: String(err) }
   }

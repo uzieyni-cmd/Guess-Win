@@ -1,8 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { ArrowRight, Trophy, BarChart2, User, Target, LogOut, Settings } from 'lucide-react'
+import { ArrowRight, Trophy, TrendingUp, User, Target, LogOut, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useTournament } from '@/context/TournamentContext'
@@ -12,8 +11,8 @@ import { cn } from '@/lib/utils'
 
 const NAV_TABS = [
   { label: 'משחקים', href: 'matches', icon: Target },
-  { label: 'דירוג', href: 'leaderboard', icon: BarChart2 },
-  { label: 'סטטיסטיקה', href: 'stats', icon: BarChart2 },
+  { label: 'דירוג', href: 'leaderboard', icon: Trophy },
+  { label: 'סטטיסטיקה', href: 'stats', icon: TrendingUp },
   { label: 'הניחושים שלי', href: 'personal', icon: User },
 ]
 
@@ -30,9 +29,6 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
   }, [id, setActiveTournamentId])
 
   const tournament = activeTournament ?? tournaments.find((t) => t.id === id)
-  const [logoError, setLogoError] = useState(false)
-  // Reset error state when navigating to a different tournament
-  useEffect(() => { setLogoError(false) }, [tournament?.logoUrl])
 
   return (
     <div className="min-h-screen bg-[#070b14] flex flex-col">
@@ -60,28 +56,17 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
         }
         below={
           <div className="flex gap-0.5 border-t border-white/5">
-            {/* tournament name */}
-            <div className="flex items-center gap-2 px-1 py-2 mr-1">
-              {tournament?.logoUrl && !logoError ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={tournament.logoUrl} alt={tournament.name}
-                  className="h-5 w-5 object-contain rounded shrink-0" onError={() => setLogoError(true)} />
-              ) : (
-                <Trophy className="h-4 w-4 text-slate-500 shrink-0" />
-              )}
-              <span className="text-xs font-medium text-slate-400 truncate max-w-[120px]">{tournament?.name}</span>
-              <span className="text-slate-700">|</span>
-            </div>
             {NAV_TABS.map((tab) => {
               const isActive = pathname.endsWith(`/${tab.href}`)
               return (
                 <Link key={tab.href} href={`/tournament/${id}/${tab.href}`}
                   className={cn(
-                    'px-3 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap',
+                    'flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap',
                     isActive
                       ? 'text-emerald-400 border-emerald-400'
                       : 'text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600'
                   )}>
+                  <tab.icon className="h-3.5 w-3.5 shrink-0" />
                   {tab.label}
                 </Link>
               )
@@ -91,15 +76,9 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
       />
 
       {/* Content */}
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-        className="flex-1 max-w-[1600px] mx-auto w-full px-4 py-6"
-      >
+      <div key={pathname} className="flex-1 max-w-[1600px] mx-auto w-full px-4 py-6 animate-fade-up">
         {children}
-      </motion.div>
+      </div>
     </div>
   )
 }

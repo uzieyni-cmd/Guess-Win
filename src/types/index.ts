@@ -47,6 +47,7 @@ export interface Match {
   liveMinute?: number
   matchPeriod?: string   // '1H' | '2H' | 'HT' | 'ET' | 'P' | 'BT'
   apiFixtureId?: number
+  odds?: { home: number; draw: number; away: number }
 }
 
 export interface Score {

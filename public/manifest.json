@@ -1,0 +1,35 @@
+{
+  "name": "Guess & Win – ניחושי כדורגל",
+  "short_name": "Guess & Win",
+  "description": "התחרה בטורנירי ניחושי כדורגל עם החברים שלך",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "orientation": "portrait-primary",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["games", "sports"],
+  "shortcuts": [
+    {
+      "name": "תחרויות",
+      "url": "/competitions",
+      "description": "ראה את כל התחרויות"
+    }
+  ]
+}

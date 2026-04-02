@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import { Trophy, Users, Target, BarChart2 } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { supabase } from '@/lib/supabase'
@@ -25,9 +24,9 @@ export default function AdminOverviewPage() {
   return (
     <div className="p-6 max-w-4xl">
       <h1 className="font-suez text-2xl text-white mb-6">סקירת מנהל</h1>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {stats.map((s, i) => (
-          <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 stagger">
+        {stats.map((s) => (
+          <div key={s.label} className="animate-fade-up">
             <div className="rounded-xl bg-slate-800/50 border border-slate-700/40 p-4">
               <p className="text-xs text-slate-500 mb-2">{s.label}</p>
               <div className="flex items-center gap-2.5">
@@ -37,7 +36,7 @@ export default function AdminOverviewPage() {
                 <span className="text-3xl font-bold text-white">{s.value}</span>
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 

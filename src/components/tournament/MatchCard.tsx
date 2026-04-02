@@ -283,6 +283,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             </div>
           </div>
 
+          {/* יחסי הימורים — גלויים רק לפני נעילה */}
+          {!isLocked && !isFinished && !isLive && match.odds && (
+            <OddsBar odds={match.odds} />
+          )}
+
           {/* פס חלוקת ניחושים — גלוי אחרי נעילה */}
           {(isLocked || isLive || isFinished) && matchBetsAll.length > 0 && (
             <BetDistributionBar bets={matchBetsAll} totalParticipants={participants.length} />
@@ -323,6 +328,26 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
         participants={participants}
         isFinished={isFinished}
       />
+    </div>
+  )
+}
+
+// ── יחסי הימורים (Bet365) ─────────────────────────────────────────────
+function OddsBar({ odds }: { odds: { home: number; draw: number; away: number } }) {
+  return (
+    <div className="mt-3 flex items-center justify-between gap-1 text-[11px]" dir="ltr">
+      <div className="flex-1 flex flex-col items-center gap-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-1.5 px-2">
+        <span className="text-muted-foreground font-medium">1</span>
+        <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{odds.home.toFixed(2)}</span>
+      </div>
+      <div className="flex-1 flex flex-col items-center gap-0.5 bg-slate-500/10 border border-slate-500/20 rounded-lg py-1.5 px-2">
+        <span className="text-muted-foreground font-medium">X</span>
+        <span className="font-bold tabular-nums text-slate-500">{odds.draw.toFixed(2)}</span>
+      </div>
+      <div className="flex-1 flex flex-col items-center gap-0.5 bg-blue-500/10 border border-blue-500/20 rounded-lg py-1.5 px-2">
+        <span className="text-muted-foreground font-medium">2</span>
+        <span className="font-bold tabular-nums text-blue-600 dark:text-blue-400">{odds.away.toFixed(2)}</span>
+      </div>
     </div>
   )
 }

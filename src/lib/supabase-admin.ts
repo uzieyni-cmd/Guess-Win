@@ -1,5 +1,7 @@
 // Server-side only! Uses service role key – bypasses RLS.
-// Import ONLY in Server Actions or Route Handlers.
+// Import ONLY from: Server Actions ('use server'), Route Handlers, auth-server.ts
+// DO NOT import in Client Components or files without 'use server'.
+import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 
 export const supabaseAdmin = createClient(

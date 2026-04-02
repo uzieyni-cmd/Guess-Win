@@ -77,6 +77,49 @@ export async function fetchLeagues(): Promise<ApiLeague[]> {
   return apiFetch<ApiLeague>('/leagues?type=cup&type=league')
 }
 
+// Bet365 bookmaker ID = 8 | Match Winner bet ID = 1
+const BET365_ID = 8
+
+export interface ApiOddsResult {
+  home: number
+  draw: number
+  away: number
+}
+
+export async function fetchOdds(fixtureId: number): Promise<ApiOddsResult | null> {
+  try {
+    const data = await apiFetchRaw<{
+      bookmakers: {
+        id: number
+        bets: { id: number; values: { value: string; odd: string }[] }[]
+      }[]
+    }>(`/odds?fixture=${fixtureId}&bet=1&bookmaker=${BET365_ID}`, true)
+
+    // נסה Bet365 קודם, fallback לכל בוקמייקר אחר
+    let bets = data.response[0]?.bookmakers
+      .find(b => b.id === BET365_ID)
+      ?.bets.find(b => b.id === 1)
+      ?.values
+
+    if (!bets) {
+      bets = data.response[0]?.bookmakers[0]
+        ?.bets.find(b => b.id === 1)
+        ?.values
+    }
+
+    if (!bets) return null
+
+    const home = parseFloat(bets.find(v => v.value === 'Home')?.odd ?? '0')
+    const draw = parseFloat(bets.find(v => v.value === 'Draw')?.odd ?? '0')
+    const away = parseFloat(bets.find(v => v.value === 'Away')?.odd ?? '0')
+
+    if (!home || !draw || !away) return null
+    return { home, draw, away }
+  } catch {
+    return null
+  }
+}
+
 // ── Status Mapper ────────────────────────────────────────────────
 
 export function mapFixtureStatus(short: string): string {

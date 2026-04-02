@@ -17,22 +17,18 @@ export function SiteHeader({ left, right, className, below }: Props) {
     )}>
       <div className="max-w-[1600px] mx-auto px-4">
         <div className="flex items-center justify-between h-[68px]">
-          {/* שמאל: actions (back, settings…) */}
-          <div className="flex items-center gap-1 min-w-[80px]">
-            {left}
-          </div>
-
-          {/* מרכז: לוגו + כותרת */}
-          <div className="flex items-center gap-3 select-none">
-            <Image src="/logo.svg" alt="Guess&Win" width={48} height={56} priority />
-            <span className="font-black text-2xl tracking-widest leading-none whitespace-nowrap">
+          {/* RTL: לוגו + כותרת + back — בצד ימין */}
+          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+            {left && <div className="shrink-0">{left}</div>}
+            <Image src="/logo.svg" alt="Guess&Win" width={38} height={44} className="sm:w-[48px] sm:h-[56px] shrink-0" priority />
+            <span className="font-black text-lg sm:text-2xl tracking-widest leading-none whitespace-nowrap select-none">
               <span className="text-white">GUESS</span>
               <span className="text-yellow-400"> &amp; WIN</span>
             </span>
           </div>
 
-          {/* ימין: actions (avatar, logout…) */}
-          <div className="flex items-center gap-1 min-w-[80px] justify-end">
+          {/* RTL: כפתורי פעולה — בצד שמאל */}
+          <div className="flex items-center gap-1 shrink-0">
             {right}
           </div>
         </div>

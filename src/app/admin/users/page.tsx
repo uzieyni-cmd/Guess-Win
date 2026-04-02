@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import { Users, Save, CheckCircle2 } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { supabase } from '@/lib/supabase'
@@ -72,9 +71,9 @@ export default function AdminUsersPage() {
         <p className="text-center py-12 text-slate-500">אין משתמשים רשומים עדיין.</p>
       )}
 
-      <div className="space-y-3">
-        {users.map((user, i) => (
-          <motion.div key={user.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+      <div className="space-y-3 stagger">
+        {users.map((user) => (
+          <div key={user.id} className="animate-fade-up">
             <div className="rounded-xl bg-slate-800/50 border border-slate-700/40 overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/30">
                 <div className="flex items-center gap-3">
@@ -113,7 +112,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>

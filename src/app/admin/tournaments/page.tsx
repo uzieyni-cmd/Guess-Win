@@ -1,12 +1,12 @@
 'use client'
 import { useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2, Upload, Link2, Search, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useTournament } from '@/context/TournamentContext'
 import { fetchLeagueSeasons, fetchAllLeagues, type LeagueItem } from '@/app/actions/leagues'
 import { adminUpdateTournament, fetchLogoForTournament, uploadLogo } from '@/app/actions/tournaments'
+import { syncFixtures } from '@/app/actions/fixtures'
 import { Tournament } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,6 +48,7 @@ export default function AdminTournamentsPage() {
   const [confirmDelete, setConfirmDelete] = useState<Tournament | null>(null)
   const router = useRouter()
   const [creating, setCreating] = useState(false)
+  const [createStep, setCreateStep] = useState<'creating' | 'syncing' | null>(null)
   const [createError, setCreateError] = useState('')
 
   // ── Create state ─────────────────────────────────────────────────
@@ -134,6 +135,7 @@ export default function AdminTournamentsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
+    setCreateStep('creating')
     setCreateError('')
     try {
       const newId = await createTournament({
@@ -142,6 +144,13 @@ export default function AdminTournamentsPage() {
         apiSeason:   season   ? parseInt(season)   : undefined,
       })
       if (!newId) { setCreateError('שגיאה ביצירת התחרות — נסה שוב'); return }
+
+      // Auto-sync matches from API if league configured
+      if (leagueId && season) {
+        setCreateStep('syncing')
+        await syncFixtures(newId, parseInt(leagueId), parseInt(season))
+      }
+
       setCreateOpen(false)
       setName(''); setDescription(''); setLogoUrl('')
       setLeagueId(''); setSeason(''); setSeasons([])
@@ -151,6 +160,7 @@ export default function AdminTournamentsPage() {
       setCreateError(String(err))
     } finally {
       setCreating(false)
+      setCreateStep(null)
     }
   }
 
@@ -360,9 +370,11 @@ export default function AdminTournamentsPage() {
 
               {createError && <p className="text-sm text-red-500">{createError}</p>}
               <Button type="submit" className="w-full" disabled={creating}>
-                {creating
-                  ? <><Loader2 className="h-4 w-4 ml-1 animate-spin" />יוצר...</>
-                  : <><Plus className="h-4 w-4 ml-1" />צור תחרות</>}
+                {createStep === 'syncing'
+                  ? <><Loader2 className="h-4 w-4 ml-1 animate-spin" />טוען משחקים מ-API...</>
+                  : creating
+                    ? <><Loader2 className="h-4 w-4 ml-1 animate-spin" />יוצר תחרות...</>
+                    : <><Plus className="h-4 w-4 ml-1" />צור תחרות</>}
               </Button>
             </form>
           </DialogContent>
@@ -370,9 +382,9 @@ export default function AdminTournamentsPage() {
       </div>
 
       {/* Tournament list */}
-      <div className="space-y-3">
-        {tournaments.map((t, i) => (
-          <motion.div key={t.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
+      <div className="space-y-3 stagger">
+        {tournaments.map((t) => (
+          <div key={t.id} className="animate-fade-in">
             <Card className={t.isHidden ? 'opacity-60' : ''}>
               <CardContent className="p-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
@@ -421,7 +433,7 @@ export default function AdminTournamentsPage() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
         {tournaments.length === 0 && (
           <p className="text-center py-12 text-muted-foreground">אין תחרויות עדיין. צור את הראשונה!</p>

@@ -6,7 +6,8 @@ export const revalidate = 30
 const COLS =
   'id,tournament_id,home_team_id,home_team_name,home_team_short,home_team_flag,' +
   'away_team_id,away_team_name,away_team_short,away_team_flag,' +
-  'match_start_time,status,actual_home_score,actual_away_score,api_fixture_id,round,elapsed_minutes,match_period'
+  'match_start_time,status,actual_home_score,actual_away_score,api_fixture_id,round,elapsed_minutes,match_period,' +
+  'odds_home,odds_draw,odds_away'
 
 const WINDOW_FUTURE = 30  // ימים קדימה לחלון הראשוני
 const PAGE_SIZE     = 20  // גודל דף infinite scroll

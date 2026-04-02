@@ -105,10 +105,10 @@ describe('profile card', () => {
     expect(screen.queryByText('מנהל')).not.toBeInTheDocument()
   })
 
-  it('shows initials in avatar fallback', () => {
+  it('shows initials in avatar fallback', async () => {
     render(<ProfilePage />)
-    // First letter of "ישראל" is "י"
-    expect(screen.getAllByText('י').length).toBeGreaterThan(0)
+    // First letter of "ישראל" is "י" — wait for async bets fetch to settle
+    await waitFor(() => expect(screen.getAllByText('י').length).toBeGreaterThan(0))
   })
 
   it('navigates back when back button is clicked', async () => {

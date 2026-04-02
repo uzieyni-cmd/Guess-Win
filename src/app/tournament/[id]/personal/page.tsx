@@ -1,8 +1,8 @@
 'use client'
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
 import { User } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
+import { EmptyState } from '@/components/shared/EmptyState'
 import { useAuth } from '@/context/AuthContext'
 import { calculateScore } from '@/lib/scoring'
 import { PointsBadge } from '@/components/shared/PointsBadge'
@@ -35,11 +35,11 @@ export default function PersonalPage() {
         <h2 className="font-suez text-xl text-slate-100">הניחושים שלי</h2>
       </div>
       {myBets.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">לא הגשת ניחושים עדיין.</div>
+        <EmptyState icon={User} title="לא הגשת ניחושים עדיין" subtitle="עבור למשחקים והגש ניחושים" />
       ) : (
-        <div className="space-y-3">
-          {myBets.map(({ bet, match, result }, i) => (
-            <motion.div key={bet.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+        <div className="space-y-3 stagger">
+          {myBets.map(({ bet, match, result }) => (
+            <div key={bet.id} className="animate-fade-up">
               <Card>
                 <CardContent className="p-3">
                   <div className="flex items-center gap-3">
@@ -67,7 +67,7 @@ export default function PersonalPage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
