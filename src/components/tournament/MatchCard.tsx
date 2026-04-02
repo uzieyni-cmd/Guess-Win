@@ -333,7 +333,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 // ── יחסי הימורים (Bet365) ─────────────────────────────────────────────
 function OddsBar({ odds }: { odds: { home: number; draw: number; away: number } }) {
   return (
-    <div className="mt-3 flex items-center justify-between gap-1 text-[11px]" dir="ltr">
+    <div className="mt-3 flex items-center justify-between gap-1 text-[11px]">
       <div className="flex-1 flex flex-col items-center gap-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-1.5 px-2">
         <span className="text-muted-foreground font-medium">1</span>
         <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{odds.home.toFixed(2)}</span>
