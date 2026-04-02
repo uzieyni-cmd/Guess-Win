@@ -4,7 +4,6 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 const MAX_AVATAR_BYTES = 512 * 1024 // 512 KB (after client-side resize)
-const BUCKET = 'avatars'
 
 export async function uploadAvatar(
   formData: FormData
@@ -17,21 +16,16 @@ export async function uploadAvatar(
   if (!file || !file.size) return { error: 'לא נבחר קובץ' }
   if (file.size > MAX_AVATAR_BYTES) return { error: 'הקובץ גדול מדי' }
 
-  const buffer = new Uint8Array(await file.arrayBuffer())
-  const path = `${user.id}/avatar.jpg`
+  // Convert to base64 data URL and store directly in avatar_url column
+  const buffer = await file.arrayBuffer()
+  const base64 = Buffer.from(buffer).toString('base64')
+  const dataUrl = `data:image/jpeg;base64,${base64}`
 
-  // Use the user's own session for upload (respects storage RLS policies)
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, buffer, { contentType: 'image/jpeg', upsert: true })
-  if (uploadError) return { error: `upload: ${uploadError.message}` }
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
-
-  await supabaseAdmin
+  const { error } = await supabaseAdmin
     .from('profiles')
-    .update({ avatar_url: data.publicUrl })
+    .update({ avatar_url: dataUrl })
     .eq('id', user.id)
 
-  return { url: data.publicUrl }
+  if (error) return { error: error.message }
+  return { url: dataUrl }
 }
