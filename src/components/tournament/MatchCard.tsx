@@ -128,13 +128,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     if (!userBet) return null
     const ts = new Date(userBet.updatedAt ?? userBet.submittedAt)
     const isUpdated = userBet.updatedAt && userBet.updatedAt !== userBet.submittedAt
-    const today = new Date()
-    const isToday = ts.toDateString() === today.toDateString()
-    const dateStr = isToday
-      ? ''
-      : ts.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }) + ' · '
     const timeStr = ts.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-    return { text: `${dateStr}${timeStr}`, isUpdated }
+    const day   = String(ts.getDate()).padStart(2, '0')
+    const month = String(ts.getMonth() + 1).padStart(2, '0')
+    const year  = ts.getFullYear()
+    return { text: `${timeStr} ${day}/${month}/${year}`, isUpdated }
   })()
 
   const matchDate = new Date(match.matchStartTime)
