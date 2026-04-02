@@ -1,7 +1,7 @@
 'use client'
 import { Trophy } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { cn } from '@/lib/utils'
 
@@ -39,6 +39,7 @@ export default function LeaderboardPage() {
                 {i < 3 ? i + 1 : s.rank}
               </div>
               <Avatar className="h-9 w-9">
+                <AvatarImage src={s.user.avatarUrl} />
                 <AvatarFallback className="bg-slate-700 text-slate-200 text-sm font-bold">
                   {s.user.displayName.charAt(0)}
                 </AvatarFallback>
