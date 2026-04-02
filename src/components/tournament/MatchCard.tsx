@@ -12,6 +12,7 @@ import { CountdownTimer } from './CountdownTimer'
 import { ScoreInput } from './ScoreInput'
 import { PointsBadge } from '@/components/shared/PointsBadge'
 import { calculateScore } from '@/lib/scoring'
+import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
@@ -333,7 +334,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 // ── יחסי הימורים (Bet365) ─────────────────────────────────────────────
 function OddsBar({ odds }: { odds: { home: number; draw: number; away: number } }) {
   return (
-    <div className="mt-3 flex items-center justify-between gap-1 text-[11px]">
+    <div className="mt-3 space-y-1.5 text-[11px]">
+      <div className="flex justify-end">
+        <Image src="/bet365-logo.png" alt="Bet365" width={48} height={18} className="opacity-80" />
+      </div>
+    <div className="flex items-center justify-between gap-1">
       <div className="flex-1 flex flex-col items-center gap-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-1.5 px-2">
         <span className="text-muted-foreground font-medium">1</span>
         <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{odds.home.toFixed(2)}</span>
@@ -346,6 +351,7 @@ function OddsBar({ odds }: { odds: { home: number; draw: number; away: number } 
         <span className="text-muted-foreground font-medium">2</span>
         <span className="font-bold tabular-nums text-blue-600 dark:text-blue-400">{odds.away.toFixed(2)}</span>
       </div>
+    </div>
     </div>
   )
 }
