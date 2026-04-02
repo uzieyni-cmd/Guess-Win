@@ -32,6 +32,12 @@ export function LoginForm() {
   const [isLoading, setIsLoading]     = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm]   = useState(false)
+  const [rememberMe, setRememberMe]     = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('gw_saved_email')
+    if (saved) { setEmail(saved); setRememberMe(true) }
+  }, [])
 
   const reset = () => {
     setError(''); setSuccess('')
@@ -46,6 +52,11 @@ export function LoginForm() {
     setError(''); setIsLoading(true)
     try {
       await login(email, password)
+      if (rememberMe) {
+        localStorage.setItem('gw_saved_email', email)
+      } else {
+        localStorage.removeItem('gw_saved_email')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בכניסה')
     } finally {
@@ -160,6 +171,29 @@ export function LoginForm() {
                     </button>
                   </div>
                 </div>
+                <label className="flex items-center gap-2.5 cursor-pointer select-none group w-fit">
+                  <div
+                    onClick={() => setRememberMe(v => !v)}
+                    className={cn(
+                      'h-4 w-4 rounded border transition-all shrink-0 flex items-center justify-center',
+                      rememberMe
+                        ? 'bg-emerald-500 border-emerald-500'
+                        : 'border-slate-600 bg-slate-800/60 group-hover:border-slate-400'
+                    )}
+                  >
+                    {rememberMe && (
+                      <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 4l2.5 2.5L9 1" />
+                      </svg>
+                    )}
+                  </div>
+                  <span
+                    onClick={() => setRememberMe(v => !v)}
+                    className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors"
+                  >
+                    זכור אותי
+                  </span>
+                </label>
                 {error && <p className="text-sm text-red-400 text-center">{error}</p>}
                 <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold mt-2" disabled={isLoading}>
                   {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
