@@ -283,6 +283,11 @@ export const TEAMS_HE: Record<string, string> = {
   'Jordan':            'ירדן',
   'Uzbekistan':        'אוזבקיסטן',
   'New Zealand':       'ניו זילנד',
+  'Haiti':             'האיטי',
+  'Curacao':           'קוראסאו',
+  'Curaçao':           'קוראסאו',
+  'Cape Verde':        'כף ורדה',
+  'Cape Verde Islands': 'כף ורדה',
 
   // ── ליגות מקומיות נוספות ─────────────────────────────────────────
 
