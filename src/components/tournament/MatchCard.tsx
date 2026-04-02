@@ -194,8 +194,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
               <TeamFlag team={match.homeTeam} className="h-14 w-14 sm:h-20 sm:w-20" />
               <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>
-                <span className="hidden sm:inline">{match.homeTeam.name}</span>
-                <span className="sm:hidden">{match.homeTeam.shortCode ?? match.homeTeam.name}</span>
+                {match.homeTeam.name}
               </span>
             </div>
 
@@ -279,8 +278,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
               <TeamFlag team={match.awayTeam} className="h-14 w-14 sm:h-20 sm:w-20" />
               <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>
-                <span className="hidden sm:inline">{match.awayTeam.name}</span>
-                <span className="sm:hidden">{match.awayTeam.shortCode ?? match.awayTeam.name}</span>
+                {match.awayTeam.name}
               </span>
             </div>
           </div>
