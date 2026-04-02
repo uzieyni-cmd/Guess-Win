@@ -29,13 +29,15 @@ export async function GET(req: Request) {
   if (tErr) return NextResponse.json({ error: tErr.message }, { status: 500 })
   if (!tournaments?.length) return NextResponse.json({ synced: 0, tournaments: 0 })
 
+  // מתאריך היום — הcron היומי שולף רק משחקים עתידיים לחסכון בקריאות API
+  const today = new Date().toISOString().split('T')[0]
+
   let totalSynced = 0
   const results: { id: string; synced: number; error?: string }[] = []
 
   for (const t of tournaments) {
     try {
-      // ללא פילטר תאריך — שולפים את כל המשחקים בעונה (כולל עבר) כדי לעדכן תוצאות
-      const fixtures = await fetchFixtures(t.api_league_id, t.api_season)
+      const fixtures = await fetchFixtures(t.api_league_id, t.api_season, today)
 
       const rows = fixtures.map((f) => ({
         tournament_id: t.id,
