@@ -10,7 +10,7 @@ interface AuthContextType {
   /** true once the full DB profile (role, competitionIds, etc.) has been fetched */
   isProfileReady: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, displayName: string) => Promise<void>
+  register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>
   logout: () => void
   refreshUser: () => Promise<void>
 }
@@ -35,6 +35,8 @@ async function loadProfile(userId: string): Promise<User | null> {
     id: profile.id,
     email: profile.email,
     displayName: profile.display_name,
+    firstName: profile.first_name ?? undefined,
+    lastName: profile.last_name ?? undefined,
     avatarUrl: profile.avatar_url ?? undefined,
     role: profile.role,
     competitionIds: participations?.map((p: { tournament_id: string }) => p.tournament_id) ?? [],
@@ -144,11 +146,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const register = useCallback(async (email: string, password: string, displayName: string) => {
+  const register = useCallback(async (email: string, password: string, firstName: string, lastName: string) => {
+    const displayName = `${firstName.trim()} ${lastName.trim()}`.trim()
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { display_name: displayName } },
+      options: { data: { display_name: displayName, first_name: firstName.trim(), last_name: lastName.trim() } },
     })
     if (error) throw new Error(error.message)
   }, [])

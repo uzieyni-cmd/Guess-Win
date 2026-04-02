@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { ArrowRight, BarChart3, Camera, CheckCircle2, Loader2, Lock, User } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { AuthGuard } from '@/components/auth/AuthGuard'
@@ -12,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
+import { uploadAvatar } from '@/app/actions/profile'
 
 interface Stats {
   totalBets: number
@@ -44,7 +44,8 @@ function ProfileContent() {
   const router = useRouter()
 
   // Edit name
-  const [displayName, setDisplayName] = useState(currentUser?.displayName ?? '')
+  const [firstName, setFirstName] = useState(currentUser?.firstName ?? '')
+  const [lastName, setLastName]   = useState(currentUser?.lastName ?? '')
   const [nameLoading, setNameLoading] = useState(false)
   const [nameError, setNameError] = useState('')
   const [nameSuccess, setNameSuccess] = useState(false)
@@ -112,14 +113,15 @@ function ProfileContent() {
   }
 
   async function handleSaveName() {
-    if (!currentUser || !displayName.trim()) return
+    if (!currentUser || !firstName.trim() || !lastName.trim()) return
     setNameLoading(true)
     setNameError('')
     setNameSuccess(false)
     try {
+      const displayName = `${firstName.trim()} ${lastName.trim()}`
       const { error } = await supabase
         .from('profiles')
-        .update({ display_name: displayName.trim() })
+        .update({ first_name: firstName.trim(), last_name: lastName.trim(), display_name: displayName })
         .eq('id', currentUser.id)
       if (error) throw error
       await refreshUser()
@@ -164,20 +166,10 @@ function ProfileContent() {
     setAvatarLoading(true)
     setAvatarError('')
     try {
-      const ext = file.name.split('.').pop()
-      const path = `${currentUser.id}/avatar.${ext}`
-
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', currentUser.id)
-      if (updateError) throw updateError
-
+      const formData = new FormData()
+      formData.append('file', file)
+      const result = await uploadAvatar(formData)
+      if (result.error) { setAvatarError(result.error); return }
       await refreshUser()
     } catch {
       setAvatarError('שגיאה בהעלאת התמונה')
@@ -205,7 +197,7 @@ function ProfileContent() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <div className="space-y-4 animate-fade-up">
 
           {/* Profile summary */}
           <Card className="bg-gray-900/60 border-white/10">
@@ -241,23 +233,34 @@ function ProfileContent() {
             </CardContent>
           </Card>
 
-          {/* Edit display name */}
+          {/* Edit name */}
           <Card className="bg-gray-900/60 border-white/10">
             <CardHeader className="pb-3">
               <CardTitle className="text-white text-base flex items-center gap-2">
                 <User className="h-4 w-4 text-emerald-400" />
-                עריכת שם תצוגה
+                עריכת שם
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-emerald-200 text-sm">שם תצוגה</Label>
-                <Input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
-                  placeholder="השם שלך"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-emerald-200 text-sm">שם פרטי</Label>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                    placeholder="ישראל"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-emerald-200 text-sm">שם משפחה</Label>
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                    placeholder="ישראלי"
+                  />
+                </div>
               </div>
               {nameError && <p className="text-red-400 text-sm">{nameError}</p>}
               {nameSuccess && (
@@ -267,7 +270,7 @@ function ProfileContent() {
               )}
               <Button
                 onClick={handleSaveName}
-                disabled={nameLoading || !displayName.trim() || displayName.trim() === currentUser?.displayName}
+                disabled={nameLoading || !firstName.trim() || !lastName.trim()}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
               >
                 {nameLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
@@ -368,7 +371,7 @@ function ProfileContent() {
             </CardContent>
           </Card>
 
-        </motion.div>
+        </div>
       </div>
     </div>
   )
