@@ -83,12 +83,18 @@ export default function AdminUsersPage() {
 
   const exportExcel = async () => {
     const { utils, writeFile } = await import('xlsx')
-    const rows = users.map((u) => ({
-      'שם פרטי':    u.firstName ?? '',
-      'שם משפחה':  u.lastName  ?? '',
-      'מס טלפון':  u.phone     ?? '',
-      'מייל':      u.email,
-    }))
+    const rows = users.map((u) => {
+      const base: Record<string, string> = {
+        'שם פרטי':   u.firstName ?? '',
+        'שם משפחה': u.lastName  ?? '',
+        'מס טלפון': u.phone     ?? '',
+        'מייל':     u.email,
+      }
+      for (const t of tournaments) {
+        base[t.name] = u.competitionIds.includes(t.id) ? '✓' : ''
+      }
+      return base
+    })
     const ws = utils.json_to_sheet(rows)
     const wb = utils.book_new()
     utils.book_append_sheet(wb, ws, 'משתמשים')
