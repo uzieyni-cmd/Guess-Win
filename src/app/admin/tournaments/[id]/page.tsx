@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye } from 'lucide-react'
+import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
 import { supabase } from '@/lib/supabase'
@@ -13,6 +14,197 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { Match } from '@/types'
+import { ApiFixture } from '@/lib/api-football'
+import { translateTeam } from '@/lib/teams-he'
+
+// ── BracketConfigSection ─────────────────────────────────────────
+
+interface TieInfo {
+  key: string
+  team1: { id: number; name: string; logo: string }
+  team2: { id: number; name: string; logo: string }
+}
+
+function buildTieInfos(fixtures: ApiFixture[]): TieInfo[] {
+  const map = new Map<string, TieInfo>()
+  for (const f of fixtures) {
+    const ids = [f.teams.home.id, f.teams.away.id].sort((a, b) => a - b)
+    const key = ids.join('-')
+    if (!map.has(key)) {
+      const team1 = f.teams.home.id === ids[0] ? f.teams.home : f.teams.away
+      const team2 = f.teams.home.id === ids[1] ? f.teams.home : f.teams.away
+      map.set(key, { key, team1, team2 })
+    }
+  }
+  return Array.from(map.values())
+}
+
+const ROUND_ORDER_ADMIN = [
+  'Round of 32', 'Round Of 32',
+  'Round of 16', 'Round Of 16', '1/8-finals',
+  'Quarter-finals', '1/4-finals',
+  'Semi-finals', '1/2-finals',
+  'Final',
+]
+
+function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
+  const [loading, setLoading] = useState(true)
+  const [firstRoundKey, setFirstRoundKey] = useState<string | null>(null)
+  const [firstRoundLabel, setFirstRoundLabel] = useState<string>('')
+  const [ties, setTies] = useState<TieInfo[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/knockout/${tournamentId}`)
+      .then(r => r.ok ? r.json() : null)
+      .catch(() => null)
+      .then(data => {
+        if (!data?.rounds || Object.keys(data.rounds).length === 0) {
+          setLoading(false)
+          return
+        }
+
+        const sortedKeys = Object.keys(data.rounds).sort((a: string, b: string) => {
+          const ai = ROUND_ORDER_ADMIN.findIndex(r => r.toLowerCase() === a.toLowerCase())
+          const bi = ROUND_ORDER_ADMIN.findIndex(r => r.toLowerCase() === b.toLowerCase())
+          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+        })
+
+        const firstKey = sortedKeys[0]
+        setFirstRoundKey(firstKey)
+        setFirstRoundLabel(firstKey)
+
+        const builtTies = buildTieInfos(data.rounds[firstKey] as ApiFixture[])
+
+        // Pre-populate from bracketConfig if it exists and matches firstRound
+        if (
+          data.bracketConfig?.firstRound?.toLowerCase() === firstKey.toLowerCase() &&
+          Array.isArray(data.bracketConfig.tieOrder) &&
+          data.bracketConfig.tieOrder.length > 0
+        ) {
+          const orderedKeys: string[] = data.bracketConfig.tieOrder
+          const tieMap = new Map(builtTies.map(t => [t.key, t]))
+          const ordered: TieInfo[] = []
+          for (const k of orderedKeys) {
+            const t = tieMap.get(k)
+            if (t) ordered.push(t)
+          }
+          // Add any ties not in saved order (new ones)
+          for (const t of builtTies) {
+            if (!orderedKeys.includes(t.key)) ordered.push(t)
+          }
+          setTies(ordered)
+        } else {
+          setTies(builtTies)
+        }
+
+        setLoading(false)
+      })
+  }, [tournamentId])
+
+  const moveUp = (index: number) => {
+    if (index === 0) return
+    setTies(prev => {
+      const next = [...prev]
+      ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
+      return next
+    })
+  }
+
+  const moveDown = (index: number) => {
+    setTies(prev => {
+      if (index >= prev.length - 1) return prev
+      const next = [...prev]
+      ;[next[index], next[index + 1]] = [next[index + 1], next[index]]
+      return next
+    })
+  }
+
+  const handleSave = async () => {
+    if (!firstRoundKey) return
+    setSaving(true)
+    await supabase
+      .from('tournaments')
+      .update({
+        bracket_config: {
+          firstRound: firstRoundKey,
+          tieOrder: ties.map(t => t.key),
+        },
+      })
+      .eq('id', tournamentId)
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="text-base">הגדרת עץ נוק-אאוט</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground py-4">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>טוען...</span>
+          </div>
+        ) : !firstRoundKey ? (
+          <p className="text-muted-foreground text-sm py-4">אין נתוני נוק-אאוט</p>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">שלב ראשון</Label>
+              <p className="text-sm font-medium mt-1">{firstRoundLabel}</p>
+            </div>
+            <div className="space-y-2">
+              {ties.map((tie, i) => (
+                <div key={tie.key} className="flex items-center gap-3 p-2 rounded-lg border bg-card">
+                  <span className="text-xs text-muted-foreground w-5 text-center font-bold">{i + 1}</span>
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <Image src={tie.team1.logo} alt={tie.team1.name} width={16} height={16} unoptimized />
+                    <span className="text-xs font-medium">{translateTeam(tie.team1.name)}</span>
+                    <span className="text-xs text-muted-foreground mx-1">נגד</span>
+                    <Image src={tie.team2.logo} alt={tie.team2.name} width={16} height={16} unoptimized />
+                    <span className="text-xs font-medium">{translateTeam(tie.team2.name)}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => moveUp(i)}
+                      disabled={i === 0}
+                    >
+                      ↑
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => moveDown(i)}
+                      disabled={i === ties.length - 1}
+                    >
+                      ↓
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button onClick={handleSave} disabled={saving} size="sm">
+              {saving
+                ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+                : saved
+                ? <CheckCircle2 className="h-4 w-4 ml-1 text-green-500" />
+                : <Save className="h-4 w-4 ml-1" />}
+              שמור סדר
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function AdminTournamentDetailPage() {
   const params = useParams()
@@ -300,6 +492,8 @@ export default function AdminTournamentDetailPage() {
           </div>
         )}
       </div>
+
+      <BracketConfigSection tournamentId={id} />
     </div>
   )
 }

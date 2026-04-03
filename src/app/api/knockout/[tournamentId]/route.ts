@@ -27,7 +27,7 @@ export async function GET(
 
   const { data: t } = await supabaseAdmin
     .from('tournaments')
-    .select('api_league_id, api_season')
+    .select('api_league_id, api_season, bracket_config')
     .eq('id', tournamentId)
     .single()
 
@@ -51,7 +51,7 @@ export async function GET(
       byRound[round].push(f)
     }
 
-    return NextResponse.json({ rounds: byRound }, {
+    return NextResponse.json({ rounds: byRound, bracketConfig: t.bracket_config ?? null }, {
       headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' },
     })
   } catch (e) {
