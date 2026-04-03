@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Users, Save, CheckCircle2 } from 'lucide-react'
+import { Users, Save, CheckCircle2, Phone } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { supabase } from '@/lib/supabase'
 import { User } from '@/types'
@@ -28,10 +28,11 @@ export default function AdminUsersPage() {
         .select('user_id, tournament_id')
         .in('user_id', profiles.map((p: { id: string }) => p.id))
 
-      const mappedUsers: User[] = profiles.map((p: { id: string; email: string; display_name: string; role: string }) => ({
+      const mappedUsers: User[] = profiles.map((p: { id: string; email: string; display_name: string; role: string; phone?: string }) => ({
         id: p.id,
         email: p.email,
         displayName: p.display_name,
+        phone: p.phone ?? undefined,
         role: p.role as User['role'],
         competitionIds: participations
           ?.filter((x: { user_id: string }) => x.user_id === p.id)
@@ -85,6 +86,11 @@ export default function AdminUsersPage() {
                   <div>
                     <p className="text-sm font-medium text-slate-200">{user.displayName}</p>
                     <p className="text-xs text-slate-500">{user.email}</p>
+                    {user.phone && (
+                      <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                        <Phone className="h-3 w-3" />{user.phone}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <button onClick={() => save(user.id)}

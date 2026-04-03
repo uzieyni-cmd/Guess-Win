@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, BarChart3, Camera, CheckCircle2, Loader2, Lock, User } from 'lucide-react'
+import { ArrowRight, BarChart3, Camera, CheckCircle2, Loader2, Lock, Phone, User } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -49,6 +49,12 @@ function ProfileContent() {
   const [nameLoading, setNameLoading] = useState(false)
   const [nameError, setNameError] = useState('')
   const [nameSuccess, setNameSuccess] = useState(false)
+
+  // Phone
+  const [phone, setPhone]           = useState(currentUser?.phone ?? '')
+  const [phoneLoading, setPhoneLoading] = useState(false)
+  const [phoneError, setPhoneError]     = useState('')
+  const [phoneSuccess, setPhoneSuccess] = useState(false)
 
   // Change password
   const [currentPw, setCurrentPw] = useState('')
@@ -109,6 +115,25 @@ function ProfileContent() {
       setStats({ totalBets: bets.length, finishedBets, exact, outcome, miss, totalPoints, tournaments: tournamentSet.size })
     } finally {
       setStatsLoading(false)
+    }
+  }
+
+  async function handleSavePhone() {
+    if (!currentUser) return
+    setPhoneLoading(true); setPhoneError(''); setPhoneSuccess(false)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ phone: phone.trim() || null })
+        .eq('id', currentUser.id)
+      if (error) throw error
+      await refreshUser()
+      setPhoneSuccess(true)
+      setTimeout(() => setPhoneSuccess(false), 3000)
+    } catch {
+      setPhoneError('שגיאה בשמירת מספר הטלפון')
+    } finally {
+      setPhoneLoading(false)
     }
   }
 
@@ -298,6 +323,43 @@ function ProfileContent() {
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
               >
                 {nameLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
+                שמירה
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Phone */}
+          <Card className="bg-gray-900/60 border-white/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-white text-base flex items-center gap-2">
+                <Phone className="h-4 w-4 text-emerald-400" />
+                מספר טלפון
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-emerald-200 text-sm">טלפון נייד</Label>
+                <Input
+                  type="tel"
+                  dir="ltr"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                  placeholder="050-0000000"
+                />
+              </div>
+              {phoneError && <p className="text-red-400 text-sm">{phoneError}</p>}
+              {phoneSuccess && (
+                <p className="text-green-400 text-sm flex items-center gap-1">
+                  <CheckCircle2 className="h-4 w-4" /> הטלפון עודכן בהצלחה
+                </p>
+              )}
+              <Button
+                onClick={handleSavePhone}
+                disabled={phoneLoading}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+              >
+                {phoneLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                 שמירה
               </Button>
             </CardContent>

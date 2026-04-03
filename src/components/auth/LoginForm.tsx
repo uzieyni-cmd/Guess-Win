@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Mail, Lock, User, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { Loader2, Mail, Lock, User, Phone, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import Image from 'next/image'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -27,6 +27,7 @@ export function LoginForm() {
   const [confirmPass, setConfirmPass] = useState('')
   const [firstName, setFirstName]     = useState('')
   const [lastName, setLastName]       = useState('')
+  const [phone, setPhone]             = useState('')
   const [error, setError]             = useState('')
   const [success, setSuccess]         = useState('')
   const [isLoading, setIsLoading]     = useState(false)
@@ -42,7 +43,7 @@ export function LoginForm() {
   const reset = () => {
     setError(''); setSuccess('')
     setEmail(''); setPassword(''); setConfirmPass('')
-    setFirstName(''); setLastName('')
+    setFirstName(''); setLastName(''); setPhone('')
   }
 
   const switchTab = (t: Tab) => { setTab(t); reset() }
@@ -73,7 +74,7 @@ export function LoginForm() {
     if (password !== confirmPass) { setError('הסיסמאות אינן תואמות'); return }
     setIsLoading(true)
     try {
-      await register(email, password, firstName.trim(), lastName.trim())
+      await register(email, password, firstName.trim(), lastName.trim(), phone.trim() || undefined)
       setSuccess('נרשמת בהצלחה! בדוק את הדוא"ל שלך לאישור.')
       setPassword(''); setConfirmPass('')
     } catch (err) {
@@ -236,6 +237,14 @@ export function LoginForm() {
                       <Input id="reg-lastname" type="text" placeholder="ישראלי"
                         className={inputCls} value={lastName} onChange={e => setLastName(e.target.value)} required />
                     </div>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-phone" className="text-slate-300">מספר טלפון <span className="text-slate-500 text-xs">(אופציונלי)</span></Label>
+                  <div className="relative">
+                    <Phone className={iconCls} />
+                    <Input id="reg-phone" type="tel" placeholder="050-0000000" dir="ltr"
+                      className={inputCls} value={phone} onChange={e => setPhone(e.target.value)} />
                   </div>
                 </div>
                 <div className="space-y-1.5">
