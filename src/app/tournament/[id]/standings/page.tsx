@@ -260,19 +260,20 @@ const CELL_GAP_0 = 12
 const COL_W = 155
 const COL_GAP = 40
 
-function slotCenter(r: number, p: number): number {
-  if (r === 0) return p * (CELL_H + CELL_GAP_0) + CELL_H / 2
-  return (slotCenter(r - 1, p * 2) + slotCenter(r - 1, p * 2 + 1)) / 2
+interface BracketSlot {
+  tie: Tie | null
+  childIndices: [number, number] | null  // indices in previous round, null = first round or unknown
 }
 
 function colX(r: number, totalRounds: number): number {
   return (totalRounds - 1 - r) * (COL_W + COL_GAP)
 }
 
+// Build bracket matrix with per-round draw orders and childIndices for SVG connections
 function buildBracketMatrix(
   orderedRounds: Array<{ key: string; ties: Tie[] }>,
-  firstRoundOrder: string[]
-): (Tie | null)[][] {
+  roundOrders: Record<string, string[]>
+): BracketSlot[][] {
   const tieByKey = new Map<string, Tie>()
   for (const round of orderedRounds) {
     for (const tie of round.ties) {
@@ -281,35 +282,75 @@ function buildBracketMatrix(
     }
   }
 
-  const firstTies = firstRoundOrder.map(k => tieByKey.get(k) ?? null)
-  const matrix: (Tie | null)[][] = [firstTies]
+  const matrix: BracketSlot[][] = []
 
-  for (let r = 1; r < orderedRounds.length; r++) {
-    const prev = matrix[r - 1]
-    const slots: (Tie | null)[] = []
-    for (let s = 0; s < prev.length / 2; s++) {
-      const left = prev[s * 2]
-      const right = prev[s * 2 + 1]
-      if (left?.winner && right?.winner) {
-        const w1 = left.winner === 1 ? left.team1 : left.team2
-        const w2 = right.winner === 1 ? right.team1 : right.team2
-        const key = [w1.id, w2.id].sort((a, b) => a - b).join('-')
-        slots.push(tieByKey.get(key) ?? null)
-      } else {
-        slots.push(null)
-      }
+  for (let r = 0; r < orderedRounds.length; r++) {
+    const roundKey = orderedRounds[r].key
+    const order = roundOrders[roundKey] ?? []
+    const ties = order.map(k => tieByKey.get(k) ?? null)
+
+    if (r === 0) {
+      matrix.push(ties.map(tie => ({ tie, childIndices: null })))
+      continue
     }
+
+    const prevSlots = matrix[r - 1]
+    const slots: BracketSlot[] = []
+
+    for (const tie of ties) {
+      let c0 = -1, c1 = -1
+      if (tie) {
+        // Find which two previous slots' winners are this tie's teams
+        for (let i = 0; i < prevSlots.length; i++) {
+          const prev = prevSlots[i].tie
+          if (!prev?.winner) continue
+          const winnerId = prev.winner === 1 ? prev.team1.id : prev.team2.id
+          if (winnerId === tie.team1.id || winnerId === tie.team2.id) {
+            if (c0 === -1) c0 = i
+            else { c1 = i; break }
+          }
+        }
+      }
+      slots.push({ tie, childIndices: c0 !== -1 && c1 !== -1 ? [c0, c1] : null })
+    }
+
     matrix.push(slots)
   }
 
   return matrix
 }
 
+// Compute vertical centers for all slots bottom-up; uses childIndices when available
+function computeCenters(matrix: BracketSlot[][]): number[][] {
+  const centers: number[][] = []
+  for (let r = 0; r < matrix.length; r++) {
+    centers.push([])
+    for (let p = 0; p < matrix[r].length; p++) {
+      if (r === 0) {
+        centers[r][p] = p * (CELL_H + CELL_GAP_0) + CELL_H / 2
+      } else {
+        const slot = matrix[r][p]
+        if (slot.childIndices) {
+          const [c0, c1] = slot.childIndices
+          centers[r][p] = (centers[r - 1][c0] + centers[r - 1][c1]) / 2
+        } else {
+          // No known children — evenly space within the round's expected range
+          const prevH = matrix[r - 1].length * (CELL_H + CELL_GAP_0) - CELL_GAP_0
+          const currSize = matrix[r].length
+          const step = prevH / currSize
+          centers[r][p] = p * step + step / 2
+        }
+      }
+    }
+  }
+  return centers
+}
+
 function BracketTree({
   matrix,
   roundLabels,
 }: {
-  matrix: (Tie | null)[][]
+  matrix: BracketSlot[][]
   roundLabels: string[]
 }) {
   const n = matrix.length
@@ -317,19 +358,23 @@ function BracketTree({
 
   const totalHeight = firstRoundCount * (CELL_H + CELL_GAP_0) - CELL_GAP_0
   const totalWidth = n * COL_W + (n - 1) * COL_GAP
+  const centers = computeCenters(matrix)
 
   const lines: { x1: number; y1: number; x2: number; y2: number }[] = []
   for (let r = 1; r < n; r++) {
     for (let p = 0; p < matrix[r].length; p++) {
-      const yParent = slotCenter(r, p)
-      const yChild0 = slotCenter(r - 1, p * 2)
-      const yChild1 = slotCenter(r - 1, p * 2 + 1)
+      const slot = matrix[r][p]
+      if (!slot.childIndices) continue
+      const [c0, c1] = slot.childIndices
+      const yParent = centers[r][p]
+      const yChild0 = centers[r - 1][c0]
+      const yChild1 = centers[r - 1][c1]
       const parentRight = colX(r, n) + COL_W
       const childLeft = colX(r - 1, n)
       const midX = parentRight + COL_GAP / 2
 
       lines.push({ x1: parentRight, y1: yParent, x2: midX, y2: yParent })
-      lines.push({ x1: midX, y1: yChild0, x2: midX, y2: yChild1 })
+      lines.push({ x1: midX, y1: Math.min(yChild0, yChild1), x2: midX, y2: Math.max(yChild0, yChild1) })
       lines.push({ x1: midX, y1: yChild0, x2: childLeft, y2: yChild0 })
       lines.push({ x1: midX, y1: yChild1, x2: childLeft, y2: yChild1 })
     }
@@ -359,17 +404,17 @@ function BracketTree({
         </svg>
 
         {matrix.map((roundSlots, r) =>
-          roundSlots.map((tie, p) => (
+          roundSlots.map((slot, p) => (
             <div
               key={`${r}-${p}`}
               style={{
                 position: 'absolute',
                 left: colX(r, n),
-                top: 28 + slotCenter(r, p) - CELL_H / 2,
+                top: 28 + centers[r][p] - CELL_H / 2,
                 width: COL_W,
               }}
             >
-              <TieSlot tie={tie} />
+              <TieSlot tie={slot.tie} />
             </div>
           ))
         )}
@@ -383,7 +428,7 @@ function KnockoutBracket({
   bracketConfig,
 }: {
   rounds: Record<string, ApiFixture[]>
-  bracketConfig: { firstRound: string; tieOrder: string[] } | null
+  bracketConfig: { roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[] } | null
 }) {
   const sortedRoundKeys = Object.keys(rounds).sort((a, b) => {
     const ai = ROUND_ORDER.findIndex(r => r.toLowerCase() === a.toLowerCase())
@@ -399,26 +444,32 @@ function KnockoutBracket({
     ties: buildTies(rounds[key]),
   }))
 
-  if (bracketConfig && bracketConfig.tieOrder.length > 0) {
-    const configRoundIdx = sortedRoundKeys.findIndex(
-      k => k.toLowerCase() === bracketConfig.firstRound.toLowerCase()
-    )
-    if (configRoundIdx !== -1) {
-      const bracketRounds = orderedRounds.slice(configRoundIdx)
-      const matrix = buildBracketMatrix(bracketRounds, bracketConfig.tieOrder)
-      const roundLabels = bracketRounds.map(r => r.label)
+  // Normalise config: support new { roundOrders } and old { firstRound, tieOrder }
+  const roundOrders: Record<string, string[]> =
+    bracketConfig?.roundOrders ??
+    (bracketConfig?.firstRound && bracketConfig?.tieOrder
+      ? { [bracketConfig.firstRound]: bracketConfig.tieOrder }
+      : {})
 
-      return (
-        <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
-            <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
-          </div>
-          <div className="p-4">
-            <BracketTree matrix={matrix} roundLabels={roundLabels} />
-          </div>
+  const configuredRoundKeys = sortedRoundKeys.filter(k => roundOrders[k]?.length > 0)
+
+  if (configuredRoundKeys.length > 0) {
+    // Start the bracket from the earliest configured round
+    const firstIdx = sortedRoundKeys.indexOf(configuredRoundKeys[0])
+    const bracketRounds = orderedRounds.slice(firstIdx)
+    const matrix = buildBracketMatrix(bracketRounds, roundOrders)
+    const roundLabels = bracketRounds.map(r => r.label)
+
+    return (
+      <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
+          <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
         </div>
-      )
-    }
+        <div className="p-4">
+          <BracketTree matrix={matrix} roundLabels={roundLabels} />
+        </div>
+      </div>
+    )
   }
 
   // Fallback: column view (RTL reversed)
@@ -464,7 +515,7 @@ export default function StandingsPage() {
   const { id } = useParams() as { id: string }
   const [standings, setStandings]   = useState<ApiStandingEntry[][] | null>(null)
   const [knockoutRounds, setKnockoutRounds] = useState<Record<string, ApiFixture[]> | null>(null)
-  const [bracketConfig, setBracketConfig] = useState<{ firstRound: string; tieOrder: string[] } | null>(null)
+  const [bracketConfig, setBracketConfig] = useState<{ roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[] } | null>(null)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState('')
 
