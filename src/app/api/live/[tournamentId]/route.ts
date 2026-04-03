@@ -24,11 +24,14 @@ export async function GET(
     .eq('status', 'live')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  const translated = (data ?? []).map(m => ({
-    ...(m as Record<string, unknown>),
-    home_team_name: translateTeam((m as Record<string, unknown>).home_team_name as string),
-    away_team_name: translateTeam((m as Record<string, unknown>).away_team_name as string),
-  }))
+  const translated = (data ?? []).map(m => {
+    const row = m as unknown as Record<string, unknown>
+    return {
+      ...row,
+      home_team_name: translateTeam(row.home_team_name as string),
+      away_team_name: translateTeam(row.away_team_name as string),
+    }
+  })
   return NextResponse.json(
     { matches: translated },
     { headers: { 'Cache-Control': 'no-store' } }
