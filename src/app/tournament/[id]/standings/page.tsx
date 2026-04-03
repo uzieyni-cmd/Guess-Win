@@ -168,7 +168,21 @@ function buildTies(fixtures: ApiFixture[]): Tie[] {
     if (allDone && goals1 !== null && goals2 !== null) {
       if (goals1 > goals2) winner = 1
       else if (goals2 > goals1) winner = 2
-      // equal = went to penalties; can't determine from goals alone
+      else {
+        // Aggregate level — check penalty shootout (status PEN)
+        const penLeg = legs.find(f => f.fixture.status.short === 'PEN')
+        if (penLeg) {
+          const ph = penLeg.score.penalty.home ?? 0
+          const pa = penLeg.score.penalty.away ?? 0
+          if (penLeg.teams.home.id === team1.id) {
+            if (ph > pa) winner = 1
+            else if (pa > ph) winner = 2
+          } else {
+            if (pa > ph) winner = 1
+            else if (ph > pa) winner = 2
+          }
+        }
+      }
     }
 
     return { team1, team2, goals1, goals2, winner, isLive: anyLive, nextDate }

@@ -43,6 +43,7 @@ export interface ApiFixture {
   goals: { home: number | null; away: number | null }
   score: {
     fulltime: { home: number | null; away: number | null }
+    penalty: { home: number | null; away: number | null }
   }
 }
 
