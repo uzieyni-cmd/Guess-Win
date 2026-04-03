@@ -2,6 +2,7 @@
 // הסנכרון החי מטופל על ידי /api/cron/sync-live (רץ כל דקה בVercel Cron).
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { translateTeam } from '@/lib/teams-he'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,8 +24,13 @@ export async function GET(
     .eq('status', 'live')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const translated = (data ?? []).map(m => ({
+    ...m,
+    home_team_name: translateTeam(m.home_team_name),
+    away_team_name: translateTeam(m.away_team_name),
+  }))
   return NextResponse.json(
-    { matches: data ?? [] },
+    { matches: translated },
     { headers: { 'Cache-Control': 'no-store' } }
   )
 }

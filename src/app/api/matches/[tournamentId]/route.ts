@@ -1,5 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { translateTeam } from '@/lib/teams-he'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function translateMatches(rows: any[]): any[] {
+  return rows.map(m => ({
+    ...m,
+    home_team_name: translateTeam(m.home_team_name),
+    away_team_name: translateTeam(m.away_team_name),
+  }))
+}
 
 export const revalidate = 30
 
@@ -35,7 +45,7 @@ export async function GET(
       .limit(PAGE_SIZE)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ matches: data ?? [], hasMore: (data?.length ?? 0) === PAGE_SIZE }, {
+    return NextResponse.json({ matches: translateMatches(data ?? []), hasMore: (data?.length ?? 0) === PAGE_SIZE }, {
       headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60' },
     })
   }
@@ -49,7 +59,7 @@ export async function GET(
       .order('match_start_time', { ascending: true })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ matches: data ?? [], hasMore: false }, {
+    return NextResponse.json({ matches: translateMatches(data ?? []), hasMore: false }, {
       headers: { 'Cache-Control': 'no-store' },
     })
   }
@@ -126,7 +136,7 @@ export async function GET(
     ? 'public, s-maxage=5, stale-while-revalidate=10'
     : 'public, s-maxage=30, stale-while-revalidate=60'
 
-  return NextResponse.json({ matches: data, hasMore, hasPast }, {
+  return NextResponse.json({ matches: translateMatches(data as unknown as Record<string, unknown>[]), hasMore, hasPast }, {
     headers: { 'Cache-Control': cacheControl },
   })
 }
