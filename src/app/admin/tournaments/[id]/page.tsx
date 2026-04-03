@@ -70,46 +70,46 @@ function applyOrder(allTies: TieInfo[], savedOrder: string[]): TieInfo[] {
 
 function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
   const [loading, setLoading] = useState(true)
-  // roundKeys: sorted knockout round keys (excluding Final — no reordering needed there)
   const [roundKeys, setRoundKeys] = useState<string[]>([])
-  // roundTies: ordered ties per round key
   const [roundTies, setRoundTies] = useState<Record<string, TieInfo[]>>({})
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [saveMsg, setSaveMsg] = useState('')
 
   useEffect(() => {
-    fetch(`/api/knockout/${tournamentId}`)
-      .then(r => r.ok ? r.json() : null)
-      .catch(() => null)
-      .then(data => {
-        if (!data?.rounds || Object.keys(data.rounds).length === 0) {
-          setLoading(false)
-          return
-        }
-
-        const sortedKeys = Object.keys(data.rounds).sort((a: string, b: string) => {
-          const ai = ROUND_ORDER_ADMIN.findIndex(r => r.toLowerCase() === a.toLowerCase())
-          const bi = ROUND_ORDER_ADMIN.findIndex(r => r.toLowerCase() === b.toLowerCase())
-          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
-        })
-
-        // Support old format { firstRound, tieOrder } and new { roundOrders }
-        const savedOrders: Record<string, string[]> =
-          data.bracketConfig?.roundOrders ??
-          (data.bracketConfig?.firstRound
-            ? { [data.bracketConfig.firstRound]: data.bracketConfig.tieOrder ?? [] }
-            : {})
-
-        const ties: Record<string, TieInfo[]> = {}
-        for (const key of sortedKeys) {
-          const allTies = buildTieInfos(data.rounds[key] as ApiFixture[])
-          ties[key] = savedOrders[key] ? applyOrder(allTies, savedOrders[key]) : allTies
-        }
-
-        setRoundKeys(sortedKeys)
-        setRoundTies(ties)
+    // Fetch knockout fixtures (cached API) + bracket_config (direct Supabase, always fresh)
+    Promise.all([
+      fetch(`/api/knockout/${tournamentId}`).then(r => r.ok ? r.json() : null).catch(() => null),
+      supabase.from('tournaments').select('bracket_config').eq('id', tournamentId).single(),
+    ]).then(([knockoutData, { data: configRow }]) => {
+      if (!knockoutData?.rounds || Object.keys(knockoutData.rounds).length === 0) {
         setLoading(false)
+        return
+      }
+
+      const sortedKeys = Object.keys(knockoutData.rounds).sort((a: string, b: string) => {
+        const ai = ROUND_ORDER_ADMIN.findIndex(r => r.toLowerCase() === a.toLowerCase())
+        const bi = ROUND_ORDER_ADMIN.findIndex(r => r.toLowerCase() === b.toLowerCase())
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
       })
+
+      // bracket_config from Supabase is always fresh (not cached)
+      const savedConfig = configRow?.bracket_config as { roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[] } | null
+      const savedOrders: Record<string, string[]> =
+        savedConfig?.roundOrders ??
+        (savedConfig?.firstRound
+          ? { [savedConfig.firstRound]: savedConfig.tieOrder ?? [] }
+          : {})
+
+      const ties: Record<string, TieInfo[]> = {}
+      for (const key of sortedKeys) {
+        const allTies = buildTieInfos(knockoutData.rounds[key] as ApiFixture[])
+        ties[key] = savedOrders[key] ? applyOrder(allTies, savedOrders[key]) : allTies
+      }
+
+      setRoundKeys(sortedKeys)
+      setRoundTies(ties)
+      setLoading(false)
+    })
   }, [tournamentId])
 
   const move = (roundKey: string, index: number, dir: -1 | 1) => {
@@ -124,17 +124,22 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
 
   const handleSave = async () => {
     setSaving(true)
+    setSaveMsg('')
     const roundOrders: Record<string, string[]> = {}
     for (const key of roundKeys) {
       roundOrders[key] = (roundTies[key] ?? []).map(t => t.key)
     }
-    await supabase
+    const { error } = await supabase
       .from('tournaments')
       .update({ bracket_config: { roundOrders } })
       .eq('id', tournamentId)
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    if (error) {
+      setSaveMsg(`שגיאה: ${error.message}`)
+    } else {
+      setSaveMsg('✓ נשמר בהצלחה')
+      setTimeout(() => setSaveMsg(''), 3000)
+    }
   }
 
   return (
@@ -194,14 +199,19 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
                 </div>
               )
             })}
-            <Button onClick={handleSave} disabled={saving} size="sm">
-              {saving
-                ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
-                : saved
-                ? <CheckCircle2 className="h-4 w-4 ml-1 text-green-500" />
-                : <Save className="h-4 w-4 ml-1" />}
-              שמור סדר
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button onClick={handleSave} disabled={saving} size="sm">
+                {saving
+                  ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+                  : <Save className="h-4 w-4 ml-1" />}
+                שמור סדר
+              </Button>
+              {saveMsg && (
+                <span className={`text-sm ${saveMsg.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
+                  {saveMsg}
+                </span>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
