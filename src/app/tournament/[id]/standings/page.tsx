@@ -92,111 +92,154 @@ function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandi
 
 // ── Knockout Bracket ─────────────────────────────────────────────
 
-// Order of rounds from earliest to latest (RTL: latest = leftmost)
 const ROUND_ORDER = [
-  'Round of 32',
-  'Round Of 32',
-  'Round of 16',
-  'Round Of 16',
-  '1/8-finals',
-  'Quarter-finals',
-  '1/4-finals',
-  'Semi-finals',
-  '1/2-finals',
+  'Round of 32', 'Round Of 32',
+  'Round of 16', 'Round Of 16', '1/8-finals',
+  'Quarter-finals', '1/4-finals',
+  'Semi-finals', '1/2-finals',
   'Final',
 ]
 
 const ROUND_LABEL: Record<string, string> = {
-  'Round of 32': 'שלב 32',
-  'Round Of 32': 'שלב 32',
-  'Round of 16': 'שמינית גמר',
-  'Round Of 16': 'שמינית גמר',
-  '1/8-finals': 'שמינית גמר',
-  'Quarter-finals': 'רבע גמר',
-  '1/4-finals': 'רבע גמר',
-  'Semi-finals': 'חצי גמר',
-  '1/2-finals': 'חצי גמר',
+  'Round of 32': 'שלב 32', 'Round Of 32': 'שלב 32',
+  'Round of 16': 'שמינית גמר', 'Round Of 16': 'שמינית גמר', '1/8-finals': 'שמינית גמר',
+  'Quarter-finals': 'רבע גמר', '1/4-finals': 'רבע גמר',
+  'Semi-finals': 'חצי גמר', '1/2-finals': 'חצי גמר',
   'Final': 'גמר',
 }
 
-function scoreDisplay(f: ApiFixture) {
-  const h = f.goals.home
-  const a = f.goals.away
-  if (h === null || a === null) return null
-  return `${h} - ${a}`
+interface Tie {
+  team1: { id: number; name: string; logo: string }
+  team2: { id: number; name: string; logo: string }
+  goals1: number | null  // aggregate for team1
+  goals2: number | null  // aggregate for team2
+  winner: 1 | 2 | null  // null = ongoing / penalties not tracked
+  isLive: boolean
+  nextDate: string | null
 }
 
-function matchDate(f: ApiFixture) {
-  const d = new Date(f.fixture.date)
-  return d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })
+function buildTies(fixtures: ApiFixture[]): Tie[] {
+  // Group fixtures by the (sorted) pair of team IDs
+  const map = new Map<string, ApiFixture[]>()
+  for (const f of fixtures) {
+    const key = [f.teams.home.id, f.teams.away.id].sort((a, b) => a - b).join('-')
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(f)
+  }
+
+  const FINISHED = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO'])
+  const LIVE     = new Set(['1H', '2H', 'ET', 'P', 'LIVE', 'HT', 'BT'])
+
+  return Array.from(map.values()).map(legs => {
+    // Use first leg to define team1/team2
+    const first = legs[0]
+    const team1 = first.teams.home
+    const team2 = first.teams.away
+
+    let goals1: number | null = null
+    let goals2: number | null = null
+    let anyLive = false
+    let nextDate: string | null = null
+
+    for (const f of legs) {
+      const isFinished = FINISHED.has(f.fixture.status.short)
+      const live = LIVE.has(f.fixture.status.short)
+      if (live) anyLive = true
+
+      if (isFinished || live) {
+        const h = f.goals.home ?? 0
+        const a = f.goals.away ?? 0
+        if (f.teams.home.id === team1.id) {
+          goals1 = (goals1 ?? 0) + h
+          goals2 = (goals2 ?? 0) + a
+        } else {
+          goals1 = (goals1 ?? 0) + a
+          goals2 = (goals2 ?? 0) + h
+        }
+      } else {
+        // upcoming leg — track earliest date
+        const d = f.fixture.date
+        if (!nextDate || d < nextDate) nextDate = d
+      }
+    }
+
+    const allDone = legs.every(f => FINISHED.has(f.fixture.status.short))
+    let winner: 1 | 2 | null = null
+    if (allDone && goals1 !== null && goals2 !== null) {
+      if (goals1 > goals2) winner = 1
+      else if (goals2 > goals1) winner = 2
+      // equal = went to penalties; can't determine from goals alone
+    }
+
+    return { team1, team2, goals1, goals2, winner, isLive: anyLive, nextDate }
+  })
 }
 
-function MatchSlot({ fixture }: { fixture: ApiFixture | null }) {
-  if (!fixture) {
+function TieSlot({ tie }: { tie: Tie | null }) {
+  if (!tie) {
     return (
-      <div className="bg-slate-800/40 rounded-lg border border-slate-700/30 p-2 flex flex-col gap-1 min-w-[130px]">
-        <div className="flex items-center gap-1.5 py-0.5">
-          <div className="w-4 h-4 rounded-full bg-slate-700/50 shrink-0" />
-          <span className="text-slate-600 text-xs">TBD</span>
-        </div>
-        <div className="h-px bg-slate-700/40" />
-        <div className="flex items-center gap-1.5 py-0.5">
-          <div className="w-4 h-4 rounded-full bg-slate-700/50 shrink-0" />
-          <span className="text-slate-600 text-xs">TBD</span>
-        </div>
+      <div className="bg-slate-800/30 rounded-lg border border-slate-700/20 p-2 flex flex-col gap-1 min-w-[140px]">
+        {[0, 1].map(i => (
+          <div key={i} className="flex items-center gap-1.5 py-0.5">
+            <div className="w-4 h-4 rounded-full bg-slate-700/40 shrink-0" />
+            <span className="text-slate-600 text-xs">TBD</span>
+          </div>
+        ))}
       </div>
     )
   }
 
-  const score = scoreDisplay(fixture)
-  const isFinished = ['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(fixture.fixture.status.short)
-  const isLive = ['1H', '2H', 'ET', 'P', 'LIVE', 'HT', 'BT'].includes(fixture.fixture.status.short)
+  const { team1, team2, goals1, goals2, winner, isLive, nextDate } = tie
+  const hasScore = goals1 !== null && goals2 !== null
 
-  const homeScore = fixture.goals.home
-  const awayScore = fixture.goals.away
-  const homeWon = isFinished && homeScore !== null && awayScore !== null && homeScore > awayScore
-  const awayWon = isFinished && homeScore !== null && awayScore !== null && awayScore > homeScore
+  const rowClass = (w: 1 | 2) => cn(
+    'flex items-center gap-1.5 px-2 py-1.5 transition-colors',
+    winner === w ? 'bg-emerald-500/8' : ''
+  )
+  const nameClass = (w: 1 | 2) => cn(
+    'text-xs font-medium truncate flex-1',
+    winner === w ? 'text-white font-bold' : 'text-slate-400'
+  )
+  const scoreClass = (w: 1 | 2) => cn(
+    'text-xs font-bold shrink-0',
+    winner === w ? 'text-emerald-400' : 'text-slate-500'
+  )
+
+  let footer: React.ReactNode = null
+  if (isLive) {
+    footer = <span className="text-emerald-400">LIVE</span>
+  } else if (nextDate) {
+    footer = <span>{new Date(nextDate).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</span>
+  } else if (hasScore) {
+    footer = <span>סה״כ</span>
+  }
 
   return (
-    <div className="bg-[#0d1420] rounded-lg border border-slate-700/40 overflow-hidden min-w-[140px]">
-      {/* Home team */}
-      <div className={cn('flex items-center gap-1.5 px-2 py-1.5', homeWon && 'bg-emerald-500/5')}>
-        <Image src={fixture.teams.home.logo} alt={fixture.teams.home.name} width={16} height={16} className="shrink-0" unoptimized />
-        <span className={cn('text-xs font-medium truncate flex-1', homeWon ? 'text-white' : 'text-slate-400')}>
-          {translateTeam(fixture.teams.home.name)}
-        </span>
-        {score && (
-          <span className={cn('text-xs font-bold ml-1 shrink-0', homeWon ? 'text-emerald-400' : 'text-slate-500')}>
-            {homeScore}
-          </span>
-        )}
+    <div className="bg-[#0d1420] rounded-lg border border-slate-700/40 overflow-hidden min-w-[150px]">
+      <div className={rowClass(1)}>
+        <Image src={team1.logo} alt={team1.name} width={16} height={16} className="shrink-0" unoptimized />
+        <span className={nameClass(1)}>{translateTeam(team1.name)}</span>
+        {hasScore && <span className={scoreClass(1)}>{goals1}</span>}
       </div>
       <div className="h-px bg-slate-800/60" />
-      {/* Away team */}
-      <div className={cn('flex items-center gap-1.5 px-2 py-1.5', awayWon && 'bg-emerald-500/5')}>
-        <Image src={fixture.teams.away.logo} alt={fixture.teams.away.name} width={16} height={16} className="shrink-0" unoptimized />
-        <span className={cn('text-xs font-medium truncate flex-1', awayWon ? 'text-white' : 'text-slate-400')}>
-          {translateTeam(fixture.teams.away.name)}
-        </span>
-        {score && (
-          <span className={cn('text-xs font-bold ml-1 shrink-0', awayWon ? 'text-emerald-400' : 'text-slate-500')}>
-            {awayScore}
-          </span>
-        )}
+      <div className={rowClass(2)}>
+        <Image src={team2.logo} alt={team2.name} width={16} height={16} className="shrink-0" unoptimized />
+        <span className={nameClass(2)}>{translateTeam(team2.name)}</span>
+        {hasScore && <span className={scoreClass(2)}>{goals2}</span>}
       </div>
-      {/* Date / live indicator */}
-      <div className={cn(
-        'px-2 py-1 text-[10px] text-center border-t border-slate-800/40',
-        isLive ? 'text-emerald-400 bg-emerald-500/5' : 'text-slate-600'
-      )}>
-        {isLive ? `${fixture.fixture.status.elapsed}′ LIVE` : matchDate(fixture)}
-      </div>
+      {footer && (
+        <div className={cn(
+          'px-2 py-1 text-[10px] text-center border-t border-slate-800/40',
+          isLive ? 'text-emerald-400 bg-emerald-500/5' : 'text-slate-600'
+        )}>
+          {footer}
+        </div>
+      )}
     </div>
   )
 }
 
 function KnockoutBracket({ rounds }: { rounds: Record<string, ApiFixture[]> }) {
-  // Sort rounds in logical order
   const sortedRoundKeys = Object.keys(rounds).sort((a, b) => {
     const ai = ROUND_ORDER.findIndex(r => r.toLowerCase() === a.toLowerCase())
     const bi = ROUND_ORDER.findIndex(r => r.toLowerCase() === b.toLowerCase())
@@ -205,7 +248,7 @@ function KnockoutBracket({ rounds }: { rounds: Record<string, ApiFixture[]> }) {
 
   if (sortedRoundKeys.length === 0) return null
 
-  // RTL: reverse so final is leftmost
+  // RTL: reverse so final is on the left
   const displayRounds = [...sortedRoundKeys].reverse()
 
   return (
@@ -216,16 +259,16 @@ function KnockoutBracket({ rounds }: { rounds: Record<string, ApiFixture[]> }) {
       <div className="overflow-x-auto p-4">
         <div className="flex gap-4" style={{ direction: 'rtl' }}>
           {displayRounds.map((roundKey) => {
+            const ties = buildTies(rounds[roundKey])
             const label = ROUND_LABEL[roundKey] ?? roundKey
-            const fixtures = rounds[roundKey]
             return (
-              <div key={roundKey} className="flex flex-col gap-1 min-w-[150px]">
+              <div key={roundKey} className="flex flex-col gap-1 min-w-[155px]">
                 <div className="text-[11px] font-bold text-slate-400 text-center mb-2 whitespace-nowrap">
                   {label}
                 </div>
                 <div className="flex flex-col gap-3">
-                  {fixtures.map((f) => (
-                    <MatchSlot key={f.fixture.id} fixture={f} />
+                  {ties.map((tie, i) => (
+                    <TieSlot key={i} tie={tie} />
                   ))}
                 </div>
               </div>
