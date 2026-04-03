@@ -340,12 +340,21 @@ export default function MatchDetailPage() {
 
   useEffect(() => {
     if (!match?.apiFixtureId) return
-    setLoading(true)
-    fetch(`/api/match-detail/${match.apiFixtureId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setDetail(data) })
-      .finally(() => setLoading(false))
-  }, [match?.apiFixtureId])
+
+    const fetchDetail = (isInitial = false) => {
+      if (isInitial) setLoading(true)
+      fetch(`/api/match-detail/${match.apiFixtureId}`, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setDetail(data) })
+        .finally(() => { if (isInitial) setLoading(false) })
+    }
+
+    fetchDetail(true)
+
+    if (match.status !== 'live') return
+    const interval = setInterval(() => fetchDetail(false), 30_000)
+    return () => clearInterval(interval)
+  }, [match?.apiFixtureId, match?.status])
 
   if (!activeTournament) {
     return (

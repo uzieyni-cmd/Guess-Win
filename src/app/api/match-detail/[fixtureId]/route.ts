@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-export const revalidate = 30
+export const dynamic = 'force-dynamic'
 
 export async function GET(
   _req: NextRequest,
@@ -15,7 +15,7 @@ export async function GET(
 
   const res = await fetch(
     `https://v3.football.api-sports.io/fixtures?id=${id}`,
-    { headers: { 'x-apisports-key': apiKey }, next: { revalidate: 30 } }
+    { headers: { 'x-apisports-key': apiKey }, cache: 'no-store' }
   )
   if (!res.ok) return NextResponse.json({ error: 'api error' }, { status: 502 })
 
