@@ -224,8 +224,6 @@ function TieSlot({ tie }: { tie: Tie | null }) {
     footer = <span className="text-emerald-400">LIVE</span>
   } else if (nextDate) {
     footer = <span>{new Date(nextDate).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</span>
-  } else if (hasScore) {
-    footer = <span>סה״כ</span>
   }
 
   return (
