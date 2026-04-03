@@ -7,7 +7,7 @@ import { calculateScore } from '@/lib/scoring'
 import { PointsBadge } from '@/components/shared/PointsBadge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { cn } from '@/lib/utils'
-import { ArrowRight, Loader2, Users } from 'lucide-react'
+import { ArrowRight, Download, Loader2, Users } from 'lucide-react'
 import { Match, Bet, User } from '@/types'
 
 // ── Types ────────────────────────────────────────────────────────
@@ -179,11 +179,40 @@ function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLo
   currentUserId?: string
   isLocked: boolean
 }) {
+  const exportExcel = async () => {
+    const { utils, writeFile } = await import('xlsx')
+    const rows = participants.map(p => {
+      const bet    = matchBets.find(b => b.userId === p.id) ?? null
+      const result = (match.status === 'finished') && bet && match.actualScore
+        ? calculateScore(bet, match) : null
+      return {
+        'שם':        p.displayName,
+        'ניחוש':     bet ? `${bet.predictedScore.home}–${bet.predictedScore.away}` : 'לא ניחש',
+        'נקודות':    result ? result.points : '',
+        'תוצאה':     result ? ({ exact: 'מדויק', outcome: 'כיוון', miss: 'החטאה' }[result.result]) : '',
+      }
+    })
+    const ws = utils.json_to_sheet(rows)
+    const wb = utils.book_new()
+    const name = `${match.homeTeam.name} vs ${match.awayTeam.name}`
+    utils.book_append_sheet(wb, ws, 'ניחושים')
+    writeFile(wb, `${name}.xlsx`)
+  }
+
   return (
     <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-700/40">
-        <Users className="h-4 w-4 text-slate-400" />
-        <h3 className="text-sm font-bold text-slate-200">ניחושי משתתפים</h3>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/40">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-slate-400" />
+          <h3 className="text-sm font-bold text-slate-200">ניחושי משתתפים</h3>
+        </div>
+        <button
+          onClick={exportExcel}
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1 rounded hover:bg-white/5"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Excel
+        </button>
       </div>
 
       <div className="divide-y divide-slate-800/60 max-h-[480px] overflow-y-auto">
