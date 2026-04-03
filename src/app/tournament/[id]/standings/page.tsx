@@ -630,11 +630,10 @@ function KnockoutBracket({
   bracketConfig,
 }: {
   rounds: Record<string, ApiFixture[]>
-  bracketConfig: { roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[] } | null
+  bracketConfig: { roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[]; wc2026?: boolean } | null
 }) {
-  // WC 2026 — 32-team single-elimination bracket
-  const hasRoundOf32 = Object.keys(rounds).some(k => k.toLowerCase().includes('round of 32'))
-  if (hasRoundOf32) {
+  // WC 2026 — 32-team single-elimination bracket (only when explicitly configured)
+  if (bracketConfig?.wc2026) {
     return <WC2026Bracket rounds={rounds} />
   }
   const sortedRoundKeys = Object.keys(rounds).sort((a, b) => {
@@ -722,7 +721,7 @@ export default function StandingsPage() {
   const { id } = useParams() as { id: string }
   const [standings, setStandings]   = useState<ApiStandingEntry[][] | null>(null)
   const [knockoutRounds, setKnockoutRounds] = useState<Record<string, ApiFixture[]> | null>(null)
-  const [bracketConfig, setBracketConfig] = useState<{ roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[] } | null>(null)
+  const [bracketConfig, setBracketConfig] = useState<{ roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[]; wc2026?: boolean } | null>(null)
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState('')
 
