@@ -46,19 +46,33 @@ export function startSyncCron() {
         if (!res.ok) continue
         const json = await res.json()
         const fixtures: {
-          fixture: { id: number; status: { short: string } }
+          fixture: { id: number; status: { short: string; elapsed: number | null } }
+          goals: { home: number | null; away: number | null }
           score: { fulltime: { home: number | null; away: number | null } }
         }[] = json.response ?? []
 
         for (const f of fixtures) {
           const status = mapStatus(f.fixture.status.short)
+          const isLive     = status === 'live'
+          const isFinished = status === 'finished'
+
+          const fields: Record<string, unknown> = {
+            status,
+            elapsed_minutes: isLive ? (f.fixture.status.elapsed ?? null) : null,
+            match_period:    isLive ? (f.fixture.status.short   ?? null) : null,
+          }
+
+          if (isLive) {
+            if (f.goals.home !== null && f.goals.home !== undefined) fields.actual_home_score = f.goals.home
+            if (f.goals.away !== null && f.goals.away !== undefined) fields.actual_away_score = f.goals.away
+          } else if (isFinished) {
+            if (f.score.fulltime.home !== null) fields.actual_home_score = f.score.fulltime.home
+            if (f.score.fulltime.away !== null) fields.actual_away_score = f.score.fulltime.away
+          }
+
           await supabaseAdmin
             .from('matches')
-            .update({
-              status,
-              actual_home_score: f.score.fulltime.home ?? null,
-              actual_away_score: f.score.fulltime.away ?? null,
-            })
+            .update(fields)
             .eq('api_fixture_id', f.fixture.id)
         }
       }
