@@ -171,7 +171,7 @@ export const TEAMS_HE: Record<string, string> = {
   'Bnei Yehuda Tel Aviv':      'בני יהודה תל אביב',
   'Ironi Nesher':              'עירוני נשר',
   'Ironi Nahariya':            'עירוני נהריה',
-  'Ironi Modi''in':             'עירוני מודיעין',
+  "Ironi Modi'in":             'עירוני מודיעין',
   'Ironi Modiin':              'עירוני מודיעין',
   'Shimshon Tel Aviv':         'שמשון תל אביב',
 
