@@ -73,6 +73,26 @@ export async function fetchFixtureById(fixtureId: number): Promise<ApiFixture | 
   return results[0] ?? null
 }
 
+export interface ApiStandingEntry {
+  rank: number
+  team: { id: number; name: string; logo: string }
+  points: number
+  goalsDiff: number
+  group?: string
+  form?: string
+  all: { played: number; win: number; draw: number; lose: number; goals: { for: number; against: number } }
+}
+
+export async function fetchStandings(
+  leagueId: number,
+  season: number,
+): Promise<ApiStandingEntry[][]> {
+  const data = await apiFetchRaw<{
+    league: { standings: ApiStandingEntry[][] }
+  }>(`/standings?league=${leagueId}&season=${season}`)
+  return data.response[0]?.league.standings ?? []
+}
+
 export async function fetchLeagues(): Promise<ApiLeague[]> {
   return apiFetch<ApiLeague>('/leagues?type=cup&type=league')
 }
