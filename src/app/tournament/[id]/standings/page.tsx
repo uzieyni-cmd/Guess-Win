@@ -421,6 +421,210 @@ function BracketTree({
   )
 }
 
+// ── WC 2026 — Position-Based 32-Team Single-Elimination Bracket ───
+
+const WC_CELL_H   = 56
+const WC_CELL_GAP = 6
+const WC_COL_W    = 148
+const WC_COL_GAP  = 30
+
+const WC_ROUNDS_DEF = [
+  { keys: ['Round of 32', 'Round Of 32'],               size: 16, label: 'שלב 32',     offset: 73  },
+  { keys: ['Round of 16', 'Round Of 16', '1/8-finals'], size: 8,  label: 'שמינית גמר', offset: 89  },
+  { keys: ['Quarter-finals', '1/4-finals'],              size: 4,  label: 'רבע גמר',    offset: 97  },
+  { keys: ['Semi-finals', '1/2-finals'],                 size: 2,  label: 'חצי גמר',    offset: 101 },
+  { keys: ['Final'],                                      size: 1,  label: 'גמר',         offset: 104 },
+]
+
+const THIRD_PLACE_KEYS = ['3rd Place Final', '3rd place Final', '3rd Place Finish', '3rd place']
+
+const FIN_ST = new Set(['FT', 'AET', 'PEN', 'AWD', 'WO'])
+const LIVE_ST = new Set(['1H', '2H', 'ET', 'P', 'LIVE', 'HT', 'BT'])
+
+function wcRoundFixtures(rounds: Record<string, ApiFixture[]>, keys: string[]): ApiFixture[] {
+  for (const k of keys) { if (rounds[k]?.length) return rounds[k] }
+  return []
+}
+
+function wcBuildMatrix(rounds: Record<string, ApiFixture[]>): (ApiFixture | null)[][] {
+  return WC_ROUNDS_DEF.map(({ keys, size }) => {
+    const sorted = [...wcRoundFixtures(rounds, keys)].sort((a, b) =>
+      a.fixture.date.localeCompare(b.fixture.date) || a.fixture.id - b.fixture.id
+    )
+    return Array.from({ length: size }, (_, i) => sorted[i] ?? null)
+  })
+}
+
+function wcComputeCenters(matrix: (ApiFixture | null)[][]): number[][] {
+  const centers: number[][] = []
+  for (let r = 0; r < matrix.length; r++) {
+    centers.push(matrix[r].map((_, p) => {
+      if (r === 0) return p * (WC_CELL_H + WC_CELL_GAP) + WC_CELL_H / 2
+      const c0 = 2 * p, c1 = 2 * p + 1
+      if (c1 < centers[r - 1].length) return (centers[r - 1][c0] + centers[r - 1][c1]) / 2
+      return centers[r - 1][c0] ?? 0
+    }))
+  }
+  return centers
+}
+
+function wcColX(r: number) {
+  return (WC_ROUNDS_DEF.length - 1 - r) * (WC_COL_W + WC_COL_GAP)
+}
+
+function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchNum: number }) {
+  const cellStyle: React.CSSProperties = { height: WC_CELL_H }
+
+  if (!fixture || !fixture.teams.home.id) {
+    return (
+      <div className="bg-slate-800/25 rounded-lg border border-slate-700/20 overflow-hidden" style={cellStyle}>
+        <div className="flex items-center gap-1.5 px-2 py-1.5 h-1/2">
+          <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />
+          <span className="text-slate-600 text-[10px] flex-1">TBD</span>
+          <span className="text-[9px] text-slate-700">#{matchNum}</span>
+        </div>
+        <div className="h-px bg-slate-800/50" />
+        <div className="flex items-center gap-1.5 px-2 py-1.5 h-1/2">
+          <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />
+          <span className="text-slate-600 text-[10px]">TBD</span>
+        </div>
+      </div>
+    )
+  }
+
+  const { teams, goals, score, fixture: fix } = fixture
+  const status = fix.status.short
+  const isFinished = FIN_ST.has(status)
+  const isLive = LIVE_ST.has(status)
+  const hasScore = goals.home !== null && goals.away !== null
+
+  let winner: 'home' | 'away' | null = null
+  if (isFinished && hasScore) {
+    if (status === 'PEN') {
+      const ph = score.penalty.home ?? 0, pa = score.penalty.away ?? 0
+      winner = ph > pa ? 'home' : pa > ph ? 'away' : null
+    } else {
+      winner = (goals.home ?? 0) > (goals.away ?? 0) ? 'home'
+             : (goals.away ?? 0) > (goals.home ?? 0) ? 'away' : null
+    }
+  }
+
+  const teamRow = (side: 'home' | 'away') => {
+    const team = side === 'home' ? teams.home : teams.away
+    const g    = side === 'home' ? goals.home  : goals.away
+    const isW  = winner === side
+    return (
+      <div className={cn('flex items-center gap-1.5 px-2', isW ? 'bg-emerald-500/8' : '')}
+           style={{ height: (WC_CELL_H - (isLive || (!isFinished && !isLive) || status === 'PEN' ? 17 : 1)) / 2 }}>
+        {team.logo
+          ? <Image src={team.logo} alt={team.name} width={12} height={12} unoptimized className="shrink-0 rounded-full" />
+          : <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />}
+        <span className={cn('text-[10px] font-medium truncate flex-1',
+          isW ? 'text-white font-bold' : 'text-slate-400')}>
+          {translateTeam(team.name)}
+        </span>
+        {hasScore && <span className={cn('text-[10px] font-bold shrink-0', isW ? 'text-emerald-400' : 'text-slate-500')}>{g}</span>}
+        {side === 'home' && <span className="text-[8px] text-slate-700 shrink-0 mr-0.5">#{matchNum}</span>}
+      </div>
+    )
+  }
+
+  let footer: React.ReactNode = null
+  if (isLive) {
+    footer = <div className="text-[9px] text-emerald-400 bg-emerald-500/5 text-center py-0.5">LIVE {fix.status.elapsed ? `${fix.status.elapsed}'` : ''}</div>
+  } else if (!isFinished) {
+    footer = <div className="text-[9px] text-slate-600 text-center py-0.5">{new Date(fix.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</div>
+  } else if (status === 'PEN') {
+    footer = <div className="text-[9px] text-slate-500 text-center py-0.5">פנ׳ {score.penalty.home}-{score.penalty.away}</div>
+  }
+
+  return (
+    <div className="bg-[#0d1420] rounded-lg border border-slate-700/40 overflow-hidden" style={cellStyle}>
+      {teamRow('home')}
+      <div className="h-px bg-slate-800/60" />
+      {teamRow('away')}
+      {footer && <div className="border-t border-slate-800/40">{footer}</div>}
+    </div>
+  )
+}
+
+function WC2026Bracket({ rounds }: { rounds: Record<string, ApiFixture[]> }) {
+  const matrix  = wcBuildMatrix(rounds)
+  const centers = wcComputeCenters(matrix)
+  const n = WC_ROUNDS_DEF.length
+
+  const totalH = matrix[0].length * (WC_CELL_H + WC_CELL_GAP) - WC_CELL_GAP
+  const totalW = n * WC_COL_W + (n - 1) * WC_COL_GAP
+
+  const lines: { x1: number; y1: number; x2: number; y2: number }[] = []
+  for (let r = 1; r < n; r++) {
+    for (let p = 0; p < matrix[r].length; p++) {
+      const c0 = 2 * p, c1 = 2 * p + 1
+      if (c1 >= centers[r - 1].length) continue
+      const yParent = centers[r][p]
+      const yC0 = centers[r - 1][c0], yC1 = centers[r - 1][c1]
+      const px = wcColX(r) + WC_COL_W
+      const cx = wcColX(r - 1)
+      const midX = px + WC_COL_GAP / 2
+      lines.push({ x1: px, y1: yParent, x2: midX, y2: yParent })
+      lines.push({ x1: midX, y1: Math.min(yC0, yC1), x2: midX, y2: Math.max(yC0, yC1) })
+      lines.push({ x1: midX, y1: yC0, x2: cx, y2: yC0 })
+      lines.push({ x1: midX, y1: yC1, x2: cx, y2: yC1 })
+    }
+  }
+
+  const thirdFixtures = THIRD_PLACE_KEYS.reduce<ApiFixture[]>(
+    (acc, k) => acc.length ? acc : (rounds[k] ?? []), []
+  )
+  const thirdFixture = thirdFixtures[0] ?? null
+
+  return (
+    <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
+        <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
+      </div>
+      <div className="overflow-x-auto p-4">
+        <div style={{ position: 'relative', width: totalW, height: totalH + 28, paddingTop: 28 }}>
+          {WC_ROUNDS_DEF.map((round, r) => (
+            <div key={r} style={{ position: 'absolute', left: wcColX(r), top: 0, width: WC_COL_W, textAlign: 'center' }}
+                 className="text-[11px] font-bold text-slate-400 whitespace-nowrap">
+              {round.label}
+            </div>
+          ))}
+          <svg style={{ position: 'absolute', left: 0, top: 28, pointerEvents: 'none' }} width={totalW} height={totalH}>
+            {lines.map((l, i) => (
+              <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#334155" strokeWidth={1.5} />
+            ))}
+          </svg>
+          {matrix.map((round, r) =>
+            round.map((fixture, p) => (
+              <div key={`${r}-${p}`} style={{
+                position: 'absolute',
+                left: wcColX(r),
+                top: 28 + centers[r][p] - WC_CELL_H / 2,
+                width: WC_COL_W,
+              }}>
+                <WCMatchCard fixture={fixture} matchNum={WC_ROUNDS_DEF[r].offset + p} />
+              </div>
+            ))
+          )}
+        </div>
+
+        {thirdFixture && (
+          <div className="mt-6 pt-4 border-t border-slate-700/30 flex items-center gap-4">
+            <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap">מקום שלישי</span>
+            <div style={{ width: WC_COL_W }}>
+              <WCMatchCard fixture={thirdFixture} matchNum={103} />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── KnockoutBracket ───────────────────────────────────────────────
+
 function KnockoutBracket({
   rounds,
   bracketConfig,
@@ -428,6 +632,11 @@ function KnockoutBracket({
   rounds: Record<string, ApiFixture[]>
   bracketConfig: { roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[] } | null
 }) {
+  // WC 2026 — 32-team single-elimination bracket
+  const hasRoundOf32 = Object.keys(rounds).some(k => k.toLowerCase().includes('round of 32'))
+  if (hasRoundOf32) {
+    return <WC2026Bracket rounds={rounds} />
+  }
   const sortedRoundKeys = Object.keys(rounds).sort((a, b) => {
     const ai = ROUND_ORDER.findIndex(r => r.toLowerCase() === a.toLowerCase())
     const bi = ROUND_ORDER.findIndex(r => r.toLowerCase() === b.toLowerCase())
