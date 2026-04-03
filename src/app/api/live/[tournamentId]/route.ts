@@ -25,9 +25,9 @@ export async function GET(
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const translated = (data ?? []).map(m => ({
-    ...m,
-    home_team_name: translateTeam(m.home_team_name),
-    away_team_name: translateTeam(m.away_team_name),
+    ...(m as Record<string, unknown>),
+    home_team_name: translateTeam((m as Record<string, unknown>).home_team_name as string),
+    away_team_name: translateTeam((m as Record<string, unknown>).away_team_name as string),
   }))
   return NextResponse.json(
     { matches: translated },
