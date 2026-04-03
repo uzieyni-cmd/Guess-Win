@@ -72,6 +72,7 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
   const [loading, setLoading] = useState(true)
   const [roundKeys, setRoundKeys] = useState<string[]>([])
   const [roundTies, setRoundTies] = useState<Record<string, TieInfo[]>>({})
+  const [isWC2026, setIsWC2026] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
 
@@ -81,6 +82,9 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
       fetch(`/api/knockout/${tournamentId}`).then(r => r.ok ? r.json() : null).catch(() => null),
       supabase.from('tournaments').select('bracket_config').eq('id', tournamentId).single(),
     ]).then(([knockoutData, { data: configRow }]) => {
+      const savedConfig = configRow?.bracket_config as { roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[]; wc2026?: boolean } | null
+      setIsWC2026(savedConfig?.wc2026 ?? false)
+
       if (!knockoutData?.rounds || Object.keys(knockoutData.rounds).length === 0) {
         setLoading(false)
         return
@@ -93,7 +97,6 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
       })
 
       // bracket_config from Supabase is always fresh (not cached)
-      const savedConfig = configRow?.bracket_config as { roundOrders?: Record<string, string[]>; firstRound?: string; tieOrder?: string[] } | null
       const savedOrders: Record<string, string[]> =
         savedConfig?.roundOrders ??
         (savedConfig?.firstRound
@@ -129,9 +132,11 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
     for (const key of roundKeys) {
       roundOrders[key] = (roundTies[key] ?? []).map(t => t.key)
     }
+    const bracketConfig: Record<string, unknown> = { roundOrders }
+    if (isWC2026) bracketConfig.wc2026 = true
     const { error } = await supabase
       .from('tournaments')
-      .update({ bracket_config: { roundOrders } })
+      .update({ bracket_config: bracketConfig })
       .eq('id', tournamentId)
     setSaving(false)
     if (error) {
@@ -199,6 +204,16 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
                 </div>
               )
             })}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isWC2026}
+                onChange={e => setIsWC2026(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-600 accent-emerald-500"
+              />
+              <span className="text-sm text-muted-foreground">תצוגת עץ גביע העולם 2026 (32 קבוצות)</span>
+            </label>
+
             <div className="flex items-center gap-3">
               <Button onClick={handleSave} disabled={saving} size="sm">
                 {saving
