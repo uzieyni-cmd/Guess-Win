@@ -452,7 +452,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       } catch { /* שקט בשגיאות רשת */ }
     }
     poll()
-    const interval = setInterval(poll, 60_000)
+    const interval = setInterval(poll, 30_000)
     return () => clearInterval(interval)
   }, [activeTournamentId, patchMatches])
 
