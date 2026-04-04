@@ -84,4 +84,5 @@ export interface ParticipantStanding {
   rank: number
   betResults: BetResult[]
   scoredBetsCount: number
+  liveBonus?: number  // ניקוד זמני ממשחקים חיים (לא נשמר ב-DB)
 }

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { supabase, DbMatch, DbBet, DbTournament } from '@/lib/supabase'
 import { translateTeam } from '@/lib/teams-he'
 import { Bet, Match, ParticipantStanding, Score, Tournament, User } from '@/types'
+import { calculateScore } from '@/lib/scoring'
 import {
   adminCreateTournament,
   adminUpdateTournament,
@@ -93,7 +94,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [activeTournamentId, setActiveTournamentIdState] = useState<string | null>(null)
   const [bets, setBets] = useState<Bet[]>([])
   const [participants, setParticipants] = useState<User[]>([])
-  const [standings, setStandings] = useState<ParticipantStanding[]>([])
+  const [baseStandings, setStandings] = useState<ParticipantStanding[]>([])
 
   // Ref לשמירת זמני התחלת משחקים — לשימוש ב-Realtime callback ללא closure stale
   const matchTimesRef = useRef<Map<string, string>>(new Map())
@@ -188,6 +189,41 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     () => tournaments.find((t) => t.id === activeTournamentId) ?? null,
     [tournaments, activeTournamentId]
   )
+
+  // ── ניקוד חי — מוסיף ניקוד זמני ממשחקים חיים על גבי ה-DB standings ──
+  const standings = useMemo<ParticipantStanding[]>(() => {
+    if (!baseStandings.length) return baseStandings
+    const liveMatches = (activeTournament?.matches ?? []).filter(
+      m => m.status === 'live' && m.actualScore !== null
+    )
+    if (!liveMatches.length) return baseStandings
+
+    const liveMatchIds = new Set(liveMatches.map(m => m.id))
+    const liveMatchMap = new Map(liveMatches.map(m => [m.id, m]))
+
+    // בטים על משחקים חיים בלבד (שעדיין לא קיבלו points ב-DB)
+    const liveBets = bets.filter(b => liveMatchIds.has(b.matchId) && b.tournamentId === activeTournamentId)
+
+    // חשב ניקוד זמני לכל משתמש
+    const livePointsByUser: Record<string, number> = {}
+    for (const bet of liveBets) {
+      const match = liveMatchMap.get(bet.matchId)
+      if (!match) continue
+      const result = calculateScore(bet, match)
+      livePointsByUser[bet.userId] = (livePointsByUser[bet.userId] ?? 0) + result.points
+    }
+
+    if (!Object.keys(livePointsByUser).length) return baseStandings
+
+    const updated = baseStandings.map(s => ({
+      ...s,
+      totalPoints: s.totalPoints + (livePointsByUser[s.user.id] ?? 0),
+      liveBonus: livePointsByUser[s.user.id] ?? 0,
+    }))
+    updated.sort((a, b) => b.totalPoints - a.totalPoints)
+    updated.forEach((s, i) => { s.rank = i + 1 })
+    return updated
+  }, [baseStandings, activeTournament, bets, activeTournamentId])
 
   useEffect(() => {
     if (!activeTournament) { matchTimesRef.current = new Map(); return }
