@@ -192,9 +192,9 @@ export default function AdminTournamentsPage() {
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 ml-1" />תחרות חדשה</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>יצירת תחרות</DialogTitle></DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
+          <DialogContent className="max-w-lg max-h-[90dvh] flex flex-col">
+            <DialogHeader className="shrink-0"><DialogTitle>יצירת תחרות</DialogTitle></DialogHeader>
+            <form onSubmit={handleCreate} className="space-y-4 overflow-y-auto flex-1 pr-1">
 
               {/* שלב 1: בחירת ליגה */}
               <div>
