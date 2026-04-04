@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { fetchStandings } from '@/lib/api-football'
 
-export const revalidate = 3600 // cache שעה
+export const revalidate = 1800 // cache 30 דקות
 
 export async function GET(
   _req: Request,
@@ -23,7 +23,7 @@ export async function GET(
   try {
     const standings = await fetchStandings(t.api_league_id, t.api_season)
     return NextResponse.json({ standings }, {
-      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' },
+      headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600' },
     })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
