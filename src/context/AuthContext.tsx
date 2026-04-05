@@ -50,6 +50,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isProfileReady, setIsProfileReady] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const hasInitialized = useRef(false)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Idle logout — 10 דקות ללא פעילות ───────────────────────────
+  useEffect(() => {
+    const IDLE_MS = 10 * 60 * 1000
+    const EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
+
+    const resetTimer = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      idleTimerRef.current = setTimeout(async () => {
+        await supabase.auth.signOut()
+      }, IDLE_MS)
+    }
+
+    // התחל timer רק אם יש משתמש מחובר
+    if (!currentUser) {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      return
+    }
+
+    resetTimer()
+    EVENTS.forEach(e => window.addEventListener(e, resetTimer, { passive: true }))
+
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      EVENTS.forEach(e => window.removeEventListener(e, resetTimer))
+    }
+  }, [currentUser])
 
   useEffect(() => {
     let mounted = true
