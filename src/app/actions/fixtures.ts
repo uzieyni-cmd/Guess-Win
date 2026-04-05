@@ -108,7 +108,7 @@ export async function refreshMatchResult(
   }
 }
 
-// עדכון ידני של תוצאה (Admin)
+// עדכון ידני של תוצאה (Admin) — מעדכן matches + מחשב נקודות לכל הבטים
 export async function setMatchScore(
   matchId: string,
   homeScore: number,
@@ -116,12 +116,33 @@ export async function setMatchScore(
 ): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin()
   try {
+    // 1. עדכן תוצאה + סטטוס
     const { error } = await supabaseAdmin
       .from('matches')
       .update({ actual_home_score: homeScore, actual_away_score: awayScore, status: 'finished' })
       .eq('id', matchId)
-
     if (error) throw error
+
+    // 2. חשב נקודות לכל הבטים (override — כולל כאלה שכבר ניקדו)
+    const { data: bets } = await supabaseAdmin
+      .from('bets')
+      .select('id, predicted_home, predicted_away')
+      .eq('match_id', matchId)
+
+    for (const bet of (bets ?? []) as { id: string; predicted_home: number; predicted_away: number }[]) {
+      let result: 'exact' | 'outcome' | 'miss'
+      let points: number
+      if (bet.predicted_home === homeScore && bet.predicted_away === awayScore) {
+        result = 'exact'; points = 10
+      } else {
+        const predOut = bet.predicted_home > bet.predicted_away ? 'home' : bet.predicted_home < bet.predicted_away ? 'away' : 'draw'
+        const actOut  = homeScore > awayScore ? 'home' : homeScore < awayScore ? 'away' : 'draw'
+        if (predOut === actOut) { result = 'outcome'; points = 5 }
+        else { result = 'miss'; points = 0 }
+      }
+      await supabaseAdmin.from('bets').update({ points, result }).eq('id', bet.id)
+    }
+
     return { ok: true }
   } catch (err) {
     return { ok: false, error: String(err) }
