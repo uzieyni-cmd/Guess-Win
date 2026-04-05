@@ -45,10 +45,10 @@ export async function POST(req: NextRequest) {
           .order('match_start_time', { ascending: false })
           .limit(50),
 
-        // Upcoming / live matches
+        // Upcoming / live matches (with odds)
         supabaseAdmin
           .from('matches')
-          .select('home_team_name, away_team_name, actual_home_score, actual_away_score, status, match_start_time, round')
+          .select('home_team_name, away_team_name, actual_home_score, actual_away_score, status, match_start_time, round, odds_home, odds_draw, odds_away')
           .eq('tournament_id', tournamentId)
           .neq('status', 'finished')
           .order('match_start_time', { ascending: true })
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
         .sort((a: { points: number }, b: { points: number }) => b.points - a.points)
         .map((s: { name: string; points: number }, i: number) => `${i + 1}. ${s.name} — ${s.points} נקודות`)
 
-      type MatchRow = { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null }
+      type MatchRow = { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null; odds_home?: number | null; odds_draw?: number | null; odds_away?: number | null }
 
       const finishedMatches = (finishedMatchesRes.data ?? []).map(m => {
         const r = m as unknown as MatchRow
@@ -118,7 +118,17 @@ export async function POST(req: NextRequest) {
         const away = translateTeam(r.away_team_name)
         const status = r.status === 'live' ? 'חי כעת' : 'מתוכנן'
         const score = r.actual_home_score !== null ? ` ${r.actual_home_score}:${r.actual_away_score}` : ''
-        return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}`
+        let oddsStr = ''
+        if (r.odds_home && r.odds_draw && r.odds_away) {
+          // Lower odds = more likely to win
+          const fav = r.odds_home < r.odds_away
+            ? `${home} מועדף`
+            : r.odds_away < r.odds_home
+              ? `${away} מועדף`
+              : 'שוויון'
+          oddsStr = ` | יחסים: ${home} ${r.odds_home} / תיקו ${r.odds_draw} / ${away} ${r.odds_away} (${fav})`
+        }
+        return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}${oddsStr}`
       })
 
       // user bets
@@ -154,6 +164,9 @@ ${userBets.length ? `הניחושים שלך:\n${userBets.join('\n')}` : ''}
 
 בסעיף "תוצאות משחקים שהסתיימו" מופיעות כל התוצאות הסופיות — השתמש בהן כמקור הסמכותי לכל שאלה על תוצאת משחק.
 הפורמט: קבוצה_בית תוצאה_בית:תוצאה_חוץ קבוצה_חוץ
+
+בסעיף "משחקים עתידיים" מופיעים יחסי הימורים של Bet365 (כאשר זמינים). יחס נמוך יותר = סיכוי ניצחון גבוה יותר.
+כשמישהו שואל על תחזית / ניחוש / מי ינצח — השתמש ביחסים כדי להמליץ, ותסביר בקצרה למה.
 ${contextBlock}`
 
     // סנן הודעות assistant ראשונות — LLM צריך להתחיל עם user
