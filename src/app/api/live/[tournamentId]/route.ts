@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
+import { syncLiveMatches } from '@/lib/sync-live-matches'
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 30
 
 const COLS =
   'id,tournament_id,home_team_id,home_team_name,home_team_short,home_team_flag,' +
@@ -14,6 +16,9 @@ export async function GET(
   { params }: { params: Promise<{ tournamentId: string }> }
 ) {
   const { tournamentId } = await params
+
+  // סנכרן מ-API Football לפני הקריאה (rate-limited ל-55s לטורניר)
+  await syncLiveMatches({ tournamentId })
 
   const { data, error } = await supabaseAdmin
     .from('matches')

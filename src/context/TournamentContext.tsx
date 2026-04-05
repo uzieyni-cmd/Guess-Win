@@ -489,7 +489,13 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     }
     poll()
     const interval = setInterval(poll, 30_000)
-    return () => clearInterval(interval)
+    // רענון מיידי כשחוזרים לטאב (מובייל מקפיא timers ב-background)
+    const onVisible = () => { if (!document.hidden) poll() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [activeTournamentId, patchMatches])
 
   return (

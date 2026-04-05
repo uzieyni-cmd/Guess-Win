@@ -351,9 +351,16 @@ export default function MatchDetailPage() {
 
     fetchDetail(true)
 
-    if (match.status !== 'live') return
+    // poll כל עוד המשחק לא הסתיים — גם אם context עדיין מציג 'scheduled'
+    if (match.status === 'finished') return
     const interval = setInterval(() => fetchDetail(false), 30_000)
-    return () => clearInterval(interval)
+    // רענון מיידי כשחוזרים לטאב (מובייל מקפיא timers ב-background)
+    const onVisible = () => { if (!document.hidden) fetchDetail(false) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [match?.apiFixtureId, match?.status])
 
   if (!activeTournament) {
