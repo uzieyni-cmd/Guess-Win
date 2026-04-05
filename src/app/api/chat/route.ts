@@ -52,9 +52,12 @@ export async function POST(req: NextRequest) {
     // חשב standings
     const pointsByUser: Record<string, { name: string; points: number }> = {}
     for (const row of standingsRes.data ?? []) {
-      const r = row as { user_id: string; points: number; profiles: { display_name: string } | null }
+      const r = row as unknown as { user_id: string; points: number; profiles: { display_name: string }[] | { display_name: string } | null }
+      const profileName = Array.isArray(r.profiles)
+        ? r.profiles[0]?.display_name
+        : r.profiles?.display_name
       if (!pointsByUser[r.user_id]) {
-        pointsByUser[r.user_id] = { name: r.profiles?.display_name ?? 'משתתף', points: 0 }
+        pointsByUser[r.user_id] = { name: profileName ?? 'משתתף', points: 0 }
       }
       pointsByUser[r.user_id].points += r.points
     }
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     // משחקים
     const matches = (matchesRes.data ?? []).map(m => {
-      const r = m as { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null }
+      const r = m as unknown as { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null }
       const home = translateTeam(r.home_team_name)
       const away = translateTeam(r.away_team_name)
       const score = r.actual_home_score !== null ? `${r.actual_home_score}:${r.actual_away_score}` : 'טרם שוחק'
@@ -74,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     // ניחושי המשתמש
     const userBets = (userBetsRes.data ?? []).map(b => {
-      const r = b as { predicted_home: number; predicted_away: number; points: number | null; result: string | null; matches: { home_team_name: string; away_team_name: string; status: string } | null }
+      const r = b as unknown as { predicted_home: number; predicted_away: number; points: number | null; result: string | null; matches: { home_team_name: string; away_team_name: string; status: string } | null }
       const home = translateTeam(r.matches?.home_team_name ?? '')
       const away = translateTeam(r.matches?.away_team_name ?? '')
       const pts = r.points !== null ? `${r.points} נק'` : 'טרם חושב'
