@@ -21,7 +21,7 @@ export function SiteHeader({ left, right, className, below }: Props) {
           <div className="flex items-center gap-2 min-w-0 overflow-hidden">
             {left && <div className="shrink-0">{left}</div>}
             <Image src="/logo.svg" alt="Guess&Win" width={38} height={44} className="sm:w-[48px] sm:h-[56px] shrink-0" priority />
-            <span className="font-black text-lg sm:text-2xl tracking-widest leading-none whitespace-nowrap select-none">
+            <span className="font-suez text-lg sm:text-2xl tracking-wide leading-none whitespace-nowrap select-none">
               <span className="text-white">GUESS</span>
               <span className="text-yellow-400"> &amp; WIN</span>
             </span>
