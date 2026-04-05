@@ -42,12 +42,15 @@ export function ChatBot({ tournamentId }: Props) {
     setInput('')
     setLoading(true)
 
+    // שלח רק הודעות user/assistant אמיתיות — לא הברכה הראשונית
+    const apiMessages = next.filter((m, i) => !(i === 0 && m.role === 'assistant'))
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: next,
+          messages: apiMessages,
           tournamentId,
           userId: currentUser?.id,
         }),
