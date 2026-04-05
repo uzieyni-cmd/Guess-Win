@@ -206,11 +206,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                 /* ── ציון LIVE / תוצאה סופית ─── */
                 <div className="flex flex-col items-center gap-1 min-h-[36px] justify-center">
                   <div className="flex items-center gap-2">
-                    <span className={cn('text-2xl font-bold tabular-nums w-7 text-center', isLive ? 'text-white' : 'text-slate-800')}>
+                    <span className={cn('font-condensed text-3xl font-bold tabular-nums w-8 text-center', isLive ? 'text-white' : 'text-slate-800')}>
                       {match.actualScore?.home ?? 0}
                     </span>
                     <span className={cn('text-base font-bold', isLive ? 'text-slate-400' : 'text-slate-500')}>–</span>
-                    <span className={cn('text-2xl font-bold tabular-nums w-7 text-center', isLive ? 'text-white' : 'text-slate-800')}>
+                    <span className={cn('font-condensed text-3xl font-bold tabular-nums w-8 text-center', isLive ? 'text-white' : 'text-slate-800')}>
                       {match.actualScore?.away ?? 0}
                     </span>
                   </div>
@@ -218,7 +218,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                   {userBet ? (
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap justify-center">
                       <span className={cn('text-[11px]', isLive ? 'text-slate-300' : 'text-slate-500')}>
-                        ניחוש: <span className={cn('font-mono font-semibold tabular-nums', isLive ? 'text-slate-200' : 'text-slate-600')}>{userBet.predictedScore.home}–{userBet.predictedScore.away}</span>
+                        ניחוש: <span className={cn('font-condensed font-semibold tabular-nums text-sm', isLive ? 'text-slate-200' : 'text-slate-600')}>{userBet.predictedScore.home}–{userBet.predictedScore.away}</span>
                       </span>
                       {userResult && <PointsBadge result={userResult.result} points={userResult.points} />}
                     </div>

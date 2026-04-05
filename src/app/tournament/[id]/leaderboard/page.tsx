@@ -58,7 +58,7 @@ export default function LeaderboardPage() {
               >
                 {/* מספר דירוג */}
                 <div className={cn(
-                  'w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold shrink-0',
+                  'w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0',
                   i < 3 ? rankStyles[i].badge : 'text-slate-500'
                 )}>
                   {s.rank}
@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
 
                 {/* ניקוד */}
                 <div className="text-left shrink-0 flex flex-col items-center">
-                  <p className={cn('text-xl font-bold tabular-nums', i < 3 ? rankStyles[i].points : 'text-emerald-400')}>
+                  <p className={cn('font-condensed text-2xl font-bold tabular-nums', i < 3 ? rankStyles[i].points : 'text-emerald-400')}>
                     {s.totalPoints}
                   </p>
                   {liveBonus > 0 ? (
