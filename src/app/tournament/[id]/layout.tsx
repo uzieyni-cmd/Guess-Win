@@ -7,6 +7,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { SiteHeader } from '@/components/shared/SiteHeader'
+import { ChatBot } from '@/components/shared/ChatBot'
 import { cn } from '@/lib/utils'
 
 const NAV_TABS = [
@@ -80,6 +81,8 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
       <div key={pathname} className="flex-1 max-w-[1600px] mx-auto w-full px-4 py-6 animate-fade-up">
         {children}
       </div>
+
+      <ChatBot tournamentId={id} />
     </div>
   )
 }
