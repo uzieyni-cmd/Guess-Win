@@ -112,7 +112,6 @@ ${contextBlock}`
     model: gateway('google/gemini-2.0-flash-lite'),
     system: systemPrompt,
     messages,
-    maxTokens: 400,
   })
 
   return result.toDataStreamResponse()
