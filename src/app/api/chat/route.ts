@@ -115,7 +115,8 @@ ${contextBlock}`
 
     return NextResponse.json({ text })
   } catch (err) {
-    console.error('[/api/chat] error:', err)
-    return NextResponse.json({ error: 'שגיאת שרת' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[/api/chat] error:', msg)
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
