@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai'
-import { streamText, CoreMessage } from 'ai'
+import { streamText } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { messages, tournamentId, userId } = body as {
-      messages: CoreMessage[]
+      messages: { role: 'user' | 'assistant'; content: string }[]
       tournamentId?: string
       userId?: string
     }
@@ -105,7 +105,7 @@ ${contextBlock}`
     // סנן הודעות assistant ראשונות — LLM צריך להתחיל עם user
     const filteredMessages = messages.filter((m, i) =>
       !(i === 0 && m.role === 'assistant')
-    ) as CoreMessage[]
+    )
 
     const result = streamText({
       model: gateway('google/gemini-2.0-flash-lite'),
