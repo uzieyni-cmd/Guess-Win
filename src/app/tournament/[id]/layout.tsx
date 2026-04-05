@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, usePathname } from 'next/navigation'
-import { ArrowRight, Trophy, TrendingUp, User, Target, LogOut, Settings, TableProperties, Gift } from 'lucide-react'
+import { ArrowRight, Trophy, TrendingUp, Target, LogOut, Settings, TableProperties, Gift } from 'lucide-react'
 import Link from 'next/link'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useTournament } from '@/context/TournamentContext'
@@ -12,11 +12,10 @@ import { cn } from '@/lib/utils'
 
 const NAV_TABS = [
   { label: 'משחקים', href: 'matches', icon: Target },
-  { label: 'דירוג', href: 'leaderboard', icon: Trophy },
-  { label: 'טבלה', href: 'standings', icon: TableProperties },
-  { label: 'סטטיסטיקה', href: 'stats', icon: TrendingUp },
-  { label: 'הניחושים שלי', href: 'personal', icon: User },
   { label: 'בונוס', href: 'bonus', icon: Gift },
+  { label: 'טבלה', href: 'standings', icon: TableProperties },
+  { label: 'דירוג', href: 'leaderboard', icon: Trophy },
+  { label: 'סטטיסטיקה', href: 'stats', icon: TrendingUp },
 ]
 
 function TournamentShell({ children }: { children: React.ReactNode }) {
@@ -58,7 +57,7 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
           </div>
         }
         below={
-          <div className="flex gap-0.5 border-t border-white/5">
+          <div className="flex gap-0.5 border-t border-white/5 overflow-x-auto scrollbar-none">
             {NAV_TABS.map((tab) => {
               const isActive = pathname.endsWith(`/${tab.href}`)
               return (
