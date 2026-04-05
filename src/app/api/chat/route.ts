@@ -29,12 +29,12 @@ export async function POST(req: NextRequest) {
     let contextBlock = ''
 
     if (tournamentId) {
-      const [standingsRes, finishedMatchesRes, upcomingMatchesRes, userBetsRes] = await Promise.all([
+      const [participantsRes, finishedMatchesRes, upcomingMatchesRes, userBetsRes, scoredBetsRes] = await Promise.all([
+        // Participants list for this tournament
         supabaseAdmin
-          .from('bets')
-          .select('user_id, points, profiles(display_name)')
-          .eq('tournament_id', tournamentId)
-          .not('points', 'is', null),
+          .from('tournament_participants')
+          .select('user_id')
+          .eq('tournament_id', tournamentId),
 
         // Finished matches — primary results data source
         supabaseAdmin
@@ -61,19 +61,47 @@ export async function POST(req: NextRequest) {
               .eq('tournament_id', tournamentId)
               .eq('user_id', userId)
           : Promise.resolve({ data: [] }),
+
+        // Scored bets for standings — separate from profiles
+        supabaseAdmin
+          .from('bets')
+          .select('user_id, points')
+          .eq('tournament_id', tournamentId)
+          .not('points', 'is', null),
       ])
 
-      // standings
-      const pointsByUser: Record<string, { name: string; points: number }> = {}
-      for (const row of standingsRes.data ?? []) {
-        const r = row as unknown as { user_id: string; points: number; profiles: { display_name: string }[] | { display_name: string } | null }
-        const profileName = Array.isArray(r.profiles) ? r.profiles[0]?.display_name : (r.profiles as { display_name: string } | null)?.display_name
-        if (!pointsByUser[r.user_id]) pointsByUser[r.user_id] = { name: profileName ?? 'משתתף', points: 0 }
-        pointsByUser[r.user_id].points += r.points
+      // standings — replicate TournamentContext logic exactly
+      const participantIds = (participantsRes.data ?? []).map(
+        (p: { user_id: string }) => p.user_id
+      )
+
+      // Fetch profiles for participants
+      const profilesRes = participantIds.length
+        ? await supabaseAdmin
+            .from('profiles')
+            .select('id, display_name')
+            .in('id', participantIds)
+        : { data: [] }
+
+      const nameById: Record<string, string> = {}
+      for (const p of (profilesRes.data ?? []) as { id: string; display_name: string }[]) {
+        nameById[p.id] = p.display_name
       }
-      const standings = Object.values(pointsByUser)
-        .sort((a, b) => b.points - a.points)
-        .map((s, i) => `${i + 1}. ${s.name} — ${s.points} נקודות`)
+
+      // Sum points per user
+      const pointsByUser: Record<string, number> = {}
+      for (const row of (scoredBetsRes.data ?? []) as { user_id: string; points: number }[]) {
+        pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points
+      }
+
+      // Build standings for ALL participants (same as leaderboard page)
+      const standings = participantIds
+        .map((uid: string) => ({
+          name: nameById[uid] ?? 'משתתף',
+          points: pointsByUser[uid] ?? 0,
+        }))
+        .sort((a: { points: number }, b: { points: number }) => b.points - a.points)
+        .map((s: { name: string; points: number }, i: number) => `${i + 1}. ${s.name} — ${s.points} נקודות`)
 
       type MatchRow = { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null }
 
