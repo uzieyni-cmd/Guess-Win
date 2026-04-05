@@ -8,24 +8,32 @@ import { useAuth } from '@/context/AuthContext'
 import { SiteHeader } from '@/components/shared/SiteHeader'
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS = [
-  { label: 'סקירה',     href: '/admin',              icon: LayoutDashboard },
-  { label: 'תחרויות',  href: '/admin/tournaments',  icon: Trophy },
-  { label: 'משתמשים',  href: '/admin/users',         icon: Users },
-]
+// Roles that can access the admin area
+const ALLOWED_ROLES = ['admin', 'owner', 'tournament_admin']
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
+  const role = currentUser?.role ?? ''
+  const isFullAdmin = role === 'admin' || role === 'owner'
+  const isTournamentAdmin = role === 'tournament_admin'
+
   useEffect(() => {
-    if (currentUser && currentUser.role !== 'admin') {
+    if (currentUser && !ALLOWED_ROLES.includes(currentUser.role)) {
       router.replace('/competitions')
     }
   }, [currentUser, router])
 
-  if (currentUser?.role !== 'admin') return null
+  if (!currentUser || !ALLOWED_ROLES.includes(role)) return null
+
+  // tournament_admin: only show access to tournaments section
+  const navItems = [
+    ...(isFullAdmin ? [{ label: 'סקירה', href: '/admin', icon: LayoutDashboard }] : []),
+    { label: 'תחרויות', href: '/admin/tournaments', icon: Trophy },
+    ...(isFullAdmin ? [{ label: 'משתמשים', href: '/admin/users', icon: Users }] : []),
+  ]
 
   return (
     <div className="min-h-screen bg-[#070b14] flex flex-col">
@@ -39,7 +47,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
         }
         below={
           <div className="flex gap-0.5 border-t border-white/5">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
               return (
                 <Link key={item.href} href={item.href}
@@ -57,8 +65,6 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
         }
       />
-
-      {/* Content */}
       <main className="flex-1 overflow-auto">
         {children}
       </main>

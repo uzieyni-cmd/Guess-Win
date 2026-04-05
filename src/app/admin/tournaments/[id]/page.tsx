@@ -1,11 +1,12 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift } from 'lucide-react'
+import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield } from 'lucide-react'
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
 import { getBonusQuestions, createBonusQuestion, deleteBonusQuestion, setBonusResult } from '@/app/actions/bonus'
+import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
-import { Match, BonusQuestion } from '@/types'
+import { Match, BonusQuestion, UserRole } from '@/types'
 import { ApiFixture } from '@/lib/api-football'
 import { translateTeam } from '@/lib/teams-he'
 
@@ -238,7 +239,7 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
 export default function AdminTournamentDetailPage() {
   const params = useParams()
   const id = params.id as string
-  const { tournaments, addMatch, reload, reloadMatches } = useTournament()
+  const { tournaments, addMatch, reload, reloadMatches, participants } = useTournament()
   const tournament = tournaments.find((t) => t.id === id)
 
   const [scores, setScores] = useState<Record<string, { home: string; away: string }>>({})
@@ -298,6 +299,41 @@ export default function AdminTournamentDetailPage() {
   const handleDeleteBonus = async (qId: string) => {
     await deleteBonusQuestion(qId)
     loadBonusQuestions()
+  }
+
+  // ── Tournament admins state ────────────────────────────────────
+  const [tournamentAdmins, setTournamentAdmins] = useState<{ userId: string; displayName: string; email: string }[]>([])
+  const [assignEmail, setAssignEmail] = useState('')
+  const [adminMsg, setAdminMsg] = useState('')
+
+  const loadTournamentAdmins = useCallback(async () => {
+    const list = await getTournamentAdmins(id)
+    setTournamentAdmins(list)
+  }, [id])
+
+  useEffect(() => { loadTournamentAdmins() }, [loadTournamentAdmins])
+
+  const handleAssignAdmin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    // Find user by email from participants (or all profiles via supabase)
+    const { supabase: sb } = await import('@/lib/supabase')
+    const { data: profile } = await sb.from('profiles').select('id, display_name, role').eq('email', assignEmail.trim()).single()
+    if (!profile) { setAdminMsg('משתמש לא נמצא'); return }
+    if ((profile.role as UserRole) === 'owner') { setAdminMsg('לא ניתן להגדיר בעלים כמנהל טורניר'); return }
+    const res = await assignTournamentAdmin(id, profile.id)
+    if (res.ok) {
+      setAssignEmail('')
+      loadTournamentAdmins()
+      setAdminMsg(`✓ ${profile.display_name} הוגדר כמנהל הטורניר`)
+    } else {
+      setAdminMsg(res.error ?? 'שגיאה')
+    }
+    setTimeout(() => setAdminMsg(''), 3000)
+  }
+
+  const handleRemoveAdmin = async (userId: string) => {
+    await removeTournamentAdmin(id, userId)
+    loadTournamentAdmins()
   }
 
   const handleSetBonusResult = async (qId: string) => {
@@ -580,6 +616,52 @@ export default function AdminTournamentDetailPage() {
       </div>
 
       <BracketConfigSection tournamentId={id} />
+
+      {/* ── מנהלי טורניר ─────────────────────────────────────────── */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Shield className="h-4 w-4 text-blue-400" />
+            מנהלי טורניר
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {adminMsg && (
+            <p className={`text-sm px-3 py-2 rounded-lg ${adminMsg.startsWith('✓') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              {adminMsg}
+            </p>
+          )}
+          {/* Assigned admins */}
+          {tournamentAdmins.length > 0 && (
+            <div className="space-y-2">
+              {tournamentAdmins.map(ta => (
+                <div key={ta.userId} className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/30">
+                  <div>
+                    <p className="text-sm font-medium text-slate-200">{ta.displayName}</p>
+                    <p className="text-xs text-slate-500">{ta.email}</p>
+                  </div>
+                  <button onClick={() => handleRemoveAdmin(ta.userId)}
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Assign new admin by email */}
+          <form onSubmit={handleAssignAdmin} className="flex gap-2">
+            <Input
+              placeholder="אימייל של משתמש..."
+              value={assignEmail}
+              onChange={e => setAssignEmail(e.target.value)}
+              className="flex-1"
+            />
+            <Button type="submit" size="sm" disabled={!assignEmail.trim()}>
+              <Plus className="h-4 w-4 ml-1" />הגדר
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* ── הימורי בונוס ──────────────────────────────────────────── */}
       <Card className="mt-6">
