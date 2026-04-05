@@ -29,19 +29,30 @@ export async function POST(req: NextRequest) {
     let contextBlock = ''
 
     if (tournamentId) {
-      const [standingsRes, matchesRes, userBetsRes] = await Promise.all([
+      const [standingsRes, finishedMatchesRes, upcomingMatchesRes, userBetsRes] = await Promise.all([
         supabaseAdmin
           .from('bets')
           .select('user_id, points, profiles(display_name)')
           .eq('tournament_id', tournamentId)
           .not('points', 'is', null),
 
+        // Finished matches — primary results data source
         supabaseAdmin
           .from('matches')
           .select('home_team_name, away_team_name, actual_home_score, actual_away_score, status, match_start_time, round')
           .eq('tournament_id', tournamentId)
+          .eq('status', 'finished')
           .order('match_start_time', { ascending: false })
-          .limit(30),
+          .limit(50),
+
+        // Upcoming / live matches
+        supabaseAdmin
+          .from('matches')
+          .select('home_team_name, away_team_name, actual_home_score, actual_away_score, status, match_start_time, round')
+          .eq('tournament_id', tournamentId)
+          .neq('status', 'finished')
+          .order('match_start_time', { ascending: true })
+          .limit(20),
 
         userId
           ? supabaseAdmin
@@ -64,14 +75,22 @@ export async function POST(req: NextRequest) {
         .sort((a, b) => b.points - a.points)
         .map((s, i) => `${i + 1}. ${s.name} — ${s.points} נקודות`)
 
-      // matches
-      const matches = (matchesRes.data ?? []).map(m => {
-        const r = m as unknown as { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null }
+      type MatchRow = { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null }
+
+      const finishedMatches = (finishedMatchesRes.data ?? []).map(m => {
+        const r = m as unknown as MatchRow
         const home = translateTeam(r.home_team_name)
         const away = translateTeam(r.away_team_name)
-        const score = r.actual_home_score !== null ? `${r.actual_home_score}:${r.actual_away_score}` : 'טרם שוחק'
-        const status = r.status === 'finished' ? 'הסתיים' : r.status === 'live' ? 'חי' : 'מתוכנן'
-        return `${home} נגד ${away} | ${score} | ${status}${r.round ? ` | ${r.round}` : ''}`
+        return `${home} ${r.actual_home_score}:${r.actual_away_score} ${away}${r.round ? ` (${r.round})` : ''}`
+      })
+
+      const upcomingMatches = (upcomingMatchesRes.data ?? []).map(m => {
+        const r = m as unknown as MatchRow
+        const home = translateTeam(r.home_team_name)
+        const away = translateTeam(r.away_team_name)
+        const status = r.status === 'live' ? 'חי כעת' : 'מתוכנן'
+        const score = r.actual_home_score !== null ? ` ${r.actual_home_score}:${r.actual_away_score}` : ''
+        return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}`
       })
 
       // user bets
@@ -84,22 +103,29 @@ export async function POST(req: NextRequest) {
 
       contextBlock = `
 === נתוני הטורניר ===
+
 טבלת דירוג:
 ${standings.length ? standings.join('\n') : 'אין נתונים עדיין'}
 
-משחקים:
-${matches.length ? matches.join('\n') : 'אין משחקים'}
+תוצאות משחקים שהסתיימו:
+${finishedMatches.length ? finishedMatches.join('\n') : 'אין משחקים שהסתיימו עדיין'}
+
+משחקים עתידיים / חיים:
+${upcomingMatches.length ? upcomingMatches.join('\n') : 'אין משחקים מתוכננים'}
 
 ${userBets.length ? `הניחושים שלך:\n${userBets.join('\n')}` : ''}
 `
     }
 
     const systemPrompt = `אתה עוזר של אתר Guess & Win — אתר ניחושי כדורגל.
-ענה רק על שאלות על האתר: דירוגים, ניחושים, תוצאות, כללי ניקוד.
+ענה רק על שאלות על האתר: דירוגים, ניחושים, תוצאות משחקים, כללי ניקוד.
 אם שואלים על נושא אחר — סרב בנימוס.
 ענה בעברית, קצר וברור.
 
-כללי ניקוד: תוצאה מדויקת = 3 נק', כיוון נכון = 1 נק', טעות = 0.
+כללי ניקוד: תוצאה מדויקת = 3 נק', כיוון נכון (ניצחון/תיקו/הפסד) = 1 נק', טעות = 0.
+
+בסעיף "תוצאות משחקים שהסתיימו" מופיעות כל התוצאות הסופיות — השתמש בהן כמקור הסמכותי לכל שאלה על תוצאת משחק.
+הפורמט: קבוצה_בית תוצאה_בית:תוצאה_חוץ קבוצה_חוץ
 ${contextBlock}`
 
     // סנן הודעות assistant ראשונות — LLM צריך להתחיל עם user
