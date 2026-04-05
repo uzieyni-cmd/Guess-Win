@@ -280,18 +280,28 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         }))
         setParticipants(profileUsers)
 
-        // Load standings from pre-computed points in DB
-        const { data: scoredBets } = await supabase
-          .from('bets')
-          .select('user_id, points')
-          .eq('tournament_id', activeTournamentId)
-          .not('points', 'is', null)
+        // Load standings: regular bets + bonus picks
+        const [{ data: scoredBets }, { data: bonusPicks }] = await Promise.all([
+          supabase
+            .from('bets')
+            .select('user_id, points')
+            .eq('tournament_id', activeTournamentId)
+            .not('points', 'is', null),
+          supabase
+            .from('bonus_picks')
+            .select('user_id, points_awarded')
+            .eq('tournament_id', activeTournamentId)
+            .not('points_awarded', 'is', null),
+        ])
 
         const pointsByUser: Record<string, number> = {}
         const countByUser: Record<string, number> = {}
         for (const row of (scoredBets ?? []) as { user_id: string; points: number }[]) {
           pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points
           countByUser[row.user_id] = (countByUser[row.user_id] ?? 0) + 1
+        }
+        for (const row of (bonusPicks ?? []) as { user_id: string; points_awarded: number }[]) {
+          pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points_awarded
         }
 
         const newStandings: ParticipantStanding[] = profileUsers

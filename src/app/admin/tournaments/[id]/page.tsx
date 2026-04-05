@@ -1,10 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye } from 'lucide-react'
+import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift } from 'lucide-react'
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
+import { getBonusQuestions, createBonusQuestion, deleteBonusQuestion, setBonusResult } from '@/app/actions/bonus'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
-import { Match } from '@/types'
+import { Match, BonusQuestion } from '@/types'
 import { ApiFixture } from '@/lib/api-football'
 import { translateTeam } from '@/lib/teams-he'
 
@@ -254,6 +255,63 @@ export default function AdminTournamentDetailPage() {
     awayFlag: '',
     kickoff: '',
   })
+
+  // ── Bonus questions state ──────────────────────────────────────
+  const [bonusQuestions, setBonusQuestions] = useState<BonusQuestion[]>([])
+  const [bonusMsg, setBonusMsg] = useState('')
+  const [bonusResultPick, setBonusResultPick] = useState<Record<string, string>>({})
+  const [addBonusOpen, setAddBonusOpen] = useState(false)
+  const [newBonus, setNewBonus] = useState({
+    type: 'custom' as BonusQuestion['type'],
+    question: '',
+    optionsRaw: '',   // comma-separated
+    points: '10',
+  })
+
+  const loadBonusQuestions = useCallback(async () => {
+    const qs = await getBonusQuestions(id)
+    setBonusQuestions(qs)
+  }, [id])
+
+  useEffect(() => { loadBonusQuestions() }, [loadBonusQuestions])
+
+  const handleAddBonus = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const options = newBonus.optionsRaw.split(',').map(s => s.trim()).filter(Boolean)
+    if (!newBonus.question || options.length < 2) return
+    const res = await createBonusQuestion({
+      tournamentId: id,
+      type: newBonus.type,
+      question: newBonus.question,
+      options,
+      points: parseInt(newBonus.points) || 10,
+    })
+    if (res.ok) {
+      setAddBonusOpen(false)
+      setNewBonus({ type: 'custom', question: '', optionsRaw: '', points: '10' })
+      loadBonusQuestions()
+    } else {
+      setBonusMsg(res.error ?? 'שגיאה')
+    }
+  }
+
+  const handleDeleteBonus = async (qId: string) => {
+    await deleteBonusQuestion(qId)
+    loadBonusQuestions()
+  }
+
+  const handleSetBonusResult = async (qId: string) => {
+    const correct = bonusResultPick[qId]
+    if (!correct) return
+    const res = await setBonusResult(qId, correct)
+    if (res.ok) {
+      setBonusMsg(`✓ ${res.awarded} משתתפים קיבלו נקודות`)
+      loadBonusQuestions()
+    } else {
+      setBonusMsg(res.error ?? 'שגיאה')
+    }
+    setTimeout(() => setBonusMsg(''), 3000)
+  }
 
   // ── טעינת משחקים אמיתיים תמיד בכניסה לדף ─────────────────────
   const [matchesLoaded, setMatchesLoaded] = useState(false)
@@ -522,6 +580,112 @@ export default function AdminTournamentDetailPage() {
       </div>
 
       <BracketConfigSection tournamentId={id} />
+
+      {/* ── הימורי בונוס ──────────────────────────────────────────── */}
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Gift className="h-4 w-4 text-emerald-500" />
+              הימורי בונוס
+            </CardTitle>
+            <Dialog open={addBonusOpen} onOpenChange={setAddBonusOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline"><Plus className="h-4 w-4 ml-1" />הוסף שאלה</Button>
+              </DialogTrigger>
+              <DialogContent dir="rtl">
+                <DialogHeader>
+                  <DialogTitle>הוספת הימור בונוס</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddBonus} className="space-y-4 mt-2">
+                  <div>
+                    <Label>סוג</Label>
+                    <select
+                      className="w-full mt-1 border rounded-md px-3 py-2 text-sm bg-background"
+                      value={newBonus.type}
+                      onChange={e => setNewBonus(p => ({ ...p, type: e.target.value as BonusQuestion['type'] }))}
+                    >
+                      <option value="winner">מנצחת הטורניר</option>
+                      <option value="top_scorer">מלך השערים</option>
+                      <option value="custom">מותאם אישית</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>שאלה</Label>
+                    <Input className="mt-1" placeholder='למשל: "מי תנצח בטורניר?"'
+                      value={newBonus.question}
+                      onChange={e => setNewBonus(p => ({ ...p, question: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label>אפשרויות (מופרדות בפסיק)</Label>
+                    <Input className="mt-1" placeholder="ישראל, גרמניה, צרפת, ..."
+                      value={newBonus.optionsRaw}
+                      onChange={e => setNewBonus(p => ({ ...p, optionsRaw: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label>נקודות לניצחון</Label>
+                    <Input className="mt-1 w-24" type="number" min={1} max={100}
+                      value={newBonus.points}
+                      onChange={e => setNewBonus(p => ({ ...p, points: e.target.value }))} />
+                  </div>
+                  <Button type="submit" className="w-full">הוסף</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {bonusMsg && (
+            <p className={`text-sm px-3 py-2 rounded-lg ${bonusMsg.startsWith('✓') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              {bonusMsg}
+            </p>
+          )}
+          {bonusQuestions.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">אין הימורי בונוס עדיין</p>
+          )}
+          {bonusQuestions.map(q => (
+            <div key={q.id} className="border rounded-lg p-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-medium text-sm">{q.question}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {q.points} נק' | נועל: {new Date(q.lockTime).toLocaleString('he-IL')}
+                  </p>
+                </div>
+                <button onClick={() => handleDeleteBonus(q.id)} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {q.options.map(opt => (
+                  <Badge key={opt} variant={q.correctOption === opt ? 'default' : 'outline'}
+                    className={q.correctOption === opt ? 'bg-emerald-600' : ''}>
+                    {opt}
+                  </Badge>
+                ))}
+              </div>
+              {!q.correctOption && (
+                <div className="flex items-center gap-2 pt-1">
+                  <select
+                    className="flex-1 border rounded-md px-2 py-1 text-sm bg-background"
+                    value={bonusResultPick[q.id] ?? ''}
+                    onChange={e => setBonusResultPick(p => ({ ...p, [q.id]: e.target.value }))}
+                  >
+                    <option value="">— סמן תוצאה —</option>
+                    {q.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                  <Button size="sm" disabled={!bonusResultPick[q.id]} onClick={() => handleSetBonusResult(q.id)}>
+                    <CheckCircle2 className="h-4 w-4 ml-1" />אשר
+                  </Button>
+                </div>
+              )}
+              {q.correctOption && (
+                <p className="text-xs text-emerald-600 font-medium">✓ תוצאה סופית: {q.correctOption}</p>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   )
 }

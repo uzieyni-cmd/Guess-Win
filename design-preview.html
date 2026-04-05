@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guess & Win — Design Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@700;800;900&family=Sora:wght@300;400;500;600;700&family=Bebas+Neue&family=Heebo:wght@300;400;500;700;800;900&family=Suez+One&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #04060c;
+    font-family: 'Heebo', sans-serif;
+    color: #fff;
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+  }
+
+  .page-header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+  .page-header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(24px, 4vw, 44px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #fff;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .page-header p { color: #444; font-size: 13px; letter-spacing: 1px; }
+
+  .designs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .design-section { display: flex; flex-direction: column; gap: 12px; }
+
+  .design-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    align-self: flex-start;
+  }
+  .label-current { background: #111; color: #666; border: 1px solid #222; }
+  .label-a { background: #1a2740; color: #4d9fff; border: 1px solid #1e3a5a; }
+  .label-b { background: #130d2a; color: #a855f7; border: 1px solid #2d1a4a; }
+  .label-c { background: #1a0d0d; color: #ff6b35; border: 1px solid #3a1a0d; }
+
+  .design-name { font-size: 16px; font-weight: 700; color: #e0e0e0; margin-bottom: 1px; }
+  .design-desc { font-size: 11px; color: #383838; margin-bottom: 10px; }
+
+  /* ─────────────────────────────────────
+     CURRENT DESIGN (faithful recreation)
+  ───────────────────────────────────── */
+  .design-current {
+    background: #0d1117;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #1e2535;
+    font-family: 'Heebo', sans-serif;
+  }
+
+  .cur-topbar {
+    background: #0a0e18;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #1a2030;
+  }
+  .cur-logo {
+    font-family: 'Suez One', serif;
+    font-size: 15px;
+    color: #f1f5f9;
+    letter-spacing: 0.5px;
+  }
+  .cur-logo span { color: #10b981; }
+  .cur-nav { display: flex; gap: 14px; font-size: 11px; color: #3a4a6a; font-weight: 500; }
+  .cur-nav span.active { color: #10b981; border-bottom: 1.5px solid #10b981; padding-bottom: 1px; }
+
+  .cur-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* Match card — current */
+  .cur-match-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid rgba(239,68,68,0.4);
+    background: rgba(239,68,68,0.04);
+    overflow: hidden;
+  }
+  .cur-card-header {
+    background: rgba(127,29,29,0.25);
+    padding: 7px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cur-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 3px 7px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .cur-live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #fff;
+    animation: cpulse 1.2s ease-in-out infinite;
+  }
+  @keyframes cpulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .cur-minute-chip {
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 2px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-family: monospace;
+    font-weight: 600;
+    color: #fca5a5;
+  }
+  .cur-round { font-size: 10px; color: #fca5a5; font-weight: 500; }
+
+  .cur-card-body {
+    padding: 14px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .cur-team {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+  }
+  .cur-flag { font-size: 28px; }
+  .cur-team-name { font-size: 11px; font-weight: 600; color: #e2e8f0; text-align: center; }
+
+  .cur-score-center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .cur-score {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .cur-score-num {
+    font-size: 26px; font-weight: 700; color: #fff;
+    width: 28px; text-align: center; font-variant-numeric: tabular-nums;
+  }
+  .cur-score-sep { font-size: 18px; font-weight: 700; color: #475569; }
+  .cur-bet-label { font-size: 10px; color: #94a3b8; }
+  .cur-bet-val { font-size: 11px; font-weight: 600; color: #e2e8f0; font-family: monospace; }
+
+  .cur-card-footer {
+    padding: 8px 12px;
+    border-top: 1px solid rgba(239,68,68,0.15);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .cur-dist-label { font-size: 9px; color: #10b981; }
+  .cur-dist-label-away { font-size: 9px; color: #3b82f6; }
+  .cur-dist-bar {
+    height: 5px; border-radius: 9999px; overflow: hidden;
+    display: flex; flex: 1; margin: 0 8px;
+  }
+  .cur-dist-home { background: rgba(16,185,129,0.6); height: 100%; }
+  .cur-dist-draw { background: rgba(100,116,139,0.4); height: 100%; }
+  .cur-dist-away { background: rgba(59,130,246,0.6); height: 100%; }
+
+  /* Leaderboard — current */
+  .cur-leaderboard { display: flex; flex-direction: column; gap: 0; }
+  .cur-lb-header {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
+  }
+  .cur-trophy { color: #10b981; font-size: 14px; }
+  .cur-lb-title { font-family: 'Suez One', serif; font-size: 15px; color: #f1f5f9; }
+  .cur-lb-live {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #dc2626; color: #fff;
+    font-size: 9px; font-weight: 700; letter-spacing: 2px;
+    padding: 2px 6px; border-radius: 2px;
+  }
+
+  .cur-lb-rows { display: flex; flex-direction: column; gap: 6px; }
+  .cur-lb-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    background: #0d1420; border: 1px solid rgba(100,116,139,0.25);
+  }
+  .cur-lb-row-1 { border-color: rgba(250,204,21,0.3); }
+  .cur-lb-row-2 { border-color: rgba(148,163,184,0.25); }
+  .cur-lb-row-3 { border-color: rgba(217,119,6,0.25); }
+
+  .cur-rank-badge {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .crb-1 { background: rgba(250,204,21,0.12); border: 1px solid rgba(250,204,21,0.4); color: #fde047; }
+  .crb-2 { background: rgba(148,163,184,0.1); border: 1px solid rgba(148,163,184,0.35); color: #cbd5e1; }
+  .crb-3 { background: rgba(217,119,6,0.1); border: 1px solid rgba(217,119,6,0.35); color: #fbbf24; }
+
+  .cur-av {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+    background: #4f46e5;
+  }
+  .cur-lb-name { flex: 1; font-size: 13px; font-weight: 600; color: #f1f5f9; }
+
+  .cur-pts-block { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .cur-pts { font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cur-pts-1 { color: #fde047; }
+  .cur-pts-2 { color: #cbd5e1; }
+  .cur-pts-3 { color: #fbbf24; }
+  .cur-pts-label { font-size: 10px; color: #475569; }
+  .cur-live-pts {
+    display: flex; align-items: center; gap: 2px;
+    font-size: 9px; font-weight: 700; color: #fb923c;
+  }
+
+  /* ─────────────────────────────────────
+     DESIGN A — Sports Premium
+  ───────────────────────────────────── */
+  .design-a {
+    background: #0a0e1a;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #131929;
+    font-family: 'Barlow', sans-serif;
+  }
+  .a-topbar {
+    background: #0d1322;
+    padding: 10px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #131929;
+  }
+  .a-topbar-logo { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:900; letter-spacing:2px; color:#fff; }
+  .a-topbar-logo span { color:#4d9fff; }
+  .a-nav { display:flex; gap:16px; font-size:11px; font-weight:600; color:#3a4a6a; }
+  .a-nav span.active { color:#4d9fff; }
+  .a-body { padding:16px; display:flex; flex-direction:column; gap:12px; }
+
+  .a-match-card {
+    background:#0f1624; border-radius:10px;
+    border:1px solid #1a2540; border-right:3px solid #4d9fff;
+    box-shadow:-4px 0 20px rgba(77,159,255,0.1);
+    padding:14px; position:relative; overflow:hidden;
+  }
+  .a-match-card::before {
+    content:''; position:absolute; top:0; right:0;
+    width:100px; height:100%;
+    background:linear-gradient(to left,rgba(77,159,255,0.04),transparent);
+    pointer-events:none;
+  }
+  .a-match-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .a-live-badge { background:#c0392b; color:#fff; font-size:9px; font-weight:700; letter-spacing:1.5px; padding:3px 7px; border-radius:20px; text-transform:uppercase; }
+  .a-match-time { font-size:10px; color:#4a5a7a; font-weight:500; }
+  .a-score-row { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:6px; }
+  .a-team { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .a-flag { font-size:22px; }
+  .a-team-name { font-size:11px; font-weight:700; color:#c0cce0; letter-spacing:0.5px; }
+  .a-score-center { display:flex; flex-direction:column; align-items:center; gap:1px; }
+  .a-score { font-family:'Barlow Condensed',sans-serif; font-size:40px; font-weight:900; color:#fff; letter-spacing:-1px; line-height:1; }
+  .a-score-sep { color:#2a3a5a; }
+  .a-minute { font-size:10px; color:#4d9fff; font-weight:600; }
+  .a-bet-row { margin-top:10px; padding-top:10px; border-top:1px solid #131929; display:flex; align-items:center; justify-content:space-between; }
+  .a-bet-label { font-size:10px; color:#3a4a6a; }
+  .a-bet-value { font-size:12px; font-weight:700; color:#4d9fff; background:rgba(77,159,255,0.1); padding:3px 9px; border-radius:5px; }
+
+  .a-leaderboard { background:#0f1624; border-radius:10px; border:1px solid #1a2540; overflow:hidden; }
+  .a-lb-header { padding:10px 14px; border-bottom:1px solid #131929; font-size:10px; font-weight:700; color:#3a4a6a; letter-spacing:1px; text-transform:uppercase; display:flex; justify-content:space-between; }
+  .a-lb-row { display:flex; align-items:center; padding:10px 14px; gap:10px; border-bottom:1px solid #0d1322; }
+  .a-lb-row:last-child { border-bottom:none; }
+  .a-rank { font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:900; width:22px; text-align:center; }
+  .rank-1{color:#f5c518} .rank-2{color:#9ca3af} .rank-3{color:#cd7f32}
+  .a-avatar { width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0; }
+  .av-1{background:linear-gradient(135deg,#1a6bbf,#0a3d6b)} .av-2{background:linear-gradient(135deg,#2d5a27,#1a3a15)} .av-3{background:linear-gradient(135deg,#7b2d82,#4a1a52)}
+  .a-lb-name { flex:1; font-size:12px; font-weight:600; color:#c0cce0; }
+  .a-lb-pts { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; color:#fff; }
+  .a-lb-pts span { font-size:9px; color:#3a4a6a; font-weight:500; margin-right:2px; }
+
+  /* ─────────────────────────────────────
+     DESIGN B — Glassmorphism Dark
+  ───────────────────────────────────── */
+  .design-b {
+    background:#050810; border-radius:20px; overflow:hidden;
+    border:1px solid rgba(255,255,255,0.04); font-family:'Sora',sans-serif; position:relative;
+  }
+  .design-b::before { content:''; position:absolute; top:-80px; right:-80px; width:280px; height:280px; background:radial-gradient(ellipse,rgba(120,60,255,0.18) 0%,transparent 70%); pointer-events:none; }
+  .design-b::after  { content:''; position:absolute; bottom:-60px; left:-60px; width:200px; height:200px; background:radial-gradient(ellipse,rgba(0,180,255,0.1) 0%,transparent 70%); pointer-events:none; }
+  .b-topbar { padding:13px 18px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.04); position:relative; z-index:1; background:rgba(255,255,255,0.02); backdrop-filter:blur(10px); }
+  .b-logo { font-family:'Sora',sans-serif; font-size:13px; font-weight:700; color:rgba(255,255,255,0.9); letter-spacing:1px; }
+  .b-logo em { font-style:normal; color:#a855f7; }
+  .b-pill { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:3px 10px; font-size:9px; color:rgba(255,255,255,0.35); backdrop-filter:blur(4px); }
+  .b-body { padding:14px; display:flex; flex-direction:column; gap:11px; position:relative; z-index:1; }
+
+  .b-match-card { background:rgba(255,255,255,0.04); border-radius:15px; border:1px solid rgba(255,255,255,0.06); backdrop-filter:blur(12px); padding:16px; position:relative; box-shadow:0 0 0 1px rgba(0,255,120,0.15),0 0 28px rgba(0,255,120,0.05),inset 0 1px 0 rgba(255,255,255,0.06); }
+  .b-live-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .b-live-badge { display:flex; align-items:center; gap:5px; background:rgba(0,255,120,0.08); border:1px solid rgba(0,255,120,0.2); border-radius:20px; padding:3px 9px; font-size:9px; font-weight:700; color:#00ff78; letter-spacing:1px; text-transform:uppercase; }
+  .b-live-dot { width:5px;height:5px;border-radius:50%;background:#00ff78;box-shadow:0 0 5px #00ff78;animation:bpulse 1.5s ease-in-out infinite; }
+  @keyframes bpulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+  .b-minute { font-size:10px; color:rgba(255,255,255,0.22); font-weight:300; }
+  .b-score-row { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; margin-bottom:12px; }
+  .b-team { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .b-flag { font-size:24px; }
+  .b-team-name { font-size:10px; font-weight:500; color:rgba(255,255,255,0.4); letter-spacing:0.5px; }
+  .b-score-center { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .b-score { font-family:'Barlow Condensed',sans-serif; font-size:46px; font-weight:900; color:#fff; letter-spacing:-2px; line-height:1; text-shadow:0 0 28px rgba(168,85,247,0.35),0 0 55px rgba(168,85,247,0.12); }
+  .b-score-vs { font-size:9px; color:rgba(255,255,255,0.1); font-weight:300; letter-spacing:2px; }
+  .b-bet-row { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:9px; padding:9px 13px; display:flex; align-items:center; justify-content:space-between; }
+  .b-bet-label { font-size:9px; color:rgba(255,255,255,0.22); font-weight:300; letter-spacing:0.5px; }
+  .b-bet-value { font-size:13px; font-weight:600; color:#a855f7; }
+
+  .b-leaderboard { background:rgba(255,255,255,0.03); border-radius:14px; border:1px solid rgba(255,255,255,0.05); overflow:hidden; backdrop-filter:blur(8px); }
+  .b-lb-title { padding:10px 14px; font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.18); border-bottom:1px solid rgba(255,255,255,0.04); }
+  .b-lb-row { display:flex; align-items:center; padding:10px 14px; gap:10px; border-bottom:1px solid rgba(255,255,255,0.025); }
+  .b-lb-row:last-child { border-bottom:none; }
+  .b-avatar { width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff; }
+  .b-av-1 { background:linear-gradient(135deg,#7c3aed,#4c1d95); box-shadow:0 0 0 2px rgba(251,191,36,0.45),0 0 10px rgba(251,191,36,0.15); }
+  .b-av-2 { background:linear-gradient(135deg,#374151,#1f2937); box-shadow:0 0 0 2px rgba(156,163,175,0.35); }
+  .b-av-3 { background:linear-gradient(135deg,#92400e,#78350f); box-shadow:0 0 0 2px rgba(205,127,50,0.3); }
+  .b-lb-name { flex:1; font-size:12px; font-weight:500; color:rgba(255,255,255,0.65); }
+  .b-lb-pts { font-size:13px; font-weight:700; color:rgba(255,255,255,0.85); }
+  .b-lb-pts-1 { color:#a855f7; text-shadow:0 0 10px rgba(168,85,247,0.35); }
+  .b-rank-num { font-size:9px; font-weight:700; color:rgba(255,255,255,0.1); width:14px; text-align:center; }
+
+  /* ─────────────────────────────────────
+     DESIGN C — Bold & Energetic
+  ───────────────────────────────────── */
+  .design-c { background:#0c0c0f; border-radius:13px; overflow:hidden; border:1px solid #1a1a20; font-family:'Barlow',sans-serif; }
+  .c-topbar { background:#0e0e12; padding:11px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:2px solid #1a1a22; }
+  .c-logo { font-family:'Bebas Neue',cursive; font-size:19px; letter-spacing:3px; color:#fff; }
+  .c-logo span { color:#ff6b35; }
+  .c-body { padding:14px; display:flex; flex-direction:column; gap:12px; }
+
+  .c-match-card { background:#111116; border-radius:11px; border:1px solid #1e1e26; position:relative; overflow:hidden; }
+  .c-card-gradient-top { height:3px; background:linear-gradient(to left,#1a56c4,#1a56c4 40%,#c41a1a 60%,#c41a1a); }
+  .c-card-inner { padding:14px; }
+  .c-match-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .c-league { font-size:9px; font-weight:700; letter-spacing:1.5px; color:#252530; text-transform:uppercase; }
+  .c-live-badge { background:linear-gradient(135deg,#ff4500,#ff6b35); color:#fff; font-size:9px; font-weight:800; letter-spacing:2px; padding:3px 9px; border-radius:3px; text-transform:uppercase; box-shadow:0 2px 10px rgba(255,69,0,0.35); }
+  .c-score-row { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:6px; margin-bottom:12px; }
+  .c-team { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .c-flag { font-size:26px; }
+  .c-team-name { font-size:11px; font-weight:800; color:#7070808; text-transform:uppercase; letter-spacing:1px; color:#606075; }
+  .c-score-block { display:flex; flex-direction:column; align-items:center; }
+  .c-score { font-family:'Bebas Neue',cursive; font-size:52px; letter-spacing:4px; color:#fff; line-height:1; }
+  .c-minute-badge { background:#1a1a22; border:1px solid #2a2a35; border-radius:3px; padding:2px 7px; font-size:9px; font-weight:800; color:#ff6b35; letter-spacing:1px; }
+  .c-bet-row { background:#0e0e12; border-radius:7px; padding:9px 12px; display:flex; align-items:center; justify-content:space-between; border:1px solid #1a1a22; border-right:3px solid #ff6b35; }
+  .c-bet-label { font-size:9px; font-weight:700; color:#252530; text-transform:uppercase; letter-spacing:1px; }
+  .c-bet-value { font-family:'Barlow Condensed',sans-serif; font-size:17px; font-weight:900; color:#ff6b35; }
+
+  .c-leaderboard { background:#111116; border-radius:11px; border:1px solid #1e1e26; overflow:hidden; }
+  .c-lb-header { background:#0e0e12; padding:9px 14px; border-bottom:1px solid #1a1a22; display:flex; align-items:center; justify-content:space-between; }
+  .c-lb-title { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:900; letter-spacing:2px; text-transform:uppercase; color:#fff; }
+  .c-lb-live-dot { width:5px;height:5px;border-radius:50%;background:#ff4500;box-shadow:0 0 6px #ff4500; }
+  .c-lb-row { display:flex; align-items:center; padding:11px 14px; gap:10px; border-bottom:1px solid #0e0e12; }
+  .c-lb-row:last-child { border-bottom:none; }
+  .c-lb-row-1 { background:rgba(245,197,24,0.03); }
+  .c-rank-num { font-family:'Bebas Neue',cursive; font-size:24px; line-height:1; width:26px; text-align:center; }
+  .c-rn-1{color:#f5c518;text-shadow:0 0 10px rgba(245,197,24,0.25)} .c-rn-2{color:#3a3a50} .c-rn-3{color:#352518}
+  .c-avatar { width:32px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0; }
+  .c-av-1{background:linear-gradient(135deg,#f5c518,#b8960c);color:#0c0c0f}
+  .c-av-2{background:#1e1e28;color:#3a3a50}
+  .c-av-3{background:#1e1510;color:#352518}
+  .c-lb-name { flex:1; font-size:13px; font-weight:800; color:#c0c0d0; text-transform:uppercase; letter-spacing:0.5px; }
+  .c-lb-pts { font-family:'Barlow Condensed',sans-serif; font-size:21px; font-weight:900; color:#fff; }
+  .c-lb-pts-1{color:#f5c518;text-shadow:0 0 10px rgba(245,197,24,0.25)}
+  .c-lb-pts span { font-size:10px; font-weight:600; color:#252530; margin-right:2px; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Guess <span style="color:#222">&</span> Win — Design Preview</h1>
+  <p>עיצוב נוכחי לעומת 3 הצעות שיפור</p>
+</div>
+
+<div class="designs-grid">
+
+  <!-- ═══════════ CURRENT ═══════════ -->
+  <div class="design-section">
+    <span class="design-label label-current">נוכחי</span>
+    <div class="design-name">Current Design</div>
+    <div class="design-desc">מה שיש היום — Heebo + Suez One, slate palette, shadcn cards</div>
+
+    <div class="design-current">
+      <div class="cur-topbar">
+        <div class="cur-logo">GUESS <span>&</span> WIN</div>
+        <div class="cur-nav">
+          <span>תחרויות</span>
+          <span class="active">משחקים</span>
+          <span>טבלה</span>
+        </div>
+      </div>
+
+      <div class="cur-body">
+        <!-- Match Card -->
+        <div class="cur-match-card">
+          <div class="cur-card-header">
+            <div class="cur-live-badge"><div class="cur-live-dot"></div>LIVE</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="cur-minute-chip">67′</div>
+              <div class="cur-round">רבע גמר</div>
+            </div>
+          </div>
+          <div class="cur-card-body">
+            <div class="cur-team" style="align-items:flex-end">
+              <div class="cur-flag">🇧🇷</div>
+              <div class="cur-team-name">ברזיל</div>
+            </div>
+            <div class="cur-score-center">
+              <div class="cur-score">
+                <span class="cur-score-num">2</span>
+                <span class="cur-score-sep">–</span>
+                <span class="cur-score-num">1</span>
+              </div>
+              <div class="cur-bet-label">ניחוש: <span class="cur-bet-val">3–1</span></div>
+            </div>
+            <div class="cur-team" style="align-items:flex-start">
+              <div class="cur-flag">🇦🇷</div>
+              <div class="cur-team-name">ארגנטינה</div>
+            </div>
+          </div>
+          <div class="cur-card-footer">
+            <div class="cur-dist-label">58% בית</div>
+            <div class="cur-dist-bar">
+              <div class="cur-dist-home" style="width:58%"></div>
+              <div class="cur-dist-draw" style="width:17%"></div>
+              <div class="cur-dist-away" style="width:25%"></div>
+            </div>
+            <div class="cur-dist-label-away">25% חוץ</div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="cur-leaderboard">
+          <div class="cur-lb-header">
+            <span class="cur-trophy">🏆</span>
+            <span class="cur-lb-title">טבלת דירוג</span>
+            <span class="cur-lb-live"><span class="cur-live-dot" style="width:5px;height:5px;animation:cpulse 1.2s infinite"></span>LIVE</span>
+          </div>
+          <div class="cur-lb-rows">
+            <div class="cur-lb-row cur-lb-row-1">
+              <div class="cur-rank-badge crb-1">1</div>
+              <div class="cur-av" style="background:#4f46e5">ד</div>
+              <div class="cur-lb-name">דניאל כהן</div>
+              <div class="cur-pts-block">
+                <div class="cur-pts cur-pts-1">142</div>
+                <div class="cur-live-pts">🔥 +8</div>
+              </div>
+            </div>
+            <div class="cur-lb-row cur-lb-row-2">
+              <div class="cur-rank-badge crb-2">2</div>
+              <div class="cur-av" style="background:#047857">י</div>
+              <div class="cur-lb-name">יוסי לוי</div>
+              <div class="cur-pts-block">
+                <div class="cur-pts cur-pts-2">118</div>
+                <div class="cur-pts-label">נק׳</div>
+              </div>
+            </div>
+            <div class="cur-lb-row cur-lb-row-3">
+              <div class="cur-rank-badge crb-3">3</div>
+              <div class="cur-av" style="background:#7c3aed">מ</div>
+              <div class="cur-lb-name">מיכל ברק</div>
+              <div class="cur-pts-block">
+                <div class="cur-pts cur-pts-3">97</div>
+                <div class="cur-pts-label">נק׳</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ DESIGN A ═══════════ -->
+  <div class="design-section">
+    <span class="design-label label-a">Option A</span>
+    <div class="design-name">Sports Premium</div>
+    <div class="design-desc">Sportradar / Sofascore — כחול חשמלי, גלו על LIVE, Barlow Condensed</div>
+
+    <div class="design-a">
+      <div class="a-topbar">
+        <div class="a-topbar-logo">GUESS<span>&</span>WIN</div>
+        <div class="a-nav"><span>תחרויות</span><span class="active">משחקים</span><span>טבלה</span></div>
+      </div>
+      <div class="a-body">
+        <div class="a-match-card">
+          <div class="a-match-meta">
+            <div class="a-live-badge">● LIVE</div>
+            <div class="a-match-time">רבע גמר · מונדיאל 2026</div>
+          </div>
+          <div class="a-score-row">
+            <div class="a-team" style="align-items:flex-end">
+              <div class="a-flag">🇧🇷</div>
+              <div class="a-team-name">ברזיל</div>
+            </div>
+            <div class="a-score-center">
+              <div class="a-score">2<span class="a-score-sep">–</span>1</div>
+              <div class="a-minute">67'</div>
+            </div>
+            <div class="a-team" style="align-items:flex-start">
+              <div class="a-flag">🇦🇷</div>
+              <div class="a-team-name">ארגנטינה</div>
+            </div>
+          </div>
+          <div class="a-bet-row">
+            <div class="a-bet-label">הניחוש שלי</div>
+            <div class="a-bet-value">3 – 1</div>
+          </div>
+        </div>
+        <div class="a-leaderboard">
+          <div class="a-lb-header"><span>טבלת ניקוד</span><span>נקודות</span></div>
+          <div class="a-lb-row"><div class="a-rank rank-1">1</div><div class="a-avatar av-1">דכ</div><div class="a-lb-name">דניאל כהן</div><div class="a-lb-pts"><span>נק׳</span>142</div></div>
+          <div class="a-lb-row"><div class="a-rank rank-2">2</div><div class="a-avatar av-2">יל</div><div class="a-lb-name">יוסי לוי</div><div class="a-lb-pts"><span>נק׳</span>118</div></div>
+          <div class="a-lb-row"><div class="a-rank rank-3">3</div><div class="a-avatar av-3">מב</div><div class="a-lb-name">מיכל ברק</div><div class="a-lb-pts"><span>נק׳</span>97</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ DESIGN B ═══════════ -->
+  <div class="design-section">
+    <span class="design-label label-b">Option B</span>
+    <div class="design-name">Glassmorphism Dark</div>
+    <div class="design-desc">Apple Sports style — זכוכית, גלו ניאון, Sora + גרדיינט סגול</div>
+
+    <div class="design-b">
+      <div class="b-topbar">
+        <div class="b-logo">Guess <em>&</em> Win</div>
+        <div class="b-pill">טורניר פעיל</div>
+      </div>
+      <div class="b-body">
+        <div class="b-match-card">
+          <div class="b-live-row">
+            <div class="b-live-badge"><div class="b-live-dot"></div>Live</div>
+            <div class="b-minute">67 דקות</div>
+          </div>
+          <div class="b-score-row">
+            <div class="b-team" style="align-items:flex-end">
+              <div class="b-flag">🇧🇷</div>
+              <div class="b-team-name">ברזיל</div>
+            </div>
+            <div class="b-score-center">
+              <div class="b-score">2–1</div>
+              <div class="b-score-vs">VS</div>
+            </div>
+            <div class="b-team" style="align-items:flex-start">
+              <div class="b-flag">🇦🇷</div>
+              <div class="b-team-name">ארגנטינה</div>
+            </div>
+          </div>
+          <div class="b-bet-row">
+            <div class="b-bet-label">הניחוש שלי</div>
+            <div class="b-bet-value">3 – 1</div>
+          </div>
+        </div>
+        <div class="b-leaderboard">
+          <div class="b-lb-title">Leaderboard</div>
+          <div class="b-lb-row"><div class="b-rank-num">1</div><div class="b-avatar b-av-1">דכ</div><div class="b-lb-name">דניאל כהן</div><div class="b-lb-pts b-lb-pts-1">142</div></div>
+          <div class="b-lb-row"><div class="b-rank-num">2</div><div class="b-avatar b-av-2">יל</div><div class="b-lb-name">יוסי לוי</div><div class="b-lb-pts" style="color:rgba(255,255,255,0.55)">118</div></div>
+          <div class="b-lb-row"><div class="b-rank-num">3</div><div class="b-avatar b-av-3">מב</div><div class="b-lb-name">מיכל ברק</div><div class="b-lb-pts" style="color:rgba(255,255,255,0.35)">97</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ DESIGN C ═══════════ -->
+  <div class="design-section">
+    <span class="design-label label-c">Option C</span>
+    <div class="design-name">Bold & Energetic</div>
+    <div class="design-desc">Fantasy Sports / DraftKings — Bebas Neue, גרדיינט בורדר, כתום חם</div>
+
+    <div class="design-c">
+      <div class="c-topbar">
+        <div class="c-logo">GUESS<span>&</span>WIN</div>
+        <div>🏆</div>
+      </div>
+      <div class="c-body">
+        <div class="c-match-card">
+          <div class="c-card-gradient-top"></div>
+          <div class="c-card-inner">
+            <div class="c-match-top">
+              <div class="c-league">מונדיאל 2026 · רבע גמר</div>
+              <div class="c-live-badge">⚡ LIVE</div>
+            </div>
+            <div class="c-score-row">
+              <div class="c-team" style="align-items:flex-end">
+                <div class="c-flag">🇧🇷</div>
+                <div class="c-team-name">ברזיל</div>
+              </div>
+              <div class="c-score-block">
+                <div class="c-score">2–1</div>
+                <div class="c-minute-badge">67'</div>
+              </div>
+              <div class="c-team" style="align-items:flex-start">
+                <div class="c-flag">🇦🇷</div>
+                <div class="c-team-name">ארגנטינה</div>
+              </div>
+            </div>
+            <div class="c-bet-row">
+              <div class="c-bet-label">הניחוש שלי</div>
+              <div class="c-bet-value">3 – 1</div>
+            </div>
+          </div>
+        </div>
+        <div class="c-leaderboard">
+          <div class="c-lb-header"><div class="c-lb-title">🏆 טבלת מובילים</div><div class="c-lb-live-dot"></div></div>
+          <div class="c-lb-row c-lb-row-1"><div class="c-rank-num c-rn-1">1</div><div class="c-avatar c-av-1">דכ</div><div class="c-lb-name">דניאל כהן</div><div class="c-lb-pts c-lb-pts-1">142<span>נק׳</span></div></div>
+          <div class="c-lb-row"><div class="c-rank-num c-rn-2">2</div><div class="c-avatar c-av-2">יל</div><div class="c-lb-name">יוסי לוי</div><div class="c-lb-pts" style="color:#3a3a50">118<span style="color:#252530">נק׳</span></div></div>
+          <div class="c-lb-row"><div class="c-rank-num c-rn-3">3</div><div class="c-avatar c-av-3">מב</div><div class="c-lb-name">מיכל ברק</div><div class="c-lb-pts" style="color:#2a1e14">97<span style="color:#1e1510">נק׳</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

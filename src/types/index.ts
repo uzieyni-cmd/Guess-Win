@@ -78,6 +78,28 @@ export interface BetResult {
   points: number
 }
 
+export type BonusQuestionType = 'winner' | 'top_scorer' | 'custom'
+
+export interface BonusQuestion {
+  id: string
+  tournamentId: string
+  type: BonusQuestionType
+  question: string
+  options: string[]
+  correctOption: string | null
+  points: number
+  lockTime: string
+}
+
+export interface BonusPick {
+  id: string
+  bonusQuestionId: string
+  tournamentId: string
+  userId: string
+  pick: string
+  pointsAwarded: number | null
+}
+
 export interface ParticipantStanding {
   user: User
   totalPoints: number

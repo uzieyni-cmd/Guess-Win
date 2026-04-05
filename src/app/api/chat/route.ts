@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     let contextBlock = ''
 
     if (tournamentId) {
-      const [participantsRes, finishedMatchesRes, upcomingMatchesRes, userBetsRes, scoredBetsRes] = await Promise.all([
+      const [participantsRes, finishedMatchesRes, upcomingMatchesRes, userBetsRes, scoredBetsRes, bonusPicksRes] = await Promise.all([
         // Participants list for this tournament
         supabaseAdmin
           .from('tournament_participants')
@@ -62,11 +62,18 @@ export async function POST(req: NextRequest) {
               .eq('user_id', userId)
           : Promise.resolve({ data: [] }),
 
-        // All bets for standings (filter nulls in JS to avoid PostgREST quirks)
+        // All bets for standings
         supabaseAdmin
           .from('bets')
           .select('user_id, points')
           .eq('tournament_id', tournamentId),
+
+        // Bonus picks points
+        supabaseAdmin
+          .from('bonus_picks')
+          .select('user_id, points_awarded')
+          .eq('tournament_id', tournamentId)
+          .not('points_awarded', 'is', null),
       ])
 
       // standings — replicate TournamentContext logic exactly
@@ -89,13 +96,13 @@ export async function POST(req: NextRequest) {
 
       // Sum points per user (filter nulls in JS)
       const pointsByUser: Record<string, number> = {}
-      const allBets = (scoredBetsRes.data ?? []) as { user_id: string; points: number | null }[]
-      console.log('[chat standings] participants:', participantIds.length, 'bets:', allBets.length, 'err:', scoredBetsRes.error)
-      for (const row of allBets) {
+      for (const row of (scoredBetsRes.data ?? []) as { user_id: string; points: number | null }[]) {
         if (row.points === null || row.points === undefined) continue
         pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points
       }
-      console.log('[chat standings] pointsByUser keys:', Object.keys(pointsByUser).length)
+      for (const row of (bonusPicksRes.data ?? []) as { user_id: string; points_awarded: number }[]) {
+        pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points_awarded
+      }
 
       // Build standings for ALL participants (same as leaderboard page)
       const standings = participantIds
