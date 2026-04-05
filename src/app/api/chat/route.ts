@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai'
-import { streamText } from 'ai'
+import { generateText } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
@@ -107,13 +107,13 @@ ${contextBlock}`
       !(i === 0 && m.role === 'assistant')
     )
 
-    const result = streamText({
+    const { text } = await generateText({
       model: gateway('google/gemini-2.0-flash-lite'),
       system: systemPrompt,
       messages: filteredMessages,
     })
 
-    return result.toTextStreamResponse()
+    return NextResponse.json({ text })
   } catch (err) {
     console.error('[/api/chat] error:', err)
     return NextResponse.json({ error: 'שגיאת שרת' }, { status: 500 })

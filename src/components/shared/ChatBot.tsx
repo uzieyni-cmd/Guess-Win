@@ -56,25 +56,11 @@ export function ChatBot({ tournamentId }: Props) {
         }),
       })
 
-      if (!res.ok || !res.body) throw new Error('שגיאת שרת')
+      if (!res.ok) throw new Error('שגיאת שרת')
 
-      // stream reading — toTextStreamResponse returns plain text chunks
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let assistantText = ''
-
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        assistantText += decoder.decode(value, { stream: true })
-        setMessages(prev => {
-          const updated = [...prev]
-          updated[updated.length - 1] = { role: 'assistant', content: assistantText }
-          return updated
-        })
-      }
+      const data = await res.json()
+      const assistantText = data.text ?? 'מצטער, לא הצלחתי לענות.'
+      setMessages(prev => [...prev, { role: 'assistant', content: assistantText }])
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'מצטער, הייתה שגיאה. נסה שוב.' }])
     } finally {
