@@ -112,6 +112,23 @@ export async function POST(req: NextRequest) {
         return `${home} ${r.actual_home_score}:${r.actual_away_score} ${away}${r.round ? ` (${r.round})` : ''}`
       })
 
+      // Helper: recent form of a team from finished matches (last 5)
+      const finishedRaw = (finishedMatchesRes.data ?? []) as unknown as MatchRow[]
+      const teamForm = (teamName: string): string => {
+        const results = finishedRaw
+          .filter(m => m.home_team_name === teamName || m.away_team_name === teamName)
+          .slice(0, 5)
+          .map(m => {
+            const isHome = m.home_team_name === teamName
+            const gs = isHome ? m.actual_home_score! : m.actual_away_score!
+            const ga = isHome ? m.actual_away_score! : m.actual_home_score!
+            const opp = translateTeam(isHome ? m.away_team_name : m.home_team_name)
+            const result = gs > ga ? 'נ' : gs < ga ? 'ה' : 'ת'
+            return `${result}(${gs}:${ga} מול ${opp})`
+          })
+        return results.length ? results.join(', ') : 'אין היסטוריה'
+      }
+
       const upcomingMatches = (upcomingMatchesRes.data ?? []).map(m => {
         const r = m as unknown as MatchRow
         const home = translateTeam(r.home_team_name)
@@ -120,7 +137,6 @@ export async function POST(req: NextRequest) {
         const score = r.actual_home_score !== null ? ` ${r.actual_home_score}:${r.actual_away_score}` : ''
         let oddsStr = ''
         if (r.odds_home && r.odds_draw && r.odds_away) {
-          // Lower odds = more likely to win
           const fav = r.odds_home < r.odds_away
             ? `${home} מועדף`
             : r.odds_away < r.odds_home
@@ -128,7 +144,10 @@ export async function POST(req: NextRequest) {
               : 'שוויון'
           oddsStr = ` | יחסים: ${home} ${r.odds_home} / תיקו ${r.odds_draw} / ${away} ${r.odds_away} (${fav})`
         }
-        return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}${oddsStr}`
+        const homeForm = teamForm(r.home_team_name)
+        const awayForm = teamForm(r.away_team_name)
+        const formStr = ` | ${home} לאחרונה: ${homeForm} | ${away} לאחרונה: ${awayForm}`
+        return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}${oddsStr}${formStr}`
       })
 
       // user bets
@@ -165,8 +184,14 @@ ${userBets.length ? `הניחושים שלך:\n${userBets.join('\n')}` : ''}
 בסעיף "תוצאות משחקים שהסתיימו" מופיעות כל התוצאות הסופיות — השתמש בהן כמקור הסמכותי לכל שאלה על תוצאת משחק.
 הפורמט: קבוצה_בית תוצאה_בית:תוצאה_חוץ קבוצה_חוץ
 
-בסעיף "משחקים עתידיים" מופיעים יחסי הימורים של Bet365 (כאשר זמינים). יחס נמוך יותר = סיכוי ניצחון גבוה יותר.
-כשמישהו שואל על תחזית / ניחוש / מי ינצח — השתמש ביחסים כדי להמליץ, ותסביר בקצרה למה.
+בסעיף "משחקים עתידיים" מופיעים:
+- יחסי הימורים של Bet365 (יחס נמוך = סיכוי גבוה)
+- ביצועים אחרונים של כל קבוצה: נ=ניצחון, ת=תיקו, ה=הפסד
+
+כשמישהו שואל על תחזית / ניחוש / מי ינצח:
+1. נתח את הביצועים האחרונים של שתי הקבוצות
+2. השתמש ביחסים כאינדיקטור נוסף
+3. תן המלצה מנומקת קצרה
 ${contextBlock}`
 
     // סנן הודעות assistant ראשונות — LLM צריך להתחיל עם user
