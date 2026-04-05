@@ -62,12 +62,11 @@ export async function POST(req: NextRequest) {
               .eq('user_id', userId)
           : Promise.resolve({ data: [] }),
 
-        // Scored bets for standings — separate from profiles
+        // All bets for standings (filter nulls in JS to avoid PostgREST quirks)
         supabaseAdmin
           .from('bets')
           .select('user_id, points')
-          .eq('tournament_id', tournamentId)
-          .not('points', 'is', null),
+          .eq('tournament_id', tournamentId),
       ])
 
       // standings — replicate TournamentContext logic exactly
@@ -88,11 +87,15 @@ export async function POST(req: NextRequest) {
         nameById[p.id] = p.display_name
       }
 
-      // Sum points per user
+      // Sum points per user (filter nulls in JS)
       const pointsByUser: Record<string, number> = {}
-      for (const row of (scoredBetsRes.data ?? []) as { user_id: string; points: number }[]) {
+      const allBets = (scoredBetsRes.data ?? []) as { user_id: string; points: number | null }[]
+      console.log('[chat standings] participants:', participantIds.length, 'bets:', allBets.length, 'err:', scoredBetsRes.error)
+      for (const row of allBets) {
+        if (row.points === null || row.points === undefined) continue
         pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points
       }
+      console.log('[chat standings] pointsByUser keys:', Object.keys(pointsByUser).length)
 
       // Build standings for ALL participants (same as leaderboard page)
       const standings = participantIds
