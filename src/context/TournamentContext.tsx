@@ -99,6 +99,9 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   // Ref לשמירת זמני התחלת משחקים — לשימוש ב-Realtime callback ללא closure stale
   const matchTimesRef = useRef<Map<string, string>>(new Map())
 
+  // Ref למצב חיבור Realtime — מונע race condition עם polling fallback
+  const realtimeConnectedRef = useRef(false)
+
   // ── Load tournaments (metadata only — no matches) ─────────────
   const loadTournaments = useCallback(async () => {
     const { data: rows } = await supabase
@@ -458,6 +461,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   // ── Realtime: עדכוני ציון / סטטוס חי (WebSocket push) ────────
+  // מעדכן realtimeConnectedRef כדי ש-polling יידע אם הוא צריך לפעול
   useEffect(() => {
     if (!activeTournamentId) return
     const channel = supabase
@@ -470,14 +474,22 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       }, (payload) => {
         patchMatches(activeTournamentId, [dbMatchToMatch(payload.new as DbMatch)])
       })
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+      .subscribe((status) => {
+        realtimeConnectedRef.current = status === 'SUBSCRIBED'
+      })
+    return () => {
+      realtimeConnectedRef.current = false
+      supabase.removeChannel(channel)
+    }
   }, [activeTournamentId, patchMatches])
 
-  // ── Live polling fallback — כל 60 שניות (גיבוי ל-Realtime) ────
+  // ── Live polling fallback — פועל רק כש-Realtime מנותק ────────
+  // כשחוזרים לטאב (מובייל) — תמיד מסנכרן כי Realtime אולי עדיין מתחבר מחדש
   useEffect(() => {
     if (!activeTournamentId) return
-    const poll = async () => {
+
+    const poll = async (force = false) => {
+      if (!force && realtimeConnectedRef.current) return
       try {
         const res = await fetch(`/api/live/${activeTournamentId}`, { cache: 'no-store' })
         if (!res.ok) return
@@ -487,10 +499,13 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         }
       } catch { /* שקט בשגיאות רשת */ }
     }
-    poll()
-    const interval = setInterval(poll, 30_000)
-    // רענון מיידי כשחוזרים לטאב (מובייל מקפיא timers ב-background)
-    const onVisible = () => { if (!document.hidden) poll() }
+
+    // טעינה ראשונית תמיד (לפני ש-Realtime התחבר)
+    poll(true)
+    // interval — רק אם Realtime נפל
+    const interval = setInterval(() => poll(false), 30_000)
+    // חזרה לטאב — תמיד (Realtime עשוי להיות באמצע reconnect)
+    const onVisible = () => { if (!document.hidden) poll(true) }
     document.addEventListener('visibilitychange', onVisible)
     return () => {
       clearInterval(interval)
