@@ -19,20 +19,15 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
   return (
     <div
       className={cn(
-        'relative rounded-full shrink-0 overflow-hidden bg-slate-600 transform-gpu',
+        'relative rounded-full shrink-0 overflow-hidden bg-slate-600',
         className ?? sizes[size],
       )}
-      style={{
-        boxShadow:
-          '0 6px 20px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.30), inset 0 -3px 8px rgba(0,0,0,0.20)',
-      }}
     >
-      {/* ── Flag image fills the entire circle ── */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={team.flagUrl}
         alt={team.name}
-        className="absolute inset-0 h-full w-full object-cover scale-[1.18]"
+        className="absolute inset-0 h-full w-full object-cover"
         onError={(e) => {
           const img = e.target as HTMLImageElement
           img.style.display = 'none'
@@ -41,22 +36,10 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
         }}
       />
 
-      {/* ── Fallback initials ── */}
+      {/* Fallback initials */}
       <span className="hidden absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
         {team.shortCode}
       </span>
-
-      {/* ── 3D convex lens effect: bright gloss top-left + depth bottom-right ── */}
-      <div
-        className="absolute inset-0 pointer-events-none rounded-full"
-        style={{
-          background: `
-            radial-gradient(ellipse 72% 55% at 38% 22%, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.38) 32%, transparent 62%),
-            radial-gradient(ellipse at 62% 72%, transparent 28%, rgba(0,0,0,0.20) 62%, rgba(0,0,0,0.48) 100%)
-          `,
-          boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.28)',
-        }}
-      />
     </div>
   )
 }
