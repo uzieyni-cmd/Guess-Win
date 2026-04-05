@@ -1,4 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Suez+One&family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800;900&display=swap');
+/* Option C alternative — uncomment to switch headings to Bebas Neue:
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800;900&display=swap');
+*/
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -133,8 +136,11 @@
     @apply font-sans;
   }
   .font-suez {
+    font-family: 'Suez One', serif;
+    /* Option C alternative — uncomment to switch to Bebas Neue:
     font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 0.05em;
+    */
   }
   .font-condensed {
     font-family: 'Barlow Condensed', sans-serif;
