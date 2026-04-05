@@ -55,7 +55,7 @@ export function ChatBot({ tournamentId }: Props) {
 
       if (!res.ok || !res.body) throw new Error('שגיאת שרת')
 
-      // stream reading
+      // stream reading — toTextStreamResponse returns plain text chunks
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let assistantText = ''
@@ -65,21 +65,12 @@ export function ChatBot({ tournamentId }: Props) {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        const chunk = decoder.decode(value)
-        // Vercel AI SDK data stream format: lines starting with "0:"
-        for (const line of chunk.split('\n')) {
-          if (line.startsWith('0:')) {
-            try {
-              const token = JSON.parse(line.slice(2))
-              assistantText += token
-              setMessages(prev => {
-                const updated = [...prev]
-                updated[updated.length - 1] = { role: 'assistant', content: assistantText }
-                return updated
-              })
-            } catch { /* skip malformed */ }
-          }
-        }
+        assistantText += decoder.decode(value, { stream: true })
+        setMessages(prev => {
+          const updated = [...prev]
+          updated[updated.length - 1] = { role: 'assistant', content: assistantText }
+          return updated
+        })
       }
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'מצטער, הייתה שגיאה. נסה שוב.' }])
