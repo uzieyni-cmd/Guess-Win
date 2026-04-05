@@ -2,6 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/auth-server'
 
 const MIN = 0
 const MAX = 30
@@ -57,5 +58,54 @@ export async function placeBetAction(
     }, { onConflict: 'user_id,match_id' })
 
   if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+/**
+ * Admin: מעדכן תוצאה סופית למשחק ומחשב נקודות לכל הבטים.
+ * exact = 10 נק', outcome = 5 נק', miss = 0.
+ */
+export async function setActualScoreAction(
+  matchId: string,
+  home: number,
+  away: number
+): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin()
+
+  // 1. עדכן תוצאה + סטטוס ב-matches
+  const { error: matchErr } = await supabaseAdmin
+    .from('matches')
+    .update({ actual_home_score: home, actual_away_score: away, status: 'finished' })
+    .eq('id', matchId)
+
+  if (matchErr) return { ok: false, error: matchErr.message }
+
+  // 2. חשב נקודות לכל הבטים על משחק זה (כולל כאלה שכבר ניקדו — override)
+  const { data: bets } = await supabaseAdmin
+    .from('bets')
+    .select('id, predicted_home, predicted_away')
+    .eq('match_id', matchId)
+
+  if (!bets?.length) return { ok: true }
+
+  for (const bet of bets as { id: string; predicted_home: number; predicted_away: number }[]) {
+    let result: 'exact' | 'outcome' | 'miss'
+    let points: number
+
+    if (bet.predicted_home === home && bet.predicted_away === away) {
+      result = 'exact'; points = 10
+    } else {
+      const predOut = bet.predicted_home > bet.predicted_away ? 'home' : bet.predicted_home < bet.predicted_away ? 'away' : 'draw'
+      const actOut  = home > away ? 'home' : home < away ? 'away' : 'draw'
+      if (predOut === actOut) { result = 'outcome'; points = 5 }
+      else { result = 'miss'; points = 0 }
+    }
+
+    await supabaseAdmin
+      .from('bets')
+      .update({ points, result })
+      .eq('id', bet.id)
+  }
+
   return { ok: true }
 }

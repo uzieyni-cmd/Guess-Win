@@ -11,7 +11,7 @@ import {
   adminDeleteTournament,
   adminToggleHide,
 } from '@/app/actions/tournaments'
-import { placeBetAction } from '@/app/actions/bets'
+import { placeBetAction, setActualScoreAction } from '@/app/actions/bets'
 
 // ── Adapters: DB row → App type ──────────────────────────────────
 
@@ -372,12 +372,9 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     return null
   }, [activeTournamentId])
 
-  // ── Set actual score (Admin) ───────────────────────────────────
+  // ── Set actual score (Admin) — updates match + scores all bets ──
   const setActualScore = useCallback(async (tournamentId: string, matchId: string, score: Score) => {
-    await supabase
-      .from('matches')
-      .update({ actual_home_score: score.home, actual_away_score: score.away, status: 'finished' })
-      .eq('id', matchId)
+    await setActualScoreAction(matchId, score.home, score.away)
     await loadTournaments()
   }, [loadTournaments])
 
