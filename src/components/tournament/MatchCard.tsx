@@ -469,8 +469,8 @@ function OtherBetsDialog({ open, onClose, match, bets, participants, isFinished 
 function LiveIndicator({ minute, period }: { minute?: number; period?: string }) {
   // תצוגת זמן לפי period
   const timeChip = (() => {
-    if (period === 'HT') return { label: 'הפסקה', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
-    if (period === 'BT') return { label: 'הפסקה', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
+    if (period === 'HT') return { label: 'מחצית', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
+    if (period === 'BT') return { label: 'מחצית', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
     if (period === 'P')  return { label: 'פנדלים', cls: 'bg-purple-500/20 text-purple-300 border border-purple-500/30' }
     if (period === 'ET') return { label: minute != null ? `${minute}′` : 'הארכה', cls: 'bg-orange-500/20 text-orange-300 border border-orange-500/30' }
     if (minute != null)  return { label: `${minute}′`, cls: 'bg-red-500/20 text-red-200 border border-red-500/40' }
