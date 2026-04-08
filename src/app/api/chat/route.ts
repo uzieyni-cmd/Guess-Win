@@ -139,8 +139,9 @@ export async function POST(req: NextRequest) {
         return results.length ? results.join(', ') : 'אין היסטוריה'
       }
 
+      const nowMs = Date.now()
       const upcomingMatches = (upcomingMatchesRes.data ?? []).map(m => {
-        const r = m as unknown as MatchRow
+        const r = m as unknown as MatchRow & { match_start_time?: string }
         const home = translateTeam(r.home_team_name)
         const away = translateTeam(r.away_team_name)
         const status = r.status === 'live' ? 'חי כעת' : 'מתוכנן'
@@ -157,7 +158,14 @@ export async function POST(req: NextRequest) {
         const homeForm = teamForm(r.home_team_name)
         const awayForm = teamForm(r.away_team_name)
         const formStr = ` | ${home} לאחרונה: ${homeForm} | ${away} לאחרונה: ${awayForm}`
-        return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}${oddsStr}${formStr}`
+        let timeStr = ''
+        if (r.match_start_time) {
+          const matchMs = new Date(r.match_start_time).getTime()
+          const hoursUntil = Math.round((matchMs - nowMs) / 36e5 * 10) / 10
+          const localTime = new Date(r.match_start_time).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
+          timeStr = ` | מועד: ${localTime} (בעוד ${hoursUntil} שעות)`
+        }
+        return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}${timeStr}${oddsStr}${formStr}`
       })
 
       // user bets
@@ -168,8 +176,10 @@ export async function POST(req: NextRequest) {
         return `${home} נגד ${away}: ניחשת ${r.predicted_home}:${r.predicted_away}${r.points !== null ? ` | ${r.points} נק'` : ''}`
       })
 
+      const nowISO = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
       contextBlock = `
 === נתוני הטורניר ===
+שעה נוכחית (ישראל): ${nowISO}
 
 טבלת דירוג:
 ${standings.length ? standings.join('\n') : 'אין נתונים עדיין'}
@@ -202,6 +212,11 @@ ${userBets.length ? `הניחושים שלך:\n${userBets.join('\n')}` : ''}
 1. נתח את הביצועים האחרונים של שתי הקבוצות
 2. השתמש ביחסים כאינדיקטור נוסף
 3. תן המלצה מנומקת קצרה
+
+כללי המלצות על משחקים עתידיים:
+- תן המלצה רק על משחקים שמתחילים תוך 24 שעות מעכשיו.
+- אם משחק מרוחק יותר מ-24 שעות — ציין שאינך נותן המלצה כל כך מוקדם ושיחזרו קרוב יותר לתאריך המשחק.
+- כשמישהו שואל "היום" — הכוונה ל-24 השעות הקרובות (לא רק יום קלנדרי). כלול משחקים שמתחילים תוך 24 שעות.
 ${contextBlock}`
 
     // סנן הודעות assistant ראשונות — LLM צריך להתחיל עם user
