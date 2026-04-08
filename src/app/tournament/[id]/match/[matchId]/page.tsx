@@ -264,7 +264,7 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
 
   const periodLabel: Record<string, string> = {
     '1H': 'מחצית ראשונה', '2H': 'מחצית שנייה',
-    'HT': 'מחצית', 'ET': 'הארכה', 'P': 'פנדלים', 'BT': 'מחצית',
+    'HT': 'מחצית', 'ET': 'הארכה', 'P': 'פנדלים', 'BT': 'הפסקה לפני הארכה',
   }
   const period = match.matchPeriod ? periodLabel[match.matchPeriod] ?? match.matchPeriod : null
 
