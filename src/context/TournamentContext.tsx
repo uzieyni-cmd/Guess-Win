@@ -94,7 +94,32 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [activeTournamentId, setActiveTournamentIdState] = useState<string | null>(null)
   const [bets, setBets] = useState<Bet[]>([])
   const [participants, setParticipants] = useState<User[]>([])
-  const [baseStandings, setStandings] = useState<ParticipantStanding[]>([])
+  const [bonusPointsByUser, setBonusPointsByUser] = useState<Record<string, number>>({})
+
+  // baseStandings — נגזר מ-bets state (מתעדכן ב-Realtime) + bonus picks
+  // זה מתקן באג שבו הניקוד התאפס בסיום משחק: כי baseStandings היה state קבוע
+  // שלא התעדכן כשה-bets קיבלו points דרך Realtime
+  const baseStandings = useMemo<ParticipantStanding[]>(() => {
+    if (!participants.length) return []
+    const pointsByUser: Record<string, number> = { ...bonusPointsByUser }
+    const countByUser: Record<string, number> = {}
+    for (const bet of bets) {
+      if (bet.tournamentId !== activeTournamentId || bet.points === null) continue
+      pointsByUser[bet.userId] = (pointsByUser[bet.userId] ?? 0) + bet.points
+      countByUser[bet.userId] = (countByUser[bet.userId] ?? 0) + 1
+    }
+    const newStandings: ParticipantStanding[] = participants
+      .map(user => ({
+        user,
+        totalPoints: pointsByUser[user.id] ?? 0,
+        rank: 0,
+        betResults: [],
+        scoredBetsCount: countByUser[user.id] ?? 0,
+      }))
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+    newStandings.forEach((s, i) => { s.rank = i + 1 })
+    return newStandings
+  }, [bets, bonusPointsByUser, participants, activeTournamentId])
 
   // Ref לשמירת זמני התחלת משחקים — לשימוש ב-Realtime callback ללא closure stale
   const matchTimesRef = useRef<Map<string, string>>(new Map())
@@ -280,41 +305,18 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         }))
         setParticipants(profileUsers)
 
-        // Load standings: regular bets + bonus picks
-        const [{ data: scoredBets }, { data: bonusPicks }] = await Promise.all([
-          supabase
-            .from('bets')
-            .select('user_id, points')
-            .eq('tournament_id', activeTournamentId)
-            .not('points', 'is', null),
-          supabase
-            .from('bonus_picks')
-            .select('user_id, points_awarded')
-            .eq('tournament_id', activeTournamentId)
-            .not('points_awarded', 'is', null),
-        ])
+        // Load bonus picks — ניקוד בטים נגזר מ-bets state (Realtime) ב-useMemo
+        const { data: bonusPicks } = await supabase
+          .from('bonus_picks')
+          .select('user_id, points_awarded')
+          .eq('tournament_id', activeTournamentId)
+          .not('points_awarded', 'is', null)
 
-        const pointsByUser: Record<string, number> = {}
-        const countByUser: Record<string, number> = {}
-        for (const row of (scoredBets ?? []) as { user_id: string; points: number }[]) {
-          pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points
-          countByUser[row.user_id] = (countByUser[row.user_id] ?? 0) + 1
-        }
+        const newBonusPoints: Record<string, number> = {}
         for (const row of (bonusPicks ?? []) as { user_id: string; points_awarded: number }[]) {
-          pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points_awarded
+          newBonusPoints[row.user_id] = (newBonusPoints[row.user_id] ?? 0) + row.points_awarded
         }
-
-        const newStandings: ParticipantStanding[] = profileUsers
-          .map((user: User) => ({
-            user,
-            totalPoints: pointsByUser[user.id] ?? 0,
-            rank: 0,
-            betResults: [],
-            scoredBetsCount: countByUser[user.id] ?? 0,
-          }))
-          .sort((a: ParticipantStanding, b: ParticipantStanding) => b.totalPoints - a.totalPoints)
-        newStandings.forEach((s: ParticipantStanding, i: number) => { s.rank = i + 1 })
-        setStandings(newStandings)
+        setBonusPointsByUser(newBonusPoints)
       }
     }
 
