@@ -134,9 +134,9 @@ export async function getTournamentAdmins(
     .select('user_id, profiles(display_name, email)')
     .eq('tournament_id', tournamentId)
 
-  return (data ?? []).map((r: { user_id: string; profiles: { display_name: string; email: string } | null }) => ({
+  return (data ?? []).map((r: { user_id: string; profiles: { display_name: string; email: string }[] | null }) => ({
     userId: r.user_id,
-    displayName: r.profiles?.display_name ?? '',
-    email: r.profiles?.email ?? '',
+    displayName: r.profiles?.[0]?.display_name ?? '',
+    email: r.profiles?.[0]?.email ?? '',
   }))
 }
