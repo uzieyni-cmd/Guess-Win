@@ -69,10 +69,10 @@ export default function MatchesPage() {
 
   const isLoadingMatches = activeTournament.matches.length > 0 && activeTournament.matches.every(m => !m.homeTeam)
   const realMatches = activeTournament.matches.filter(m => !!m.homeTeam)
-  const finishedCount = realMatches.filter(m => m.status === 'finished' || m.actualScore !== null).length
+  const finishedCount = realMatches.filter(m => m.status === 'finished').length
   const totalMatchCount = activeTournament.matches.length // כולל stubs
   const visibleMatches = hideFinished
-    ? realMatches.filter(m => m.status !== 'finished' && m.actualScore === null)
+    ? realMatches.filter(m => m.status !== 'finished')
     : realMatches
 
   return (
