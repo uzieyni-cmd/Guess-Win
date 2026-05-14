@@ -103,7 +103,7 @@ export function ChatBot({ tournamentId }: Props) {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-none" style={{ minHeight: 0 }}>
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-none" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
             {messages.map((msg, i) => (
               <div key={i} className={cn('flex', msg.role === 'user' ? 'justify-start' : 'justify-end')}>
                 <div className={cn(
