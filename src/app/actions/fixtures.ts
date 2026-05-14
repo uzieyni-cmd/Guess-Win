@@ -3,6 +3,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth-server'
 import { fetchFixtures, fetchFixtureById, fetchOdds, mapFixtureStatus } from '@/lib/api-football'
+import { computeAndSaveBetPoints } from '@/lib/bet-scoring'
 
 // סנכרון משחקים מ-API-Football לתחרות קיימת
 // fromDate (YYYY-MM-DD) — אופציונלי: אם מוגדר, שולף רק משחקים מתאריך זה והלאה (לcron יומי)
@@ -92,16 +93,23 @@ export async function refreshMatchResult(
     const fixture = await fetchFixtureById(fixtureId)
     if (!fixture) return { ok: false, error: 'Fixture not found' }
 
-    const { error } = await supabaseAdmin
+    const status = mapFixtureStatus(fixture.fixture.status.short)
+    const homeScore = fixture.score.fulltime.home ?? null
+    const awayScore = fixture.score.fulltime.away ?? null
+
+    const { data: updated, error } = await supabaseAdmin
       .from('matches')
-      .update({
-        status: mapFixtureStatus(fixture.fixture.status.short),
-        actual_home_score: fixture.score.fulltime.home ?? null,
-        actual_away_score: fixture.score.fulltime.away ?? null,
-      })
+      .update({ status, actual_home_score: homeScore, actual_away_score: awayScore })
       .eq('api_fixture_id', fixtureId)
+      .select('id')
+      .single()
 
     if (error) throw error
+
+    if (status === 'finished' && homeScore !== null && awayScore !== null && updated?.id) {
+      await computeAndSaveBetPoints(updated.id, { home: homeScore, away: awayScore })
+    }
+
     return { ok: true }
   } catch (err) {
     return { ok: false, error: String(err) }
@@ -122,6 +130,7 @@ export async function setMatchScore(
       .eq('id', matchId)
 
     if (error) throw error
+    await computeAndSaveBetPoints(matchId, { home: homeScore, away: awayScore })
     return { ok: true }
   } catch (err) {
     return { ok: false, error: String(err) }
