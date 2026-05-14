@@ -231,9 +231,9 @@ function ProfileContent() {
   const initials = currentUser?.displayName?.charAt(0)?.toUpperCase() ?? '?'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a0e1a] to-[#0d1b14]">
+    <div className="min-h-screen bg-gradient-to-b from-surface-deep to-surface-green">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-[#0a0e1a]/80 backdrop-blur-md border-b border-white/10">
+      <div className="sticky top-0 z-10 bg-surface-deep/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}

@@ -50,7 +50,7 @@ export default function LeaderboardPage() {
               <div
                 key={s.user.id}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl bg-[#0d1420] border border-slate-700/40 transition-all duration-500',
+                  'flex items-center gap-3 p-3 rounded-xl bg-surface border border-slate-700/40 transition-all duration-500',
                   i < 3 && rankStyles[i].card,
                   moved && movedUp && 'ring-1 ring-emerald-500/40',
                   moved && !movedUp && 'ring-1 ring-red-500/20',

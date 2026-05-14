@@ -201,7 +201,7 @@ function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLo
   }
 
   return (
-    <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/40">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-slate-400" />
@@ -270,7 +270,7 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
   const period = match.matchPeriod ? periodLabel[match.matchPeriod] ?? match.matchPeriod : null
 
   return (
-    <div className="bg-gradient-to-b from-[#0d1420] to-[#070b14] border-b border-slate-700/30 py-6 px-4">
+    <div className="bg-gradient-to-b from-surface to-base border-b border-slate-700/30 py-6 px-4">
       {/* שם הליגה / סיבוב */}
       {match.round && (
         <p className="text-center text-xs text-slate-500 mb-4">{translateRound(match.round)}</p>
@@ -391,7 +391,7 @@ export default function MatchDetailPage() {
   const htScore    = detail?.score.halftime ?? { home: null, away: null }
 
   return (
-    <div className="min-h-screen bg-[#070b14]">
+    <div className="min-h-screen bg-base">
       {/* Back */}
       <div className="px-4 pt-3 pb-1">
         <button
@@ -423,7 +423,7 @@ export default function MatchDetailPage() {
 
           {/* RIGHT — אירועים */}
           <div className="flex-1 order-1 md:order-2">
-            <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
+            <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
               <div className="px-4 py-3 border-b border-slate-700/40">
                 <h3 className="text-sm font-bold text-slate-200">אירועי משחק</h3>
               </div>

@@ -414,7 +414,7 @@ function OtherBetsDialog({ open, onClose, match, bets, participants, isFinished 
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           dir="rtl"
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-[#0d1420] border border-slate-700/50 shadow-2xl overflow-hidden focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4 data-[state=closed]:slide-out-to-bottom-4 duration-200"
+          className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-surface border border-slate-700/50 shadow-2xl overflow-hidden focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4 data-[state=closed]:slide-out-to-bottom-4 duration-200"
         >
           <DialogPrimitive.Title className="sr-only">ניחושי משתתפים</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">ניחושי שאר המשתתפים למשחק</DialogPrimitive.Description>

@@ -8,6 +8,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* ── Brand dark palette ───────────────────────── */
+  --color-base:          #070b14; /* deepest bg — page backgrounds */
+  --color-surface:       #0d1420; /* card / panel surface */
+  --color-surface-deep:  #0a0e1a; /* slightly lighter — profile, login */
+  --color-surface-green: #0d1b14; /* greenish dark — gradient accent */
+  /* ─────────────────────────────────────────────── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -130,7 +136,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Barlow', sans-serif;
-    background-color: #070b14;
+    background-color: var(--color-base);
   }
   html {
     @apply font-sans;

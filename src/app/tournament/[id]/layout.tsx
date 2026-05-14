@@ -33,7 +33,7 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
   const tournament = activeTournament ?? tournaments.find((t) => t.id === id)
 
   return (
-    <div className="min-h-screen bg-[#070b14] flex flex-col">
+    <div className="min-h-screen bg-base flex flex-col">
       <SiteHeader
         left={
           <button onClick={() => router.push('/competitions')}

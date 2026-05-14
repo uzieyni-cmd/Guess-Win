@@ -25,7 +25,7 @@ function CompetitionsContent() {
   }, [tournaments, currentUser, isProfileReady])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#070b14] to-[#0d1b14]">
+    <div className="min-h-screen bg-gradient-to-b from-base to-surface-green">
       <SiteHeader
         left={
           <button onClick={() => { logout(); router.push('/login') }}

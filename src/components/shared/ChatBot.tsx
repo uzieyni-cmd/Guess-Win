@@ -88,11 +88,11 @@ export function ChatBot({ tournamentId }: Props) {
       {open && (
         <div
           dir="rtl"
-          className="fixed bottom-22 left-5 z-50 w-[320px] sm:w-[360px] rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50 flex flex-col"
-          style={{ maxHeight: '70vh', background: '#0d1420' }}
+          className="fixed bottom-22 left-5 z-50 w-[320px] sm:w-[360px] rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50 flex flex-col bg-surface"
+          style={{ maxHeight: '70vh' }}
         >
           {/* Header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-700/40 bg-[#0a0f1c]">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-700/40 bg-surface-deep">
             <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
               <Bot className="h-4 w-4 text-white" />
             </div>

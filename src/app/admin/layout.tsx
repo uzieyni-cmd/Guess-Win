@@ -36,7 +36,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   ]
 
   return (
-    <div className="min-h-screen bg-[#070b14] flex flex-col">
+    <div className="min-h-screen bg-base flex flex-col">
       <SiteHeader
         left={
           <Link href="/competitions"

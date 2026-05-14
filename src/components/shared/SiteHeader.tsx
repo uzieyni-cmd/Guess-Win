@@ -12,7 +12,7 @@ interface Props {
 export function SiteHeader({ left, right, className, below }: Props) {
   return (
     <div className={cn(
-      'sticky top-0 z-20 bg-[#070b14]/90 backdrop-blur-md border-b border-white/8',
+      'sticky top-0 z-20 bg-base/90 backdrop-blur-md border-b border-white/8',
       className
     )}>
       <div className="max-w-[1600px] mx-auto px-4">

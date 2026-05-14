@@ -1,6 +1,6 @@
 export function MatchCardSkeleton() {
   return (
-    <div className="rounded-2xl overflow-hidden border border-slate-700/30 bg-[#0d1420] animate-pulse">
+    <div className="rounded-2xl overflow-hidden border border-slate-700/30 bg-surface animate-pulse">
       {/* header strip */}
       <div className="h-8 bg-slate-800/60 border-b border-slate-700/20" />
 

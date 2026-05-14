@@ -21,7 +21,7 @@ function FormBadge({ char }: { char: string }) {
 
 function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandingEntry[] }) {
   return (
-    <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
       {group && (
         <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
           <h3 className="text-xs font-bold text-emerald-400 tracking-wide uppercase">{group}</h3>
@@ -227,7 +227,7 @@ function TieSlot({ tie }: { tie: Tie | null }) {
   }
 
   return (
-    <div className="bg-[#0d1420] rounded-lg border border-slate-700/40 overflow-hidden min-w-[150px]">
+    <div className="bg-surface rounded-lg border border-slate-700/40 overflow-hidden min-w-[150px]">
       <div className={rowClass(1)}>
         <Image src={team1.logo} alt={team1.name} width={16} height={16} className="shrink-0" unoptimized />
         <span className={nameClass(1)}>{translateTeam(team1.name)}</span>
@@ -539,7 +539,7 @@ function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchN
   }
 
   return (
-    <div className="bg-[#0d1420] rounded-lg border border-slate-700/40 overflow-hidden" style={cellStyle}>
+    <div className="bg-surface rounded-lg border border-slate-700/40 overflow-hidden" style={cellStyle}>
       {teamRow('home')}
       <div className="h-px bg-slate-800/60" />
       {teamRow('away')}
@@ -579,7 +579,7 @@ function WC2026Bracket({ rounds }: { rounds: Record<string, ApiFixture[]> }) {
   const thirdFixture = thirdFixtures[0] ?? null
 
   return (
-    <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
       <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
         <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
       </div>
@@ -667,7 +667,7 @@ function KnockoutBracket({
     const roundLabels = bracketRounds.map(r => r.label)
 
     return (
-      <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
+      <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
         <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
           <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
         </div>
@@ -681,7 +681,7 @@ function KnockoutBracket({
   // Fallback: column view (RTL reversed)
   const displayRounds = [...sortedRoundKeys].reverse()
   return (
-    <div className="bg-[#0d1420] rounded-2xl border border-slate-700/40 overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
       <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
         <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
       </div>
