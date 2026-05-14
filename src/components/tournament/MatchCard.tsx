@@ -52,11 +52,14 @@ const ROUND_MAP: Record<string, string> = {
   'Group Stage':    'שלב הבתים',
 }
 
-function translateRound(round: string): string {
+export function translateRound(round: string): string {
   if (ROUND_MAP[round]) return ROUND_MAP[round]
-  // Regular Season - N
+  // Regular Season - N → מחזור N
   const rsMatch = round.match(/^Regular Season - (\d+)$/)
   if (rsMatch) return `מחזור ${rsMatch[1]}`
+  // Group Stage - N → סיבוב N
+  const gsMatch = round.match(/^Group Stage - (\d+)$/)
+  if (gsMatch) return `סיבוב ${gsMatch[1]}`
   // League Stage - N (fallback)
   const lsMatch = round.match(/^League Stage - (\d+)$/)
   if (lsMatch) return `שלב הליגה - ${lsMatch[1]}`

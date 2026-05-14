@@ -9,6 +9,7 @@ import { TeamFlag } from '@/components/shared/TeamFlag'
 import { cn } from '@/lib/utils'
 import { ArrowRight, Download, Loader2, Users } from 'lucide-react'
 import { Match, Bet, User } from '@/types'
+import { translateRound } from '@/components/tournament/MatchCard'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -272,7 +273,7 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
     <div className="bg-gradient-to-b from-[#0d1420] to-[#070b14] border-b border-slate-700/30 py-6 px-4">
       {/* שם הליגה / סיבוב */}
       {match.round && (
-        <p className="text-center text-xs text-slate-500 mb-4">{match.round}</p>
+        <p className="text-center text-xs text-slate-500 mb-4">{translateRound(match.round)}</p>
       )}
 
       <div className="max-w-sm mx-auto flex items-center gap-2">
