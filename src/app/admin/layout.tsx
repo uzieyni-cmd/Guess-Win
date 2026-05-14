@@ -32,7 +32,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const navItems = [
     ...(isFullAdmin ? [{ label: 'סקירה', href: '/admin', icon: LayoutDashboard }] : []),
     { label: 'תחרויות', href: '/admin/tournaments', icon: Trophy },
-    ...(isFullAdmin ? [{ label: 'משתמשים', href: '/admin/users', icon: Users }] : []),
+    { label: 'משתמשים', href: '/admin/users', icon: Users },
   ]
 
   return (

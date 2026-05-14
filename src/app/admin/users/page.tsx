@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Users, Save, CheckCircle2, Phone, Search, Trash2, Download, Shield, ShieldOff } from 'lucide-react'
+import { Users, Save, CheckCircle2, Phone, Search, Trash2, Download, Shield, ShieldOff, Settings } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
-import { setUserRole } from '@/app/actions/roles'
+import { setUserRole, getMyAdminTournamentIds } from '@/app/actions/roles'
 import { supabase } from '@/lib/supabase'
 import { User, UserRole } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -38,8 +38,11 @@ export default function AdminUsersPage() {
   const [search, setSearch]           = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [roleMsg, setRoleMsg]         = useState('')
+  const [myTournamentIds, setMyTournamentIds] = useState<string[] | 'all'>('all')
 
   const callerRole = currentUser?.role as UserRole
+  const isFullAdmin = callerRole === 'admin' || callerRole === 'owner'
+  const isTournamentAdmin = callerRole === 'tournament_admin'
 
   const load = async () => {
     const { data: profiles } = await supabase
@@ -73,7 +76,10 @@ export default function AdminUsersPage() {
     setPermissions(Object.fromEntries(mappedUsers.map((u) => [u.id, [...u.competitionIds]])))
   }
 
-  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load()
+    getMyAdminTournamentIds().then(setMyTournamentIds)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = (userId: string, tournamentId: string) => {
     setPermissions((prev) => {
@@ -130,7 +136,17 @@ export default function AdminUsersPage() {
     writeFile(wb, 'users.xlsx')
   }
 
+  // Tournaments visible to the caller (all for admin/owner, assigned only for tournament_admin)
+  const visibleTournaments = myTournamentIds === 'all'
+    ? tournaments
+    : tournaments.filter(t => (myTournamentIds as string[]).includes(t.id))
+
   const filtered = users.filter((u) => {
+    // tournament_admin only sees users in their tournaments
+    if (isTournamentAdmin && myTournamentIds !== 'all') {
+      const ids = myTournamentIds as string[]
+      if (!u.competitionIds.some(id => ids.includes(id))) return false
+    }
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -181,7 +197,9 @@ export default function AdminUsersPage() {
         {filtered.map((user) => {
           const isOwner = user.role === 'owner'
           const isMe = user.id === currentUser?.id
-          const canChangeRole = callerRole === 'owner' && !isOwner
+          // owner can change anyone (except other owner); admin can set tournament_admin/user (not admin)
+          const canSetTournamentAdmin = !isOwner && !isMe && (callerRole === 'owner' || callerRole === 'admin') && user.role !== 'admin'
+          const canSetAdmin = !isOwner && !isMe && callerRole === 'owner'
           const canDelete = !isOwner && !isMe && callerRole === 'owner'
 
           return (
@@ -210,38 +228,58 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* Role toggle — owner only */}
-                  {canChangeRole && (
-                    <div className="flex items-center gap-1">
-                      {user.role !== 'admin' && (
-                        <button
-                          onClick={() => handleSetRole(user.id, 'admin')}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
-                          title="הגדר כמנהל"
-                        >
-                          <Shield className="h-4 w-4" />
-                        </button>
-                      )}
-                      {user.role === 'admin' && (
-                        <button
-                          onClick={() => handleSetRole(user.id, 'user')}
-                          className="p-1.5 rounded-lg text-blue-400 hover:text-slate-500 hover:bg-slate-700 transition-colors"
-                          title="הסר הרשאת מנהל"
-                        >
-                          <ShieldOff className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
+                  {/* Tournament-admin toggle — owner or admin */}
+                  {canSetTournamentAdmin && (
+                    user.role === 'tournament_admin' ? (
+                      <button
+                        onClick={() => handleSetRole(user.id, 'user')}
+                        className="p-1.5 rounded-lg text-emerald-400 hover:text-slate-500 hover:bg-slate-700 transition-colors"
+                        title="הסר הרשאת מנהל טורניר"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleSetRole(user.id, 'tournament_admin')}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10 transition-colors"
+                        title="הגדר כמנהל טורניר"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </button>
+                    )
                   )}
 
-                  <button
-                    onClick={() => save(user.id)}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors min-w-[64px] justify-center"
-                  >
-                    {saved.includes(user.id)
-                      ? <><CheckCircle2 className="h-3.5 w-3.5" />נשמר</>
-                      : <><Save className="h-3.5 w-3.5" />שמור</>}
-                  </button>
+                  {/* Admin toggle — owner only */}
+                  {canSetAdmin && (
+                    user.role === 'admin' ? (
+                      <button
+                        onClick={() => handleSetRole(user.id, 'user')}
+                        className="p-1.5 rounded-lg text-blue-400 hover:text-slate-500 hover:bg-slate-700 transition-colors"
+                        title="הסר הרשאת מנהל"
+                      >
+                        <ShieldOff className="h-4 w-4" />
+                      </button>
+                    ) : user.role !== 'tournament_admin' && (
+                      <button
+                        onClick={() => handleSetRole(user.id, 'admin')}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
+                        title="הגדר כמנהל"
+                      >
+                        <Shield className="h-4 w-4" />
+                      </button>
+                    )
+                  )}
+
+                  {user.role !== 'owner' && user.role !== 'admin' && user.role !== 'tournament_admin' && (
+                    <button
+                      onClick={() => save(user.id)}
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors min-w-[64px] justify-center"
+                    >
+                      {saved.includes(user.id)
+                        ? <><CheckCircle2 className="h-3.5 w-3.5" />נשמר</>
+                        : <><Save className="h-3.5 w-3.5" />שמור</>}
+                    </button>
+                  )}
 
                   {canDelete && (
                     deleteConfirm === user.id ? (
@@ -266,12 +304,12 @@ export default function AdminUsersPage() {
                 </div>
               </div>
 
-              {/* Tournament permissions — hide for owner/admin (they have all access) */}
-              {user.role !== 'owner' && user.role !== 'admin' && (
+              {/* Tournament permissions — hide for owner/admin/tournament_admin (they have role-based access) */}
+              {user.role !== 'owner' && user.role !== 'admin' && user.role !== 'tournament_admin' && (
                 <div className="px-4 py-3">
                   <p className="text-xs text-slate-500 mb-2.5">גישה לתחרויות:</p>
                   <div className="space-y-2">
-                    {tournaments.map((t) => (
+                    {visibleTournaments.map((t) => (
                       <label key={t.id} className="flex items-center gap-2.5 cursor-pointer group">
                         <input
                           type="checkbox"

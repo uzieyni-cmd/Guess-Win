@@ -122,6 +122,15 @@ export async function removeTournamentAdmin(
 }
 
 /**
+ * Get the tournament IDs the current caller can admin
+ * ('all' for owner/admin, specific list for tournament_admin).
+ */
+export async function getMyAdminTournamentIds(): Promise<string[] | 'all'> {
+  const { getAdminTournamentIds } = await import('@/lib/auth-server')
+  return getAdminTournamentIds()
+}
+
+/**
  * Get all tournament admins for a tournament.
  */
 export async function getTournamentAdmins(
