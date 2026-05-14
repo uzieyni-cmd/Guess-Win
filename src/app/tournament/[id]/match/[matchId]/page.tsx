@@ -114,7 +114,7 @@ function EventRow({ event, homeTeamId }: { event: MatchEvent; homeTeamId: number
 
       {/* מרכז — דקה + אייקון */}
       <div className="flex flex-col items-center gap-0.5">
-        <span className="text-[10px] text-slate-500 font-mono tabular-nums">{event.minute}&apos;</span>
+        <span className="text-xs text-slate-500 font-mono tabular-nums">{event.minute}&apos;</span>
         <EventIcon type={event.type} detail={event.detail} />
       </div>
 
@@ -157,7 +157,7 @@ function EventsTimeline({ events, homeTeamId, htScore }: {
       {/* מפריד מחצית */}
       <div className="flex items-center gap-3 py-3 my-1 px-3">
         <div className="flex-1 h-px bg-slate-700/60" />
-        <span className="text-[11px] font-bold text-amber-300/90 tracking-wide px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+        <span className="text-xs font-bold text-amber-300/90 tracking-wide px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
           הפסקה · {htScore.home ?? 0}–{htScore.away ?? 0}
         </span>
         <div className="flex-1 h-px bg-slate-700/60" />
@@ -231,7 +231,7 @@ function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLo
             )}>
               <span className={cn('text-sm truncate max-w-[130px]', isMe ? 'text-emerald-300 font-semibold' : 'text-slate-300')}>
                 {p.displayName}
-                {isMe && <span className="text-[11px] text-emerald-500/70 mr-1">· אני</span>}
+                {isMe && <span className="text-xs text-emerald-500/70 mr-1">· אני</span>}
               </span>
 
               <div className="flex items-center gap-2 shrink-0">
@@ -291,9 +291,9 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
               </span>
-              <span className="text-[10px] text-red-400 font-bold tracking-wide">LIVE</span>
+              <span className="text-xs text-red-400 font-bold tracking-wide">LIVE</span>
               {match.liveMinute != null && !['HT','BT'].includes(match.matchPeriod ?? '') && (
-                <span className="text-[10px] text-red-300 font-mono">{match.liveMinute}&apos;</span>
+                <span className="text-xs text-red-300 font-mono">{match.liveMinute}&apos;</span>
               )}
             </div>
           )}
@@ -307,10 +307,10 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
               : `${score?.home ?? 0} : ${score?.away ?? 0}`}
           </div>
 
-          {period && <span className="text-[10px] text-slate-400">{period}</span>}
-          {isFinished && <span className="text-[10px] text-emerald-400 font-medium">סיום</span>}
+          {period && <span className="text-xs text-slate-400">{period}</span>}
+          {isFinished && <span className="text-xs text-emerald-400 font-medium">סיום</span>}
           {match.status === 'scheduled' && (
-            <span className="text-[10px] text-slate-500">
+            <span className="text-xs text-slate-500">
               {new Date(match.matchStartTime).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}

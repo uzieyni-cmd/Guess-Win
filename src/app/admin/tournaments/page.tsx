@@ -416,15 +416,16 @@ export default function AdminTournamentsPage() {
                 <div className="flex items-center gap-1 shrink-0">
                   <Button variant="ghost" size="icon"
                     onClick={() => toggleHideTournament(t.id, !t.isHidden)}
-                    title={t.isHidden ? 'הצג תחרות' : 'הסתר תחרות'}>
+                    aria-label={t.isHidden ? 'הצג תחרות' : 'הסתר תחרות'}
+                    className="min-h-[44px] min-w-[44px]">
                     {t.isHidden
                       ? <EyeOff className="h-4 w-4 text-amber-500" />
                       : <Eye className="h-4 w-4 text-muted-foreground" />}
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(t)} title="עריכה">
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(t)} aria-label="עריכת תחרות" className="min-h-[44px] min-w-[44px]">
                     <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t)} title="מחיקה">
+                  <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t)} aria-label="מחיקת תחרות" className="min-h-[44px] min-w-[44px]">
                     <Trash2 className="h-4 w-4 text-red-400" />
                   </Button>
                   <Link href={`/admin/tournaments/${t.id}`}>

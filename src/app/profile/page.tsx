@@ -291,7 +291,7 @@ function ProfileContent() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-emerald-200 text-sm">שם פרטי</Label>
                   <Input
@@ -435,7 +435,7 @@ function ProfileContent() {
                   <Loader2 className="h-6 w-6 text-emerald-400 animate-spin" />
                 </div>
               ) : stats && stats.totalBets > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <StatBox label="סה״כ ניחושים" value={stats.totalBets} color="text-white" />
                   <StatBox label="תחרויות" value={stats.tournaments} color="text-white" />
                   <StatBox label="סה״כ נקודות" value={stats.totalPoints} color="text-yellow-400" />

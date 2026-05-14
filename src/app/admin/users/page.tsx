@@ -233,16 +233,16 @@ export default function AdminUsersPage() {
                     user.role === 'tournament_admin' ? (
                       <button
                         onClick={() => handleSetRole(user.id, 'user')}
-                        className="p-1.5 rounded-lg text-emerald-400 hover:text-slate-500 hover:bg-slate-700 transition-colors"
-                        title="הסר הרשאת מנהל טורניר"
+                        aria-label="הסר הרשאת מנהל טורניר"
+                        className="p-2 rounded-lg text-emerald-400 hover:text-slate-500 hover:bg-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         <Settings className="h-4 w-4" />
                       </button>
                     ) : (
                       <button
                         onClick={() => handleSetRole(user.id, 'tournament_admin')}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10 transition-colors"
-                        title="הגדר כמנהל טורניר"
+                        aria-label="הגדר כמנהל טורניר"
+                        className="p-2 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         <Settings className="h-4 w-4" />
                       </button>
@@ -254,16 +254,16 @@ export default function AdminUsersPage() {
                     user.role === 'admin' ? (
                       <button
                         onClick={() => handleSetRole(user.id, 'user')}
-                        className="p-1.5 rounded-lg text-blue-400 hover:text-slate-500 hover:bg-slate-700 transition-colors"
-                        title="הסר הרשאת מנהל"
+                        aria-label="הסר הרשאת מנהל"
+                        className="p-2 rounded-lg text-blue-400 hover:text-slate-500 hover:bg-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         <ShieldOff className="h-4 w-4" />
                       </button>
                     ) : user.role !== 'tournament_admin' && (
                       <button
                         onClick={() => handleSetRole(user.id, 'admin')}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-400/10 transition-colors"
-                        title="הגדר כמנהל"
+                        aria-label="הגדר כמנהל"
+                        className="p-2 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-400/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         <Shield className="h-4 w-4" />
                       </button>
@@ -295,8 +295,8 @@ export default function AdminUsersPage() {
                       </div>
                     ) : (
                       <button onClick={() => setDeleteConfirm(user.id)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                        title="מחק משתמש">
+                        aria-label="מחק משתמש"
+                        className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     )

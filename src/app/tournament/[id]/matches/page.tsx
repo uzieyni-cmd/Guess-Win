@@ -105,7 +105,7 @@ export default function MatchesPage() {
           {finishedCount > 0 && (
             <button
               onClick={() => setHideFinished(v => !v)}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors cursor-pointer min-h-[44px] px-2"
             >
               {hideFinished
                 ? <><Eye className="h-3.5 w-3.5" />הצג הכל ({finishedCount})</>
@@ -118,7 +118,7 @@ export default function MatchesPage() {
             <button
               onClick={handleLoadPast}
               disabled={loadingAll}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-colors border border-slate-600 rounded-full px-2.5 py-1 hover:border-slate-400"
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-colors border border-slate-600 rounded-full px-3 py-2.5 min-h-[44px] hover:border-slate-400"
             >
               {loadingAll
                 ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />טוען...</>

@@ -13,7 +13,7 @@ function FormBadge({ char }: { char: string }) {
     char === 'D' ? 'bg-slate-500/20 text-slate-400 border-slate-500/30' :
                    'bg-red-500/20 text-red-400 border-red-500/30'
   return (
-    <span className={cn('inline-flex items-center justify-center h-4 w-4 rounded-sm text-[10px] font-bold border', cls)}>
+    <span className={cn('inline-flex items-center justify-center h-4 w-4 rounded-sm text-xs font-bold border', cls)}>
       {char === 'W' ? 'נ' : char === 'D' ? 'ת' : 'ה'}
     </span>
   )
@@ -48,7 +48,7 @@ function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandi
               <tr key={row.team.id} className="hover:bg-white/3 transition-colors">
                 <td className="px-3 py-2.5 text-center">
                   <span className={cn(
-                    'inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] font-bold',
+                    'inline-flex items-center justify-center h-5 w-5 rounded-full text-xs font-bold',
                     row.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
                     row.rank === 2 ? 'bg-slate-400/20 text-slate-300' :
                     row.rank === 3 ? 'bg-amber-600/20 text-amber-500' :
@@ -241,7 +241,7 @@ function TieSlot({ tie }: { tie: Tie | null }) {
       </div>
       {footer && (
         <div className={cn(
-          'px-2 py-1 text-[10px] text-center border-t border-slate-800/40',
+          'px-2 py-1 text-xs text-center border-t border-slate-800/40',
           isLive ? 'text-emerald-400 bg-emerald-500/5' : 'text-slate-600'
         )}>
           {footer}
@@ -480,13 +480,13 @@ function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchN
       <div className="bg-slate-800/25 rounded-lg border border-slate-700/20 overflow-hidden" style={cellStyle}>
         <div className="flex items-center gap-1.5 px-2 py-1.5 h-1/2">
           <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />
-          <span className="text-slate-600 text-[10px] flex-1">TBD</span>
+          <span className="text-slate-600 text-xs flex-1">TBD</span>
           <span className="text-[9px] text-slate-700">#{matchNum}</span>
         </div>
         <div className="h-px bg-slate-800/50" />
         <div className="flex items-center gap-1.5 px-2 py-1.5 h-1/2">
           <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />
-          <span className="text-slate-600 text-[10px]">TBD</span>
+          <span className="text-slate-600 text-xs">TBD</span>
         </div>
       </div>
     )
@@ -519,11 +519,11 @@ function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchN
         {team.logo
           ? <Image src={team.logo} alt={team.name} width={12} height={12} unoptimized className="shrink-0 rounded-full" />
           : <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />}
-        <span className={cn('text-[10px] font-medium truncate flex-1',
+        <span className={cn('text-xs font-medium truncate flex-1',
           isW ? 'text-white font-bold' : 'text-slate-400')}>
           {translateTeam(team.name)}
         </span>
-        {hasScore && <span className={cn('text-[10px] font-bold shrink-0', isW ? 'text-emerald-400' : 'text-slate-500')}>{g}</span>}
+        {hasScore && <span className={cn('text-xs font-bold shrink-0', isW ? 'text-emerald-400' : 'text-slate-500')}>{g}</span>}
         {side === 'home' && <span className="text-[8px] text-slate-700 shrink-0 mr-0.5">#{matchNum}</span>}
       </div>
     )
@@ -777,7 +777,7 @@ export default function StandingsPage() {
       ))}
 
       {filteredStandings.length > 0 && (
-        <p className="text-center text-[10px] text-slate-600 pb-2">מ׳=משחקים · נ׳=נצחון · ת׳=תיקו · ה׳=הפסד · שע׳=שערים · נק׳=נקודות</p>
+        <p className="text-center text-xs text-slate-600 pb-2">מ׳=משחקים · נ׳=נצחון · ת׳=תיקו · ה׳=הפסד · שע׳=שערים · נק׳=נקודות</p>
       )}
     </div>
   )

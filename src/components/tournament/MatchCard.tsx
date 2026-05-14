@@ -220,13 +220,13 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                   {/* ניחוש המשתמש + נקודות מתחת לתוצאה */}
                   {userBet ? (
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap justify-center">
-                      <span className={cn('text-[11px]', isLive ? 'text-slate-300' : 'text-slate-500')}>
+                      <span className={cn('text-xs', isLive ? 'text-slate-300' : 'text-slate-500')}>
                         ניחוש: <span className={cn('font-condensed font-semibold tabular-nums text-sm', isLive ? 'text-slate-200' : 'text-slate-600')}>{userBet.predictedScore.home}–{userBet.predictedScore.away}</span>
                       </span>
                       {userResult && <PointsBadge result={userResult.result} points={userResult.points} />}
                     </div>
                   ) : (
-                    <span className={cn('text-[11px] mt-0.5', isLive ? 'text-slate-400' : 'text-slate-500')}>לא ניחשת</span>
+                    <span className={cn('text-xs mt-0.5', isLive ? 'text-slate-400' : 'text-slate-500')}>לא ניחשת</span>
                   )}
                 </div>
               ) : (
@@ -244,7 +244,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                         onClick={handleSave}
                         disabled={!dirty || saved || homeScore === null || awayScore === null}
                         className={cn(
-                          'flex items-center gap-1 text-xs px-3 py-2 rounded-full font-medium transition-all min-h-[36px]',
+                          'flex items-center gap-1 text-xs px-3 py-2 rounded-full font-medium transition-all min-h-[44px]',
                           saveError
                             ? 'bg-red-100 text-red-600 cursor-default'
                             : dirty && !saved
@@ -259,18 +259,18 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                           : <><Save className="h-3 w-3" />שמור</>}
                       </button>
                       {saveError && (
-                        <span className="text-[10px] text-red-500 text-center leading-tight max-w-[120px]">{saveError}</span>
+                        <span className="text-xs text-red-500 text-center leading-tight max-w-[120px]">{saveError}</span>
                       )}
                     </div>
                   )}
                   {submittedLabel && !isInputLocked && !dirty && (
-                    <span className="flex items-center gap-1 text-[10px] text-emerald-500">
+                    <span className="flex items-center gap-1 text-xs text-emerald-500">
                       <Check className="h-2.5 w-2.5" />
                       {submittedLabel.isUpdated ? 'עודכן' : 'הוגש'} ב-{submittedLabel.text}
                     </span>
                   )}
                   {isUrgent && (
-                    <span className="text-[10px] text-orange-500 font-medium animate-pulse">
+                    <span className="text-xs text-orange-500 font-medium animate-pulse">
                       ⚡ פחות מ-2 שעות לקיקאוף
                     </span>
                   )}
@@ -315,7 +315,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                 <Users className="h-3 w-3" />
                 ניחושי שאר המשתתפים ({otherBets.length})
               </span>
-              <span className="text-[10px] opacity-60">לחץ לפתיחה</span>
+              <span className="text-xs opacity-60">לחץ לפתיחה</span>
             </button>
           </div>
         )}
@@ -337,7 +337,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 // ── יחסי הימורים (Bet365) ─────────────────────────────────────────────
 function OddsBar({ odds }: { odds: { home: number; draw: number; away: number } }) {
   return (
-    <div className="mt-3 space-y-1.5 text-[11px]">
+    <div className="mt-3 space-y-1.5 text-xs">
       <div className="flex justify-end">
         <Image src="/bet365-logo.png" alt="Bet365" width={48} height={18} className="opacity-90" />
       </div>
@@ -372,7 +372,7 @@ function BetDistributionBar({ bets, totalParticipants }: { bets: Bet[]; totalPar
 
   return (
     <div className="mt-3 space-y-1.5">
-      <div className="flex justify-between items-center text-[10px] font-medium px-0.5">
+      <div className="flex justify-between items-center text-xs font-medium px-0.5">
         <span className="text-emerald-600 dark:text-emerald-400">{homePct}% בית</span>
         <span className="text-muted-foreground/60 text-[9px]">{total}/{totalParticipants} ניחשו</span>
         <span className="text-blue-500 dark:text-blue-400">{awayPct}% חוץ</span>
@@ -430,7 +430,7 @@ function OtherBetsDialog({ open, onClose, match, bets, participants, isFinished 
               <p className="text-sm font-bold text-slate-100">
                 {match.homeTeam.name} <span className="text-slate-500 font-normal">נגד</span> {match.awayTeam.name}
               </p>
-              <p className="text-[11px] text-slate-500 mt-0.5">ניחושי המשתתפים · {bets.length}</p>
+              <p className="text-xs text-slate-500 mt-0.5">ניחושי המשתתפים · {bets.length}</p>
             </div>
             <DialogPrimitive.Close className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-slate-400">
               <X className="h-4 w-4" />
@@ -483,7 +483,7 @@ function LiveIndicator({ minute, period }: { minute?: number; period?: string })
   return (
     <div className="flex items-center gap-2">
       {/* pill LIVE */}
-      <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-[11px] font-bold tracking-widest px-2 py-0.5 rounded-sm uppercase leading-none">
+      <span className="inline-flex items-center gap-1.5 bg-red-600 text-white text-xs font-bold tracking-widest px-2 py-0.5 rounded-sm uppercase leading-none">
         <span className="relative flex h-1.5 w-1.5 shrink-0">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
@@ -492,7 +492,7 @@ function LiveIndicator({ minute, period }: { minute?: number; period?: string })
       </span>
       {/* chip זמן */}
       {timeChip && (
-        <span className={cn('inline-flex items-center text-[11px] font-mono font-semibold px-2 py-0.5 rounded-sm leading-none min-w-[36px] justify-center', timeChip.cls)}>
+        <span className={cn('inline-flex items-center text-xs font-mono font-semibold px-2 py-0.5 rounded-sm leading-none min-w-[36px] justify-center', timeChip.cls)}>
           {timeChip.label}
         </span>
       )}

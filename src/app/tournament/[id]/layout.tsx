@@ -46,12 +46,14 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-1">
             {currentUser?.role === 'admin' && (
               <button onClick={() => router.push(`/admin/tournaments/${id}`)}
-                className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/8 min-h-[36px]">
+                aria-label="ניהול תחרות"
+                className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/8 min-h-[44px] min-w-[44px] flex items-center justify-center">
                 <Settings className="h-4 w-4" />
               </button>
             )}
             <button onClick={() => { logout(); router.push('/login') }}
-              className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/8 min-h-[36px]">
+              aria-label="התנתקות"
+              className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/8 min-h-[44px] min-w-[44px] flex items-center justify-center">
               <LogOut className="h-4 w-4" />
             </button>
           </div>
