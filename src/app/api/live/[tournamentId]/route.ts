@@ -20,11 +20,14 @@ export async function GET(
   // סנכרן מ-API Football לפני הקריאה (rate-limited ל-55s לטורניר)
   await syncLiveMatches({ tournamentId })
 
+  // החזר משחקים חיים + כאלה שסיימו ב-3 השעות האחרונות (כדי שהלקוח יקבל תוצאות סופיות)
+  const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
+
   const { data, error } = await supabaseAdmin
     .from('matches')
     .select(COLS)
     .eq('tournament_id', tournamentId)
-    .eq('status', 'live')
+    .or(`status.eq.live,and(status.eq.finished,match_start_time.gte.${threeHoursAgo})`)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const translated = (data ?? []).map(m => {
