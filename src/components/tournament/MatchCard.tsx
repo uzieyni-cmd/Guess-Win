@@ -177,19 +177,25 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
           onClick={() => router.push(`/tournament/${match.tournamentId}/match/${match.id}`)}
         >
           {/* שמאל: timer / LIVE indicator */}
-          {isLive ? (
-            <LiveIndicator minute={liveMinute} period={match.matchPeriod} />
-          ) : (
-            <CountdownTimer matchStartTime={match.matchStartTime} />
-          )}
+          <div className="flex-1 flex items-center">
+            {isLive ? (
+              <LiveIndicator minute={liveMinute} period={match.matchPeriod} />
+            ) : (
+              <CountdownTimer matchStartTime={match.matchStartTime} />
+            )}
+          </div>
 
-          {/* ימין: סיבוב + תאריך */}
-          <div className="flex flex-col items-center text-center min-w-0">
-            {roundStr && (
-              <span className={cn('font-medium whitespace-nowrap text-xs leading-tight', isLive ? 'text-red-300' : 'text-emerald-400')}>
+          {/* מרכז: שלב */}
+          {roundStr && (
+            <div className="flex-1 flex justify-center">
+              <span className={cn('font-medium whitespace-nowrap text-xs leading-tight text-center', isLive ? 'text-red-300' : 'text-emerald-400')}>
                 {roundStr}
               </span>
-            )}
+            </div>
+          )}
+
+          {/* ימין: תאריך */}
+          <div className={cn('flex justify-end', roundStr ? 'flex-1' : 'flex-none')}>
             <span className="whitespace-nowrap text-xs leading-tight">{dateStr} · {timeStr}</span>
           </div>
         </div>
