@@ -13,42 +13,46 @@ export async function setUserRole(
   targetUserId: string,
   newRole: UserRole
 ): Promise<{ ok: boolean; error?: string }> {
-  const callerId = await requireAdmin()
+  try {
+    const callerId = await requireAdmin()
 
-  // Fetch caller role
-  const { data: caller } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', callerId)
-    .single()
-  const callerRole = caller?.role as string
+    // Fetch caller role
+    const { data: caller } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', callerId)
+      .single()
+    const callerRole = caller?.role as string
 
-  // Fetch target role
-  const { data: target } = await supabaseAdmin
-    .from('profiles')
-    .select('role')
-    .eq('id', targetUserId)
-    .single()
-  const targetRole = target?.role as string
+    // Fetch target role
+    const { data: target } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', targetUserId)
+      .single()
+    const targetRole = target?.role as string
 
-  // Owner is immutable
-  if (targetRole === 'owner') return { ok: false, error: 'לא ניתן לשנות תפקיד הבעלים' }
+    // Owner is immutable
+    if (targetRole === 'owner') return { ok: false, error: 'לא ניתן לשנות תפקיד הבעלים' }
 
-  // Only owner can promote to admin
-  if (newRole === 'admin' && callerRole !== 'owner') {
-    return { ok: false, error: 'רק הבעלים יכול להגדיר מנהלים' }
+    // Only owner can promote to admin
+    if (newRole === 'admin' && callerRole !== 'owner') {
+      return { ok: false, error: 'רק הבעלים יכול להגדיר מנהלים' }
+    }
+
+    // Owner cannot be set as new role by non-owner
+    if (newRole === 'owner') return { ok: false, error: 'לא ניתן להגדיר בעלים נוסף' }
+
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', targetUserId)
+
+    if (error) return { ok: false, error: error.message }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'שגיאה לא צפויה' }
   }
-
-  // Owner cannot be set as new role by non-owner
-  if (newRole === 'owner') return { ok: false, error: 'לא ניתן להגדיר בעלים נוסף' }
-
-  const { error } = await supabaseAdmin
-    .from('profiles')
-    .update({ role: newRole })
-    .eq('id', targetUserId)
-
-  if (error) return { ok: false, error: error.message }
-  return { ok: true }
 }
 
 /**
