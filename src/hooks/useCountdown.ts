@@ -5,7 +5,11 @@ const LOCK_BEFORE_MS = 10 * 60 * 1000 // 10 minutes
 interface CountdownResult {
   timeLeft: number // ms remaining until lock
   isLocked: boolean
-  formatted: string // HH:MM:SS
+  formatted: string // HH:MM:SS or "X ימים"
+  days: number
+  hours: number
+  minutes: number
+  seconds: number
 }
 
 export function useCountdown(matchStartTime: string): CountdownResult {
@@ -38,5 +42,5 @@ export function useCountdown(matchStartTime: string): CountdownResult {
     ? `${days} ימים ו-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} שעות`
     : `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 
-  return { timeLeft, isLocked, formatted }
+  return { timeLeft, isLocked, formatted, days, hours, minutes, seconds }
 }

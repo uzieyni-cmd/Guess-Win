@@ -184,10 +184,13 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
           )}
 
           {/* ימין: סיבוב + תאריך */}
-          <div className="flex items-center gap-1.5 text-left min-w-0 overflow-hidden">
-            {roundStr && <span className={cn('font-medium', isLive ? 'text-red-300' : 'text-emerald-400')}>{roundStr}</span>}
-            {roundStr && <span>·</span>}
-            <span>{dateStr} · {timeStr}</span>
+          <div className="flex flex-col items-center text-center min-w-0">
+            {roundStr && (
+              <span className={cn('font-medium whitespace-nowrap text-xs leading-tight', isLive ? 'text-red-300' : 'text-emerald-400')}>
+                {roundStr}
+              </span>
+            )}
+            <span className="whitespace-nowrap text-xs leading-tight">{dateStr} · {timeStr}</span>
           </div>
         </div>
 
