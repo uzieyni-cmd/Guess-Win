@@ -38,13 +38,28 @@ export async function placeBetAction(
   const lockTime = new Date(match.match_start_time).getTime() - 10 * 60 * 1000
   if (Date.now() >= lockTime) return { ok: false, error: 'הגשת הניחוש נסגרה' }
 
-  // ולידציה: המשתמש משתתף בתחרות
-  const { count } = await supabaseAdmin
-    .from('tournament_participants')
-    .select('*', { count: 'exact', head: true })
-    .eq('tournament_id', tournamentId)
-    .eq('user_id', user.id)
-  if (!count) return { ok: false, error: 'אינך משתתף בתחרות זו' }
+  // בדוק תפקיד המשתמש
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const isElevated = ['admin', 'owner', 'tournament_admin'].includes(profile?.role ?? '')
+
+  if (isElevated) {
+    // מנהל — רשום אוטומטית לטורניר כדי להופיע בדירוגים
+    await supabaseAdmin
+      .from('tournament_participants')
+      .upsert({ tournament_id: tournamentId, user_id: user.id }, { onConflict: 'tournament_id,user_id' })
+  } else {
+    // משתמש רגיל — חייב להיות משתתף
+    const { count } = await supabaseAdmin
+      .from('tournament_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('tournament_id', tournamentId)
+      .eq('user_id', user.id)
+    if (!count) return { ok: false, error: 'אינך משתתף בתחרות זו' }
+  }
 
   const { error } = await supabaseAdmin
     .from('bets')
