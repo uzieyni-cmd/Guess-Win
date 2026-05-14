@@ -10,19 +10,19 @@ import { SiteHeader } from '@/components/shared/SiteHeader'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 function CompetitionsContent() {
-  const { currentUser, logout, isProfileReady } = useAuth()
+  const { currentUser, logout, isLoading } = useAuth()
   const { tournaments, reload } = useTournament()
   const router = useRouter()
 
   useEffect(() => { reload() }, [reload])
 
   const myTournaments = useMemo(() => {
-    if (!currentUser || !isProfileReady) return null
-    // אדמין רואה את כל התחרויות (כולל מוסתרות)
-    if (currentUser.role === 'admin') return tournaments
+    if (!currentUser) return null
+    // admin/owner/tournament_admin רואים את כל התחרויות (כולל מוסתרות)
+    if (['admin', 'owner', 'tournament_admin'].includes(currentUser.role)) return tournaments
     // משתמש רגיל: רק תחרויות גלויות שהוא משתתף בהן
     return tournaments.filter((t) => !t.isHidden && currentUser.competitionIds.includes(t.id))
-  }, [tournaments, currentUser, isProfileReady])
+  }, [tournaments, currentUser])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-base to-surface-green">
@@ -66,7 +66,7 @@ function CompetitionsContent() {
             <p className="text-emerald-300">בחרו תחרות לניחוש</p>
           </div>
 
-          {myTournaments === null ? (
+          {myTournaments === null || (isLoading && myTournaments.length === 0) ? (
             <div className="flex justify-center py-16">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
             </div>
