@@ -29,19 +29,30 @@ export async function POST(req: NextRequest) {
     let contextBlock = ''
 
     if (tournamentId) {
-      const [standingsRes, matchesRes, userBetsRes] = await Promise.all([
+      const [participantsRes, finishedMatchesRes, upcomingMatchesRes, userBetsRes, scoredBetsRes, bonusPicksRes] = await Promise.all([
+        // Participants list for this tournament
         supabaseAdmin
-          .from('bets')
-          .select('user_id, points, profiles(display_name)')
-          .eq('tournament_id', tournamentId)
-          .not('points', 'is', null),
+          .from('tournament_participants')
+          .select('user_id')
+          .eq('tournament_id', tournamentId),
 
+        // Finished matches — primary results data source
         supabaseAdmin
           .from('matches')
           .select('home_team_name, away_team_name, actual_home_score, actual_away_score, status, match_start_time, round')
           .eq('tournament_id', tournamentId)
+          .eq('status', 'finished')
           .order('match_start_time', { ascending: false })
-          .limit(30),
+          .limit(50),
+
+        // Upcoming / live matches (with odds)
+        supabaseAdmin
+          .from('matches')
+          .select('home_team_name, away_team_name, actual_home_score, actual_away_score, status, match_start_time, round, odds_home, odds_draw, odds_away')
+          .eq('tournament_id', tournamentId)
+          .neq('status', 'finished')
+          .order('match_start_time', { ascending: true })
+          .limit(20),
 
         userId
           ? supabaseAdmin
@@ -50,28 +61,111 @@ export async function POST(req: NextRequest) {
               .eq('tournament_id', tournamentId)
               .eq('user_id', userId)
           : Promise.resolve({ data: [] }),
+
+        // All bets for standings
+        supabaseAdmin
+          .from('bets')
+          .select('user_id, points')
+          .eq('tournament_id', tournamentId),
+
+        // Bonus picks points
+        supabaseAdmin
+          .from('bonus_picks')
+          .select('user_id, points_awarded')
+          .eq('tournament_id', tournamentId)
+          .not('points_awarded', 'is', null),
       ])
 
-      // standings
-      const pointsByUser: Record<string, { name: string; points: number }> = {}
-      for (const row of standingsRes.data ?? []) {
-        const r = row as unknown as { user_id: string; points: number; profiles: { display_name: string }[] | { display_name: string } | null }
-        const profileName = Array.isArray(r.profiles) ? r.profiles[0]?.display_name : (r.profiles as { display_name: string } | null)?.display_name
-        if (!pointsByUser[r.user_id]) pointsByUser[r.user_id] = { name: profileName ?? 'משתתף', points: 0 }
-        pointsByUser[r.user_id].points += r.points
-      }
-      const standings = Object.values(pointsByUser)
-        .sort((a, b) => b.points - a.points)
-        .map((s, i) => `${i + 1}. ${s.name} — ${s.points} נקודות`)
+      // standings — replicate TournamentContext logic exactly
+      const participantIds = (participantsRes.data ?? []).map(
+        (p: { user_id: string }) => p.user_id
+      )
 
-      // matches
-      const matches = (matchesRes.data ?? []).map(m => {
-        const r = m as unknown as { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null }
+      // Fetch profiles for participants
+      const profilesRes = participantIds.length
+        ? await supabaseAdmin
+            .from('profiles')
+            .select('id, display_name')
+            .in('id', participantIds)
+        : { data: [] }
+
+      const nameById: Record<string, string> = {}
+      for (const p of (profilesRes.data ?? []) as { id: string; display_name: string }[]) {
+        nameById[p.id] = p.display_name
+      }
+
+      // Sum points per user (filter nulls in JS)
+      const pointsByUser: Record<string, number> = {}
+      for (const row of (scoredBetsRes.data ?? []) as { user_id: string; points: number | null }[]) {
+        if (row.points === null || row.points === undefined) continue
+        pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points
+      }
+      for (const row of (bonusPicksRes.data ?? []) as { user_id: string; points_awarded: number }[]) {
+        pointsByUser[row.user_id] = (pointsByUser[row.user_id] ?? 0) + row.points_awarded
+      }
+
+      // Build standings for ALL participants (same as leaderboard page)
+      const standings = participantIds
+        .map((uid: string) => ({
+          name: nameById[uid] ?? 'משתתף',
+          points: pointsByUser[uid] ?? 0,
+        }))
+        .sort((a: { points: number }, b: { points: number }) => b.points - a.points)
+        .map((s: { name: string; points: number }, i: number) => `${i + 1}. ${s.name} — ${s.points} נקודות`)
+
+      type MatchRow = { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null; odds_home?: number | null; odds_draw?: number | null; odds_away?: number | null }
+
+      const finishedMatches = (finishedMatchesRes.data ?? []).map(m => {
+        const r = m as unknown as MatchRow
         const home = translateTeam(r.home_team_name)
         const away = translateTeam(r.away_team_name)
-        const score = r.actual_home_score !== null ? `${r.actual_home_score}:${r.actual_away_score}` : 'טרם שוחק'
-        const status = r.status === 'finished' ? 'הסתיים' : r.status === 'live' ? 'חי' : 'מתוכנן'
-        return `${home} נגד ${away} | ${score} | ${status}${r.round ? ` | ${r.round}` : ''}`
+        return `${home} ${r.actual_home_score}:${r.actual_away_score} ${away}${r.round ? ` (${r.round})` : ''}`
+      })
+
+      // Helper: recent form of a team from finished matches (last 5)
+      const finishedRaw = (finishedMatchesRes.data ?? []) as unknown as MatchRow[]
+      const teamForm = (teamName: string): string => {
+        const results = finishedRaw
+          .filter(m => m.home_team_name === teamName || m.away_team_name === teamName)
+          .slice(0, 5)
+          .map(m => {
+            const isHome = m.home_team_name === teamName
+            const gs = isHome ? m.actual_home_score! : m.actual_away_score!
+            const ga = isHome ? m.actual_away_score! : m.actual_home_score!
+            const opp = translateTeam(isHome ? m.away_team_name : m.home_team_name)
+            const result = gs > ga ? 'נ' : gs < ga ? 'ה' : 'ת'
+            return `${result}(${gs}:${ga} מול ${opp})`
+          })
+        return results.length ? results.join(', ') : 'אין היסטוריה'
+      }
+
+      const nowMs = Date.now()
+      const upcomingMatches = (upcomingMatchesRes.data ?? []).map(m => {
+        const r = m as unknown as MatchRow & { match_start_time?: string }
+        const home = translateTeam(r.home_team_name)
+        const away = translateTeam(r.away_team_name)
+        const status = r.status === 'live' ? 'חי כעת' : 'מתוכנן'
+        const score = r.actual_home_score !== null ? ` ${r.actual_home_score}:${r.actual_away_score}` : ''
+        let oddsStr = ''
+        if (r.odds_home && r.odds_draw && r.odds_away) {
+          const fav = r.odds_home < r.odds_away
+            ? `${home} מועדף`
+            : r.odds_away < r.odds_home
+              ? `${away} מועדף`
+              : 'שוויון'
+          oddsStr = ` | סיכויים סטטיסטיים: ${home} ${r.odds_home} / תיקו ${r.odds_draw} / ${away} ${r.odds_away} (${fav})`
+        }
+        const homeForm = teamForm(r.home_team_name)
+        const awayForm = teamForm(r.away_team_name)
+        const formStr = ` | ${home} לאחרונה: ${homeForm} | ${away} לאחרונה: ${awayForm}`
+        let timeStr = ''
+        if (r.match_start_time) {
+          const matchMs = new Date(r.match_start_time).getTime()
+          const hoursUntil = Math.round((matchMs - nowMs) / 36e5 * 10) / 10
+          const localTime = new Date(r.match_start_time).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
+          timeStr = ` | מועד: ${localTime} (בעוד ${hoursUntil} שעות)`
+        }
+        return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}${timeStr}${oddsStr}${formStr}`
       })
 
       // user bets
@@ -82,24 +176,49 @@ export async function POST(req: NextRequest) {
         return `${home} נגד ${away}: ניחשת ${r.predicted_home}:${r.predicted_away}${r.points !== null ? ` | ${r.points} נק'` : ''}`
       })
 
+      const nowISO = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
       contextBlock = `
 === נתוני הטורניר ===
+שעה נוכחית (ישראל): ${nowISO}
+
 טבלת דירוג:
 ${standings.length ? standings.join('\n') : 'אין נתונים עדיין'}
 
-משחקים:
-${matches.length ? matches.join('\n') : 'אין משחקים'}
+תוצאות משחקים שהסתיימו:
+${finishedMatches.length ? finishedMatches.join('\n') : 'אין משחקים שהסתיימו עדיין'}
+
+משחקים עתידיים / חיים:
+${upcomingMatches.length ? upcomingMatches.join('\n') : 'אין משחקים מתוכננים'}
 
 ${userBets.length ? `הניחושים שלך:\n${userBets.join('\n')}` : ''}
 `
     }
 
     const systemPrompt = `אתה עוזר של אתר Guess & Win — אתר ניחושי כדורגל.
-ענה רק על שאלות על האתר: דירוגים, ניחושים, תוצאות, כללי ניקוד.
+ענה רק על שאלות על האתר: דירוגים, ניחושים, תוצאות משחקים, כללי ניקוד.
 אם שואלים על נושא אחר — סרב בנימוס.
 ענה בעברית, קצר וברור.
 
-כללי ניקוד: תוצאה מדויקת = 10 נק', כיוון נכון = 5 נק', טעות = 0.
+כללי ניקוד: תוצאה מדויקת (בול) = 10 נק', כיוון נכון (ניצחון/תיקו/הפסד) = 5 נק', טעות = 0.
+
+בסעיף "תוצאות משחקים שהסתיימו" מופיעות כל התוצאות הסופיות — השתמש בהן כמקור הסמכותי לכל שאלה על תוצאת משחק.
+הפורמט: קבוצה_בית תוצאה_בית:תוצאה_חוץ קבוצה_חוץ
+
+בסעיף "משחקים עתידיים" מופיעים:
+- יחסי סיכויים סטטיסטיים (יחס נמוך = סיכוי גבוה לפי הניתוח)
+- ביצועים אחרונים של כל קבוצה: נ=ניצחון, ת=תיקו, ה=הפסד
+
+כשמישהו שואל על תחזית / ניחוש / מי ינצח — זוהי שאלה לגיטימית לחלוטין באתר ניחושי כדורגל:
+1. נתח את הביצועים האחרונים של שתי הקבוצות
+2. השתמש ביחסי הסיכויים כאינדיקטור נוסף
+3. תן תחזית מנומקת קצרה — זה בדיוק תפקידך
+
+כלל זמן למשחקים עתידיים:
+- תן תחזית רק על משחקים שמתחילים תוך 24 שעות מעכשיו.
+- אם משחק מרוחק יותר מ-24 שעות — ציין שהתחזית תינתן קרוב יותר לתאריך המשחק.
+- כשמישהו שואל "היום" — הכוונה ל-24 השעות הקרובות (לא רק יום קלנדרי). כלול משחקים שמתחילים תוך 24 שעות.
+- כשמישהו שואל על "המשחק הקרוב" / "המשחק הבא" / "הבא שלנו" — זהו המשחק עם הערך הנמוך ביותר של "בעוד X שעות" ברשימת המשחקים העתידיים (הראשון ברשימה, שהיא ממוינת לפי זמן עולה).
+>>>>>>> origin/main
 ${contextBlock}`
 
     // סנן הודעות assistant ראשונות — LLM צריך להתחיל עם user
