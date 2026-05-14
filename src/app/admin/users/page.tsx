@@ -106,8 +106,10 @@ export default function AdminUsersPage() {
   }
 
   const handleSetRole = async (userId: string, newRole: UserRole) => {
+    console.log('[handleSetRole] called', { userId, newRole })
     try {
       const res = await setUserRole(userId, newRole)
+      console.log('[handleSetRole] result', res)
       if (res.ok) {
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
       } else {
@@ -115,6 +117,7 @@ export default function AdminUsersPage() {
         setTimeout(() => setRoleMsg(''), 3000)
       }
     } catch (e) {
+      console.error('[handleSetRole] exception', e)
       setRoleMsg(e instanceof Error ? e.message : 'שגיאה לא צפויה')
       setTimeout(() => setRoleMsg(''), 3000)
     }
