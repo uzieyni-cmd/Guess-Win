@@ -12,7 +12,8 @@ import {
   adminToggleHide,
 } from '@/app/actions/tournaments'
 import { placeBetAction, setActualScoreAction } from '@/app/actions/bets'
-import { toggleJokerPick, MAX_JOKERS } from '@/app/actions/joker'
+import { toggleJokerPick } from '@/app/actions/joker'
+import { MAX_JOKERS } from '@/lib/constants'
 
 // ── Adapters: DB row → App type ──────────────────────────────────
 

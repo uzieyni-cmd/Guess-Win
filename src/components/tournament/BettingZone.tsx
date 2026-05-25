@@ -6,7 +6,7 @@ import { MatchCard } from './MatchCard'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Target } from 'lucide-react'
 import { Match } from '@/types'
-import { MAX_JOKERS } from '@/app/actions/joker'
+import { MAX_JOKERS, GROUP_STAGE_PREFIXES } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 // ── Joker card icon (duplicated here to avoid re-import cycle) ────
@@ -48,7 +48,9 @@ export function BettingZone({ matches }: Props) {
   }, [sorted])
 
   // ── Joker counter ─────────────────────────────────────────────
-  const hasGroupStageMatches = sorted.some(m => m.round?.startsWith('Group Stage'))
+  const hasGroupStageMatches = sorted.some(m =>
+    m.round ? GROUP_STAGE_PREFIXES.some(p => m.round!.startsWith(p)) : false
+  )
   const myJokerCount = jokerPicks.filter(j => j.userId === currentUser?.id).length
   const jokersLeft = MAX_JOKERS - myJokerCount
 

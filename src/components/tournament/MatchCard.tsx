@@ -7,7 +7,7 @@ import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
-import { MAX_JOKERS } from '@/app/actions/joker'
+import { MAX_JOKERS, GROUP_STAGE_PREFIXES } from '@/lib/constants'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { CountdownTimer } from './CountdownTimer'
 import { ScoreInput } from './ScoreInput'
@@ -92,7 +92,8 @@ function JokerCardIcon({ className, active }: { className?: string; active?: boo
 
 // ── Group Stage round detection ─────────────────────────────────────
 function isGroupStageRound(round?: string) {
-  return !!round?.startsWith('Group Stage')
+  if (!round) return false
+  return GROUP_STAGE_PREFIXES.some(p => round.startsWith(p))
 }
 
 export function MatchCard({ match, userBet, allBets, participants }: Props) {

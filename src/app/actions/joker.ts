@@ -2,8 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-
-export const MAX_JOKERS = 3
+import { MAX_JOKERS, GROUP_STAGE_PREFIXES } from '@/lib/constants'
 
 // ── Toggle a joker pick on/off ────────────────────────────────────
 // Rules:
@@ -29,7 +28,8 @@ export async function toggleJokerPick(
 
   const m = match as { match_start_time: string; round: string | null }
 
-  if (!m.round?.startsWith('Group Stage')) {
+  const isGroupStage = m.round ? GROUP_STAGE_PREFIXES.some(p => m.round!.startsWith(p)) : false
+  if (!isGroupStage) {
     return { ok: false, error: "ג'וקר זמין רק בשלב הבתים" }
   }
 
