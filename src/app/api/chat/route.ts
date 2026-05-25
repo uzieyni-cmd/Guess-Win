@@ -127,13 +127,18 @@ export async function POST(req: NextRequest) {
         .sort((a: { points: number }, b: { points: number }) => b.points - a.points)
         .map((s: { name: string; points: number }, i: number) => `${i + 1}. ${s.name} — ${s.points} נקודות`)
 
-      type MatchRow = { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null; odds_home?: number | null; odds_draw?: number | null; odds_away?: number | null }
+      type MatchRow = { home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; round: string | null; match_start_time?: string | null; odds_home?: number | null; odds_draw?: number | null; odds_away?: number | null }
+
+      const toIsraelTime = (iso: string) =>
+        new Date(iso).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
       const finishedMatches = (finishedMatchesRes.data ?? []).map(m => {
         const r = m as unknown as MatchRow
         const home = translateTeam(r.home_team_name)
         const away = translateTeam(r.away_team_name)
-        return `${home} ${r.actual_home_score}:${r.actual_away_score} ${away}${r.round ? ` (${r.round})` : ''}`
+        const timeStr = r.match_start_time ? ` | ${toIsraelTime(r.match_start_time)}` : ''
+        const roundStr = r.round ? ` | ${r.round}` : ''
+        return `${home} ${r.actual_home_score}:${r.actual_away_score} ${away}${timeStr}${roundStr}`
       })
 
       // Helper: recent form of a team from finished matches (last 5)
