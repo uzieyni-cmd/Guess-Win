@@ -6,6 +6,21 @@ import { getBonusQuestions, getMyBonusPicks, submitBonusPick } from '@/app/actio
 import { BonusQuestion, BonusPick } from '@/types'
 import { cn } from '@/lib/utils'
 
+// ── Mini toast ───────────────────────────────────────────────────
+function SavedBadge({ show }: { show: boolean }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 transition-all duration-300',
+        show ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1 pointer-events-none'
+      )}
+    >
+      <CheckCircle2 className="h-3 w-3" />
+      נשמר
+    </span>
+  )
+}
+
 // ── Drilldown panel for a single question ────────────────────────
 function DrilldownPanel({
   options,
@@ -102,17 +117,23 @@ function QuestionCard({
   q,
   pick,
   isPending,
+  savedId,
+  errorId,
   onPick,
 }: {
   q: BonusQuestion
   pick: BonusPick | undefined
   isPending: boolean
+  savedId: string | null
+  errorId: string | null
   onPick: (q: BonusQuestion, opt: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const isLocked  = new Date() >= new Date(q.lockTime)
   const hasResult = !!q.correctOption
   const selected  = pick?.pick
+  const justSaved = savedId === q.id
+  const hasError  = errorId === q.id
 
   const toggleOpen = () => {
     if (isLocked) return
@@ -124,14 +145,20 @@ function QuestionCard({
       {/* Header row */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground leading-snug">{q.question}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-foreground leading-snug">{q.question}</p>
+            <SavedBadge show={justSaved} />
+          </div>
           <p className="text-xs text-muted-foreground mt-1">
             {hasResult
               ? `תשובה נכונה: ${q.correctOption}`
               : isLocked
               ? 'ההימור נעול'
-              : `נועל: ${new Date(q.lockTime).toLocaleString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+              : `נועל: ${new Date(q.lockTime).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
           </p>
+          {hasError && (
+            <p className="text-xs text-destructive mt-1">שגיאה בשמירה — נסה שוב</p>
+          )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
@@ -200,11 +227,17 @@ export default function BonusPage() {
   const [questions, setQuestions] = useState<BonusQuestion[]>([])
   const [picks, setPicks]         = useState<BonusPick[]>([])
   const [isPending, startTransition] = useTransition()
+  const [savedId,  setSavedId]  = useState<string | null>(null)
+  const [errorId,  setErrorId]  = useState<string | null>(null)
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     getBonusQuestions(id).then(setQuestions)
     getMyBonusPicks(id).then(setPicks)
   }, [id])
+
+  // cleanup timer on unmount
+  useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current) }, [])
 
   const myPick = (questionId: string) =>
     picks.find(p => p.bonusQuestionId === questionId)
@@ -213,6 +246,8 @@ export default function BonusPage() {
     if (myPick(q.id)?.pick === option) return
     if (new Date() >= new Date(q.lockTime)) return
 
+    setErrorId(null)
+
     startTransition(async () => {
       const res = await submitBonusPick(q.id, id, option)
       if (res.ok) {
@@ -220,6 +255,12 @@ export default function BonusPage() {
           ...prev.filter(p => p.bonusQuestionId !== q.id),
           { id: '', bonusQuestionId: q.id, tournamentId: id, userId: '', pick: option, pointsAwarded: null },
         ])
+        // Show "נשמר ✓" badge for 2.5 s
+        setSavedId(q.id)
+        if (savedTimer.current) clearTimeout(savedTimer.current)
+        savedTimer.current = setTimeout(() => setSavedId(null), 2500)
+      } else {
+        setErrorId(q.id)
       }
     })
   }
@@ -247,6 +288,8 @@ export default function BonusPage() {
           q={q}
           pick={myPick(q.id)}
           isPending={isPending}
+          savedId={savedId}
+          errorId={errorId}
           onPick={handlePick}
         />
       ))}
