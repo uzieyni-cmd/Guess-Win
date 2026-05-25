@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, DbMatch, DbBet, DbTournament } from '@/lib/supabase'
 import { translateTeam } from '@/lib/teams-he'
-import { Bet, Match, ParticipantStanding, Score, Tournament, User } from '@/types'
+import { Bet, JokerPick, Match, ParticipantStanding, Score, Tournament, User } from '@/types'
 import { calculateScore } from '@/lib/scoring'
 import {
   adminCreateTournament,
@@ -12,6 +12,7 @@ import {
   adminToggleHide,
 } from '@/app/actions/tournaments'
 import { placeBetAction, setActualScoreAction } from '@/app/actions/bets'
+import { toggleJokerPick, MAX_JOKERS } from '@/app/actions/joker'
 
 // ── Adapters: DB row → App type ──────────────────────────────────
 
@@ -72,6 +73,8 @@ interface TournamentContextType {
   bets: Bet[]
   participants: User[]
   standings: ParticipantStanding[]
+  jokerPicks: JokerPick[]
+  toggleJoker: (matchId: string, userId: string) => Promise<string | null>
   setActiveTournamentId: (id: string) => void
   placeBet: (matchId: string, score: Score, userId: string) => Promise<string | null>
   setActualScore: (tournamentId: string, matchId: string, score: Score) => Promise<void>
@@ -102,6 +105,9 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   type RoundPickRaw = { id: string; userId: string; pointsAwarded: number }
   const [roundPicksRaw, setRoundPicksRaw] = useState<RoundPickRaw[]>([])
 
+  // Joker picks — כל הבחירות של כל המשתמשים לטורניר הפעיל
+  const [jokerPicksRaw, setJokerPicksRaw] = useState<JokerPick[]>([])
+
   const bonusPointsByUser = useMemo(() => {
     const map: Record<string, number> = {}
     for (const p of bonusPicksRaw) {
@@ -114,6 +120,13 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     }
     return map
   }, [bonusPicksRaw, roundPicksRaw])
+
+  // jokerSet — Set<"userId:matchId"> לחיפוש מהיר בעת חישוב ניקוד חי
+  const jokerSet = useMemo(() => {
+    const s = new Set<string>()
+    for (const j of jokerPicksRaw) s.add(`${j.userId}:${j.matchId}`)
+    return s
+  }, [jokerPicksRaw])
 
   // baseStandings — נגזר מ-bets state (מתעדכן ב-Realtime) + bonus picks
   // זה מתקן באג שבו הניקוד התאפס בסיום משחק: כי baseStandings היה state קבוע
@@ -251,13 +264,15 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     // בטים על משחקים חיים בלבד (שעדיין לא קיבלו points ב-DB)
     const liveBets = bets.filter(b => liveMatchIds.has(b.matchId) && b.tournamentId === activeTournamentId)
 
-    // חשב ניקוד זמני לכל משתמש
+    // חשב ניקוד זמני לכל משתמש (כולל מכפיל ג'וקר)
     const livePointsByUser: Record<string, number> = {}
     for (const bet of liveBets) {
       const match = liveMatchMap.get(bet.matchId)
       if (!match) continue
       const result = calculateScore(bet, match)
-      livePointsByUser[bet.userId] = (livePointsByUser[bet.userId] ?? 0) + result.points
+      const isJoker = jokerSet.has(`${bet.userId}:${bet.matchId}`)
+      const pts = isJoker ? result.points * 2 : result.points
+      livePointsByUser[bet.userId] = (livePointsByUser[bet.userId] ?? 0) + pts
     }
 
     if (!Object.keys(livePointsByUser).length) return baseStandings
@@ -270,7 +285,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     updated.sort((a, b) => b.totalPoints - a.totalPoints)
     updated.forEach((s, i) => { s.rank = i + 1 })
     return updated
-  }, [baseStandings, activeTournament, bets, activeTournamentId])
+  }, [baseStandings, activeTournament, bets, activeTournamentId, jokerSet])
 
   useEffect(() => {
     if (!activeTournament) { matchTimesRef.current = new Map(); return }
@@ -351,6 +366,21 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
             pointsAwarded: p.points_awarded ?? 0,
           }))
         )
+
+        // Load joker picks (all users)
+        const { data: jokerPicks } = await supabase
+          .from('joker_picks')
+          .select('id, match_id, user_id')
+          .eq('tournament_id', activeTournamentId)
+
+        setJokerPicksRaw(
+          (jokerPicks ?? []).map((j: { id: string; match_id: string; user_id: string }) => ({
+            id: j.id,
+            matchId: j.match_id,
+            tournamentId: activeTournamentId,
+            userId: j.user_id,
+          }))
+        )
       }
     }
 
@@ -427,6 +457,46 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     return () => { supabase.removeChannel(channel) }
   }, [activeTournamentId])
 
+  // ── Realtime: joker_picks — INSERT / DELETE ──────────────────────
+  useEffect(() => {
+    if (!activeTournamentId) return
+
+    const channel = supabase
+      .channel(`joker-picks-${activeTournamentId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'joker_picks',
+        filter: `tournament_id=eq.${activeTournamentId}`,
+      }, (payload) => {
+        const row = payload.new as { id: string; match_id: string; user_id: string }
+        setJokerPicksRaw(prev => {
+          // Replace placeholder (from optimistic update) or add new
+          const idx = prev.findIndex(j => j.matchId === row.match_id && j.userId === row.user_id)
+          const pick: JokerPick = { id: row.id, matchId: row.match_id, tournamentId: activeTournamentId, userId: row.user_id }
+          if (idx >= 0) { const next = [...prev]; next[idx] = pick; return next }
+          return [...prev, pick]
+        })
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'joker_picks',
+      }, (payload) => {
+        // REPLICA IDENTITY FULL מאפשר קבלת id בשורת DELETE
+        const old = payload.old as { id?: string; match_id?: string; user_id?: string }
+        setJokerPicksRaw(prev => {
+          if (old.id) return prev.filter(j => j.id !== old.id)
+          if (old.match_id && old.user_id)
+            return prev.filter(j => !(j.matchId === old.match_id && j.userId === old.user_id))
+          return prev
+        })
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [activeTournamentId])
+
   // ── Realtime: bonus_picks — כשהמנהל קובע תשובה נכונה, הדירוג מתעדכן מיד ──
   useEffect(() => {
     if (!activeTournamentId) return
@@ -462,6 +532,35 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
     return () => { supabase.removeChannel(channel) }
   }, [activeTournamentId])
+
+  // ── Toggle joker pick ─────────────────────────────────────────
+  const toggleJoker = useCallback(async (matchId: string, userId: string): Promise<string | null> => {
+    if (!activeTournamentId) return 'שגיאה פנימית'
+
+    const userJokers = jokerPicksRaw.filter(j => j.userId === userId)
+    const isCurrentJoker = userJokers.some(j => j.matchId === matchId)
+
+    // Optimistic update
+    if (isCurrentJoker) {
+      setJokerPicksRaw(prev => prev.filter(j => !(j.matchId === matchId && j.userId === userId)))
+    } else {
+      if (userJokers.length >= MAX_JOKERS) return `ניתן לסמן עד ${MAX_JOKERS} ג'וקרים בלבד`
+      // placeholder id — Realtime יחליף עם id אמיתי
+      setJokerPicksRaw(prev => [...prev, { id: `opt-${Date.now()}`, matchId, tournamentId: activeTournamentId, userId }])
+    }
+
+    const result = await toggleJokerPick(matchId, activeTournamentId)
+    if (!result.ok) {
+      // Revert optimistic update
+      if (isCurrentJoker) {
+        setJokerPicksRaw(prev => [...prev, { id: `rev-${Date.now()}`, matchId, tournamentId: activeTournamentId, userId }])
+      } else {
+        setJokerPicksRaw(prev => prev.filter(j => !(j.matchId === matchId && j.userId === userId)))
+      }
+      return result.error ?? 'שגיאה לא ידועה'
+    }
+    return null
+  }, [activeTournamentId, jokerPicksRaw])
 
   const setActiveTournamentId = useCallback((id: string) => {
     setActiveTournamentIdState(id)
@@ -619,6 +718,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   return (
     <TournamentContext.Provider value={{
       tournaments, activeTournament, bets, participants, standings,
+      jokerPicks: jokerPicksRaw, toggleJoker,
       setActiveTournamentId, placeBet, setActualScore, createTournament,
       updateTournament, deleteTournament, toggleHideTournament, addMatch, updateUserPermissions, reload, reloadMatches, patchMatches,
     }}>

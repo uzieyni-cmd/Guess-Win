@@ -7,6 +7,7 @@ import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
+import { MAX_JOKERS } from '@/app/actions/joker'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { CountdownTimer } from './CountdownTimer'
 import { ScoreInput } from './ScoreInput'
@@ -73,9 +74,30 @@ interface Props {
   participants: { id: string; displayName: string }[]
 }
 
+// ── Joker card icon — playing card with 4-pointed star ──────────────
+function JokerCardIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      {/* Card outline */}
+      <rect x="3" y="2" width="18" height="20" rx="2.5"
+            stroke="currentColor" strokeWidth="1.5"
+            fill={active ? 'currentColor' : 'none'}
+            fillOpacity={active ? 0.18 : 0} />
+      {/* 4-pointed star centered */}
+      <path d="M12 7 L13.3 10.7 L17 12 L13.3 13.3 L12 17 L10.7 13.3 L7 12 L10.7 10.7 Z"
+            fill="currentColor" />
+    </svg>
+  )
+}
+
+// ── Group Stage round detection ─────────────────────────────────────
+function isGroupStageRound(round?: string) {
+  return !!round?.startsWith('Group Stage')
+}
+
 export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const { isLocked } = useCountdown(match.matchStartTime)
-  const { placeBet } = useTournament()
+  const { placeBet, jokerPicks, toggleJoker } = useTournament()
   const { currentUser } = useAuth()
   const router = useRouter()
   const [homeScore, setHomeScore] = useState<number | null>(userBet?.predictedScore.home ?? null)
@@ -85,6 +107,15 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const [dirty, setDirty] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showOthers, setShowOthers] = useState(false)
+  const [jokerError, setJokerError] = useState<string | false>(false)
+  const [jokerSaving, setJokerSaving] = useState(false)
+
+  // ── Joker derived state ─────────────────────────────────────────
+  const isGroupStage = isGroupStageRound(match.round)
+  const myJokerPicks = jokerPicks.filter(j => j.userId === currentUser?.id)
+  const isMyJoker    = myJokerPicks.some(j => j.matchId === match.id)
+  const myJokerCount = myJokerPicks.length
+  const canAddJoker  = isMyJoker || myJokerCount < MAX_JOKERS
 
   const isFinished = match.status === 'finished'
   // isLive = DB עדכן ל-live, OR: המשחק התחיל בשעתיים האחרונות ועדיין לא גמור
@@ -113,6 +144,17 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 
   const handleHomeChange = (v: number) => { setHomeScore(v); setDirty(true); setSaved(false) }
   const handleAwayChange = (v: number) => { setAwayScore(v); setDirty(true); setSaved(false) }
+
+  const handleJokerToggle = async () => {
+    if (!currentUser || jokerSaving) return
+    setJokerSaving(true)
+    const err = await toggleJoker(match.id, currentUser.id)
+    setJokerSaving(false)
+    if (err) {
+      setJokerError(err)
+      setTimeout(() => setJokerError(false), 4000)
+    }
+  }
 
   const handleSave = async () => {
     if (homeScore === null || awayScore === null || !currentUser) return
@@ -309,6 +351,48 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-amber-600">
               <Lock className="h-3 w-3" />
               <span>הניחושים נעולים — ממתינים לתוצאה</span>
+            </div>
+          )}
+
+          {/* ── ג'וקר — שלב הבתים בלבד ─────────────────────────────── */}
+          {isGroupStage && (
+            <div className="mt-3 flex flex-col items-center gap-1">
+              {(isLocked || isLive || isFinished) ? (
+                /* לאחר נעילה: תצוגת קריאה בלבד */
+                isMyJoker && (
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-100/80 border border-violet-300/60 rounded-full px-3 py-1.5">
+                    <JokerCardIcon className="h-3.5 w-3.5" active />
+                    ג&apos;וקר פעיל · ×2
+                  </div>
+                )
+              ) : (
+                /* לפני נעילה: כפתור toggle */
+                <>
+                  <button
+                    onClick={handleJokerToggle}
+                    disabled={jokerSaving || (!canAddJoker)}
+                    aria-pressed={isMyJoker}
+                    className={cn(
+                      'flex items-center gap-1.5 text-xs px-4 py-2 rounded-full font-semibold border-2 transition-all min-h-[44px]',
+                      isMyJoker
+                        ? 'bg-violet-600 border-violet-500 text-white shadow-md shadow-violet-500/25 hover:bg-violet-700'
+                        : canAddJoker
+                        ? 'bg-transparent border-violet-400/50 text-violet-600 hover:border-violet-500 hover:bg-violet-50'
+                        : 'bg-transparent border-muted text-muted-foreground opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    <JokerCardIcon className="h-4 w-4" active={isMyJoker} />
+                    {jokerSaving
+                      ? 'שומר...'
+                      : isMyJoker
+                      ? "ג'וקר פעיל · ×2"
+                      : "ג'וקר"}
+                  </button>
+                  {jokerError && (
+                    <span className="text-xs text-red-500 text-center leading-tight">{jokerError}</span>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

@@ -100,6 +100,13 @@ export interface BonusPick {
   pointsAwarded: number | null
 }
 
+export interface JokerPick {
+  id: string
+  matchId: string
+  tournamentId: string
+  userId: string
+}
+
 export interface ParticipantStanding {
   user: User
   totalPoints: number
