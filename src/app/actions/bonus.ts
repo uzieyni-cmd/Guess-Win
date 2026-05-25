@@ -108,6 +108,37 @@ export async function createBonusQuestion(input: {
   return { ok: true }
 }
 
+// ── Admin: update bonus question ─────────────────────────────────
+export async function updateBonusQuestion(
+  id: string,
+  input: {
+    type: BonusQuestion['type']
+    question: string
+    options: string[]
+    points: number
+    lockTime?: string
+  }
+): Promise<{ ok: boolean; error?: string }> {
+  await requireAdmin()
+
+  const update: Record<string, unknown> = {
+    type: input.type,
+    question: input.question,
+    options: input.options,
+    points: input.points,
+    updated_at: new Date().toISOString(),
+  }
+  if (input.lockTime) update.lock_time = new Date(input.lockTime).toISOString()
+
+  const { error } = await supabaseAdmin
+    .from('bonus_questions')
+    .update(update)
+    .eq('id', id)
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
 // ── Admin: delete bonus question ─────────────────────────────────
 export async function deleteBonusQuestion(id: string): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin()

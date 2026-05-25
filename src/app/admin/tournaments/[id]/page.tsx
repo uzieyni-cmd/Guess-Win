@@ -1,11 +1,11 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield } from 'lucide-react'
+import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil } from 'lucide-react'
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
-import { getBonusQuestions, createBonusQuestion, deleteBonusQuestion, setBonusResult } from '@/app/actions/bonus'
+import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonusQuestion, setBonusResult } from '@/app/actions/bonus'
 import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -268,6 +268,15 @@ export default function AdminTournamentDetailPage() {
     optionsRaw: '',   // comma-separated
     points: '10',
   })
+  const [editBonusOpen, setEditBonusOpen] = useState(false)
+  const [editingBonus, setEditingBonus] = useState<BonusQuestion | null>(null)
+  const [editBonus, setEditBonus] = useState({
+    type: 'custom' as BonusQuestion['type'],
+    question: '',
+    optionsRaw: '',
+    points: '10',
+    lockTime: '',
+  })
 
   const loadBonusQuestions = useCallback(async () => {
     const qs = await getBonusQuestions(id)
@@ -290,6 +299,44 @@ export default function AdminTournamentDetailPage() {
     if (res.ok) {
       setAddBonusOpen(false)
       setNewBonus({ type: 'custom', question: '', optionsRaw: '', points: '10' })
+      loadBonusQuestions()
+    } else {
+      setBonusMsg(res.error ?? 'שגיאה')
+    }
+  }
+
+  const openEditBonus = (q: BonusQuestion) => {
+    setEditingBonus(q)
+    // convert lockTime ISO → datetime-local format (YYYY-MM-DDTHH:mm)
+    const localLock = q.lockTime
+      ? new Date(new Date(q.lockTime).getTime() - new Date().getTimezoneOffset() * 60000)
+          .toISOString().slice(0, 16)
+      : ''
+    setEditBonus({
+      type: q.type,
+      question: q.question,
+      optionsRaw: q.options.join(', '),
+      points: String(q.points),
+      lockTime: localLock,
+    })
+    setEditBonusOpen(true)
+  }
+
+  const handleEditBonus = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingBonus) return
+    const options = editBonus.optionsRaw.split(',').map(s => s.trim()).filter(Boolean)
+    if (!editBonus.question || options.length < 2) return
+    const res = await updateBonusQuestion(editingBonus.id, {
+      type: editBonus.type,
+      question: editBonus.question,
+      options,
+      points: parseInt(editBonus.points) || 10,
+      lockTime: editBonus.lockTime || undefined,
+    })
+    if (res.ok) {
+      setEditBonusOpen(false)
+      setEditingBonus(null)
       loadBonusQuestions()
     } else {
       setBonusMsg(res.error ?? 'שגיאה')
@@ -728,15 +775,24 @@ export default function AdminTournamentDetailPage() {
           {bonusQuestions.map(q => (
             <div key={q.id} className="border rounded-lg p-3 space-y-2">
               <div className="flex items-start justify-between gap-2">
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm">{q.question}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {q.points} נק' | נועל: {new Date(q.lockTime).toLocaleString('he-IL')}
                   </p>
                 </div>
-                <button onClick={() => handleDeleteBonus(q.id)} className="text-muted-foreground hover:text-red-500 transition-colors shrink-0">
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button onClick={() => openEditBonus(q)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                    title="ערוך שאלה">
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button onClick={() => handleDeleteBonus(q.id)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+                    title="מחק שאלה">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {q.options.map(opt => (
@@ -768,6 +824,61 @@ export default function AdminTournamentDetailPage() {
           ))}
         </CardContent>
       </Card>
+
+      {/* ── דיאלוג עריכת בונוס ────────────────────────────────────── */}
+      <Dialog open={editBonusOpen} onOpenChange={setEditBonusOpen}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>עריכת הימור בונוס</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditBonus} className="space-y-4 mt-2">
+            <div>
+              <Label>סוג</Label>
+              <select
+                className="w-full mt-1 border rounded-md px-3 py-2 text-sm bg-background"
+                value={editBonus.type}
+                onChange={e => setEditBonus(p => ({ ...p, type: e.target.value as BonusQuestion['type'] }))}
+              >
+                <option value="winner">מנצחת הטורניר</option>
+                <option value="top_scorer">מלך השערים</option>
+                <option value="custom">מותאם אישית</option>
+              </select>
+            </div>
+            <div>
+              <Label>שאלה</Label>
+              <Input className="mt-1"
+                value={editBonus.question}
+                onChange={e => setEditBonus(p => ({ ...p, question: e.target.value }))} />
+            </div>
+            <div>
+              <Label>אפשרויות (מופרדות בפסיק)</Label>
+              <Input className="mt-1"
+                value={editBonus.optionsRaw}
+                onChange={e => setEditBonus(p => ({ ...p, optionsRaw: e.target.value }))} />
+            </div>
+            <div>
+              <Label>נקודות לניצחון</Label>
+              <Input className="mt-1 w-24" type="number" min={1} max={100}
+                value={editBonus.points}
+                onChange={e => setEditBonus(p => ({ ...p, points: e.target.value }))} />
+            </div>
+            <div>
+              <Label>זמן נעילה</Label>
+              <Input className="mt-1" type="datetime-local"
+                value={editBonus.lockTime}
+                onChange={e => setEditBonus(p => ({ ...p, lockTime: e.target.value }))} />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
+                <Save className="h-4 w-4 ml-1" />שמור שינויים
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setEditBonusOpen(false)}>
+                ביטול
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
