@@ -25,11 +25,11 @@ function CompetitionsContent() {
   }, [tournaments, currentUser])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-base to-surface-green">
+    <div className="min-h-screen bg-gradient-to-b from-base to-surface-deep">
       <SiteHeader
         left={
           <button onClick={() => { logout(); router.push('/login') }}
-            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-white/8 min-h-[36px]">
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-foreground/8 min-h-[36px]">
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">יציאה</span>
           </button>
@@ -38,16 +38,16 @@ function CompetitionsContent() {
           <div className="flex items-center gap-2">
             {currentUser?.role === 'admin' && (
               <button onClick={() => router.push('/admin')}
-                className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-white/8 min-h-[36px]">
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-foreground/8 min-h-[36px]">
                 <Settings className="h-4 w-4" />
                 <span className="hidden sm:inline">ניהול</span>
               </button>
             )}
             <button onClick={() => router.push('/profile')}
-              className="rounded-full hover:ring-2 hover:ring-emerald-400 transition-all">
+              className="rounded-full hover:ring-2 hover:ring-primary transition-all">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={currentUser?.avatarUrl} />
-                <AvatarFallback delayMs={0} className="bg-emerald-700 text-white text-sm font-bold">
+                <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-sm font-bold">
                   {currentUser?.displayName?.charAt(0)?.toUpperCase() ?? '?'}
                 </AvatarFallback>
               </Avatar>
@@ -60,18 +60,18 @@ function CompetitionsContent() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="animate-fade-in">
           <div className="mb-6">
-            <h2 className="font-suez text-2xl text-white mb-1">
+            <h2 className="font-suez text-2xl text-foreground mb-1">
               שלום, {currentUser?.displayName}!
             </h2>
-            <p className="text-emerald-300">בחרו תחרות לניחוש</p>
+            <p className="text-primary font-medium">בחרו תחרות לניחוש</p>
           </div>
 
           {myTournaments === null || (isLoading && myTournaments.length === 0) ? (
             <div className="flex justify-center py-16">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : myTournaments.length === 0 ? (
-            <div className="text-center py-16 text-emerald-300">
+            <div className="text-center py-16 text-muted-foreground">
               <Trophy className="h-12 w-12 mx-auto mb-4 opacity-40" />
               <p>אין לך תחרויות עדיין.</p>
             </div>

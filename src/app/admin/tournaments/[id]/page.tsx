@@ -211,7 +211,7 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
                 type="checkbox"
                 checked={isWC2026}
                 onChange={e => setIsWC2026(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-600 accent-emerald-500"
+                className="h-4 w-4 rounded border-border accent-primary"
               />
               <span className="text-sm text-muted-foreground">תצוגת עץ גביע העולם 2026 (32 קבוצות)</span>
             </label>
@@ -535,7 +535,7 @@ export default function AdminTournamentDetailPage() {
       {/* ── ספינר טעינה ── */}
       {isLoadingMatches && (
         <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
           <span>טוען משחקים...</span>
         </div>
       )}
@@ -598,7 +598,7 @@ export default function AdminTournamentDetailPage() {
                     disabled={!scores[match.id]?.home && !scores[match.id]?.away}
                   >
                     {saved.includes(match.id)
-                      ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                       : <Save className="h-4 w-4" />}
                   </Button>
                 </div>
@@ -621,7 +621,7 @@ export default function AdminTournamentDetailPage() {
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Shield className="h-4 w-4 text-blue-400" />
+            <Shield className="h-4 w-4 text-blue-600" />
             מנהלי טורניר
           </CardTitle>
         </CardHeader>
@@ -635,13 +635,13 @@ export default function AdminTournamentDetailPage() {
           {tournamentAdmins.length > 0 && (
             <div className="space-y-2">
               {tournamentAdmins.map(ta => (
-                <div key={ta.userId} className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/30">
+                <div key={ta.userId} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/60 border border-border">
                   <div>
-                    <p className="text-sm font-medium text-slate-200">{ta.displayName}</p>
-                    <p className="text-xs text-slate-500">{ta.email}</p>
+                    <p className="text-sm font-medium text-foreground">{ta.displayName}</p>
+                    <p className="text-xs text-muted-foreground">{ta.email}</p>
                   </div>
                   <button onClick={() => handleRemoveAdmin(ta.userId)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -741,7 +741,7 @@ export default function AdminTournamentDetailPage() {
               <div className="flex flex-wrap gap-1.5">
                 {q.options.map(opt => (
                   <Badge key={opt} variant={q.correctOption === opt ? 'default' : 'outline'}
-                    className={q.correctOption === opt ? 'bg-emerald-600' : ''}>
+                    className={q.correctOption === opt ? 'bg-primary text-primary-foreground' : ''}>
                     {opt}
                   </Badge>
                 ))}

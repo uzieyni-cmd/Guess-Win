@@ -9,9 +9,9 @@ import { translateTeam } from '@/lib/teams-he'
 
 function FormBadge({ char }: { char: string }) {
   const cls =
-    char === 'W' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-    char === 'D' ? 'bg-slate-500/20 text-slate-400 border-slate-500/30' :
-                   'bg-red-500/20 text-red-400 border-red-500/30'
+    char === 'W' ? 'bg-emerald-100 text-emerald-700 border-emerald-400/50' :
+    char === 'D' ? 'bg-muted text-muted-foreground border-border' :
+                   'bg-red-100 text-red-600 border-red-400/50'
   return (
     <span className={cn('inline-flex items-center justify-center h-4 w-4 rounded-sm text-xs font-bold border', cls)}>
       {char === 'W' ? 'נ' : char === 'D' ? 'ת' : 'ה'}
@@ -21,16 +21,16 @@ function FormBadge({ char }: { char: string }) {
 
 function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandingEntry[] }) {
   return (
-    <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
       {group && (
-        <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
-          <h3 className="text-xs font-bold text-emerald-400 tracking-wide uppercase">{group}</h3>
+        <div className="px-4 py-2.5 border-b border-border bg-muted/50">
+          <h3 className="text-xs font-bold text-primary tracking-wide uppercase">{group}</h3>
         </div>
       )}
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-slate-800/60 text-slate-500">
+            <tr className="border-b border-border/60 text-muted-foreground">
               <th className="text-right px-3 py-2 font-medium w-6">#</th>
               <th className="text-right px-3 py-2 font-medium">קבוצה</th>
               <th className="px-2 py-2 font-medium text-center">מ׳</th>
@@ -39,20 +39,20 @@ function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandi
               <th className="px-2 py-2 font-medium text-center">ה׳</th>
               <th className="px-2 py-2 font-medium text-center">שע׳</th>
               <th className="px-2 py-2 font-medium text-center">+/-</th>
-              <th className="px-2 py-2 font-medium text-center text-emerald-400">נק׳</th>
+              <th className="px-2 py-2 font-medium text-center text-primary">נק׳</th>
               <th className="px-2 py-2 font-medium text-center hidden sm:table-cell">צורה</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/40">
+          <tbody className="divide-y divide-border/40">
             {rows.map((row) => (
-              <tr key={row.team.id} className="hover:bg-white/3 transition-colors">
+              <tr key={row.team.id} className="hover:bg-foreground/4 transition-colors">
                 <td className="px-3 py-2.5 text-center">
                   <span className={cn(
                     'inline-flex items-center justify-center h-5 w-5 rounded-full text-xs font-bold',
-                    row.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
-                    row.rank === 2 ? 'bg-slate-400/20 text-slate-300' :
-                    row.rank === 3 ? 'bg-amber-600/20 text-amber-500' :
-                    'text-slate-500'
+                    row.rank === 1 ? 'bg-yellow-400/20 text-yellow-600' :
+                    row.rank === 2 ? 'bg-slate-400/20 text-muted-foreground' :
+                    row.rank === 3 ? 'bg-amber-500/20 text-amber-600' :
+                    'text-muted-foreground'
                   )}>
                     {row.rank}
                   </span>
@@ -60,20 +60,20 @@ function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandi
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-2">
                     <Image src={row.team.logo} alt={row.team.name} width={18} height={18} className="rounded-full shrink-0" unoptimized />
-                    <span className="text-slate-200 font-medium truncate max-w-[100px] sm:max-w-none">
+                    <span className="text-foreground font-medium truncate max-w-[100px] sm:max-w-none">
                       {translateTeam(row.team.name)}
                     </span>
                   </div>
                 </td>
-                <td className="px-2 py-2.5 text-center text-slate-400">{row.all.played}</td>
-                <td className="px-2 py-2.5 text-center text-emerald-400">{row.all.win}</td>
-                <td className="px-2 py-2.5 text-center text-slate-400">{row.all.draw}</td>
-                <td className="px-2 py-2.5 text-center text-red-400">{row.all.lose}</td>
-                <td className="px-2 py-2.5 text-center text-slate-400">{row.all.goals.for}:{row.all.goals.against}</td>
-                <td className={cn('px-2 py-2.5 text-center font-medium', row.goalsDiff > 0 ? 'text-emerald-400' : row.goalsDiff < 0 ? 'text-red-400' : 'text-slate-400')}>
+                <td className="px-2 py-2.5 text-center text-muted-foreground">{row.all.played}</td>
+                <td className="px-2 py-2.5 text-center text-emerald-600">{row.all.win}</td>
+                <td className="px-2 py-2.5 text-center text-muted-foreground">{row.all.draw}</td>
+                <td className="px-2 py-2.5 text-center text-red-500">{row.all.lose}</td>
+                <td className="px-2 py-2.5 text-center text-muted-foreground">{row.all.goals.for}:{row.all.goals.against}</td>
+                <td className={cn('px-2 py-2.5 text-center font-medium', row.goalsDiff > 0 ? 'text-emerald-600' : row.goalsDiff < 0 ? 'text-red-500' : 'text-muted-foreground')}>
                   {row.goalsDiff > 0 ? `+${row.goalsDiff}` : row.goalsDiff}
                 </td>
-                <td className="px-2 py-2.5 text-center font-bold text-white">{row.points}</td>
+                <td className="px-2 py-2.5 text-center font-bold text-foreground">{row.points}</td>
                 <td className="px-2 py-2.5 hidden sm:table-cell">
                   <div className="flex items-center gap-0.5 justify-center">
                     {(row.form ?? '').split('').slice(-5).map((c, i) => (
@@ -192,11 +192,11 @@ function buildTies(fixtures: ApiFixture[]): Tie[] {
 function TieSlot({ tie }: { tie: Tie | null }) {
   if (!tie) {
     return (
-      <div className="bg-slate-800/30 rounded-lg border border-slate-700/20 p-2 flex flex-col gap-1 min-w-[140px]">
+      <div className="bg-muted/40 rounded-lg border border-border/40 p-2 flex flex-col gap-1 min-w-[140px]">
         {[0, 1].map(i => (
           <div key={i} className="flex items-center gap-1.5 py-0.5">
-            <div className="w-4 h-4 rounded-full bg-slate-700/40 shrink-0" />
-            <span className="text-slate-600 text-xs">TBD</span>
+            <div className="w-4 h-4 rounded-full bg-foreground/10 shrink-0" />
+            <span className="text-muted-foreground/50 text-xs">TBD</span>
           </div>
         ))}
       </div>
@@ -208,32 +208,32 @@ function TieSlot({ tie }: { tie: Tie | null }) {
 
   const rowClass = (w: 1 | 2) => cn(
     'flex items-center gap-1.5 px-2 py-1.5 transition-colors',
-    winner === w ? 'bg-emerald-500/8' : ''
+    winner === w ? 'bg-primary/8' : ''
   )
   const nameClass = (w: 1 | 2) => cn(
     'text-xs font-medium truncate flex-1',
-    winner === w ? 'text-white font-bold' : 'text-slate-400'
+    winner === w ? 'text-foreground font-bold' : 'text-muted-foreground'
   )
   const scoreClass = (w: 1 | 2) => cn(
     'text-xs font-bold shrink-0',
-    winner === w ? 'text-emerald-400' : 'text-slate-500'
+    winner === w ? 'text-primary' : 'text-muted-foreground'
   )
 
   let footer: React.ReactNode = null
   if (isLive) {
-    footer = <span className="text-emerald-400">LIVE</span>
+    footer = <span className="text-red-600">LIVE</span>
   } else if (nextDate) {
     footer = <span>{new Date(nextDate).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</span>
   }
 
   return (
-    <div className="bg-surface rounded-lg border border-slate-700/40 overflow-hidden min-w-[150px]">
+    <div className="bg-card rounded-lg border border-border overflow-hidden min-w-[150px]">
       <div className={rowClass(1)}>
         <Image src={team1.logo} alt={team1.name} width={16} height={16} className="shrink-0" unoptimized />
         <span className={nameClass(1)}>{translateTeam(team1.name)}</span>
         {hasScore && <span className={scoreClass(1)}>{goals1}</span>}
       </div>
-      <div className="h-px bg-slate-800/60" />
+      <div className="h-px bg-border/60" />
       <div className={rowClass(2)}>
         <Image src={team2.logo} alt={team2.name} width={16} height={16} className="shrink-0" unoptimized />
         <span className={nameClass(2)}>{translateTeam(team2.name)}</span>
@@ -241,8 +241,8 @@ function TieSlot({ tie }: { tie: Tie | null }) {
       </div>
       {footer && (
         <div className={cn(
-          'px-2 py-1 text-xs text-center border-t border-slate-800/40',
-          isLive ? 'text-emerald-400 bg-emerald-500/5' : 'text-slate-600'
+          'px-2 py-1 text-xs text-center border-t border-border/40',
+          isLive ? 'text-red-600 bg-red-50/50' : 'text-muted-foreground'
         )}>
           {footer}
         </div>
@@ -385,7 +385,7 @@ function BracketTree({
           <div
             key={r}
             style={{ position: 'absolute', left: colX(r, n), top: 0, width: COL_W, textAlign: 'center' }}
-            className="text-[11px] font-bold text-slate-400 whitespace-nowrap"
+            className="text-[11px] font-bold text-muted-foreground whitespace-nowrap"
           >
             {label}
           </div>
@@ -397,7 +397,7 @@ function BracketTree({
           height={totalHeight}
         >
           {lines.map((l, i) => (
-            <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#334155" strokeWidth={1.5} />
+            <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#C8C8D0" strokeWidth={1.5} />
           ))}
         </svg>
 
@@ -477,16 +477,16 @@ function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchN
 
   if (!fixture || !fixture.teams.home.id) {
     return (
-      <div className="bg-slate-800/25 rounded-lg border border-slate-700/20 overflow-hidden" style={cellStyle}>
+      <div className="bg-muted/40 rounded-lg border border-border/40 overflow-hidden" style={cellStyle}>
         <div className="flex items-center gap-1.5 px-2 py-1.5 h-1/2">
-          <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />
-          <span className="text-slate-600 text-xs flex-1">TBD</span>
-          <span className="text-[9px] text-slate-700">#{matchNum}</span>
+          <div className="w-3 h-3 rounded-full bg-foreground/10 shrink-0" />
+          <span className="text-muted-foreground/50 text-xs flex-1">TBD</span>
+          <span className="text-[9px] text-muted-foreground/30">#{matchNum}</span>
         </div>
-        <div className="h-px bg-slate-800/50" />
+        <div className="h-px bg-border/50" />
         <div className="flex items-center gap-1.5 px-2 py-1.5 h-1/2">
-          <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />
-          <span className="text-slate-600 text-xs">TBD</span>
+          <div className="w-3 h-3 rounded-full bg-foreground/10 shrink-0" />
+          <span className="text-muted-foreground/50 text-xs">TBD</span>
         </div>
       </div>
     )
@@ -514,36 +514,36 @@ function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchN
     const g    = side === 'home' ? goals.home  : goals.away
     const isW  = winner === side
     return (
-      <div className={cn('flex items-center gap-1.5 px-2', isW ? 'bg-emerald-500/8' : '')}
+      <div className={cn('flex items-center gap-1.5 px-2', isW ? 'bg-primary/8' : '')}
            style={{ height: (WC_CELL_H - (isLive || (!isFinished && !isLive) || status === 'PEN' ? 17 : 1)) / 2 }}>
         {team.logo
           ? <Image src={team.logo} alt={team.name} width={12} height={12} unoptimized className="shrink-0 rounded-full" />
-          : <div className="w-3 h-3 rounded-full bg-slate-700/40 shrink-0" />}
+          : <div className="w-3 h-3 rounded-full bg-foreground/10 shrink-0" />}
         <span className={cn('text-xs font-medium truncate flex-1',
-          isW ? 'text-white font-bold' : 'text-slate-400')}>
+          isW ? 'text-foreground font-bold' : 'text-muted-foreground')}>
           {translateTeam(team.name)}
         </span>
-        {hasScore && <span className={cn('text-xs font-bold shrink-0', isW ? 'text-emerald-400' : 'text-slate-500')}>{g}</span>}
-        {side === 'home' && <span className="text-[8px] text-slate-700 shrink-0 mr-0.5">#{matchNum}</span>}
+        {hasScore && <span className={cn('text-xs font-bold shrink-0', isW ? 'text-primary' : 'text-muted-foreground')}>{g}</span>}
+        {side === 'home' && <span className="text-[8px] text-muted-foreground/30 shrink-0 mr-0.5">#{matchNum}</span>}
       </div>
     )
   }
 
   let footer: React.ReactNode = null
   if (isLive) {
-    footer = <div className="text-[9px] text-emerald-400 bg-emerald-500/5 text-center py-0.5">LIVE {fix.status.elapsed ? `${fix.status.elapsed}'` : ''}</div>
+    footer = <div className="text-[9px] text-red-600 bg-red-50/60 text-center py-0.5">LIVE {fix.status.elapsed ? `${fix.status.elapsed}'` : ''}</div>
   } else if (!isFinished) {
-    footer = <div className="text-[9px] text-slate-600 text-center py-0.5">{new Date(fix.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</div>
+    footer = <div className="text-[9px] text-muted-foreground text-center py-0.5">{new Date(fix.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</div>
   } else if (status === 'PEN') {
-    footer = <div className="text-[9px] text-slate-500 text-center py-0.5">פנ׳ {score.penalty.home}-{score.penalty.away}</div>
+    footer = <div className="text-[9px] text-muted-foreground text-center py-0.5">פנ׳ {score.penalty.home}-{score.penalty.away}</div>
   }
 
   return (
-    <div className="bg-surface rounded-lg border border-slate-700/40 overflow-hidden" style={cellStyle}>
+    <div className="bg-card rounded-lg border border-border overflow-hidden" style={cellStyle}>
       {teamRow('home')}
-      <div className="h-px bg-slate-800/60" />
+      <div className="h-px bg-border/60" />
       {teamRow('away')}
-      {footer && <div className="border-t border-slate-800/40">{footer}</div>}
+      {footer && <div className="border-t border-border/40">{footer}</div>}
     </div>
   )
 }
@@ -579,21 +579,21 @@ function WC2026Bracket({ rounds }: { rounds: Record<string, ApiFixture[]> }) {
   const thirdFixture = thirdFixtures[0] ?? null
 
   return (
-    <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
-        <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-border bg-muted/50">
+        <h3 className="text-xs font-bold text-primary tracking-wide">שלבי נוק-אאוט</h3>
       </div>
       <div className="overflow-x-auto p-4">
         <div style={{ position: 'relative', width: totalW, height: totalH + 28, paddingTop: 28 }}>
           {WC_ROUNDS_DEF.map((round, r) => (
             <div key={r} style={{ position: 'absolute', left: wcColX(r), top: 0, width: WC_COL_W, textAlign: 'center' }}
-                 className="text-[11px] font-bold text-slate-400 whitespace-nowrap">
+                 className="text-[11px] font-bold text-muted-foreground whitespace-nowrap">
               {round.label}
             </div>
           ))}
           <svg style={{ position: 'absolute', left: 0, top: 28, pointerEvents: 'none' }} width={totalW} height={totalH}>
             {lines.map((l, i) => (
-              <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#334155" strokeWidth={1.5} />
+              <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2} stroke="#C8C8D0" strokeWidth={1.5} />
             ))}
           </svg>
           {matrix.map((round, r) =>
@@ -611,8 +611,8 @@ function WC2026Bracket({ rounds }: { rounds: Record<string, ApiFixture[]> }) {
         </div>
 
         {thirdFixture && (
-          <div className="mt-6 pt-4 border-t border-slate-700/30 flex items-center gap-4">
-            <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap">מקום שלישי</span>
+          <div className="mt-6 pt-4 border-t border-border/40 flex items-center gap-4">
+            <span className="text-[11px] font-bold text-muted-foreground whitespace-nowrap">מקום שלישי</span>
             <div style={{ width: WC_COL_W }}>
               <WCMatchCard fixture={thirdFixture} matchNum={103} />
             </div>
@@ -667,9 +667,9 @@ function KnockoutBracket({
     const roundLabels = bracketRounds.map(r => r.label)
 
     return (
-      <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
-          <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
+      <div className="bg-card rounded-2xl border border-border overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-border bg-muted/50">
+          <h3 className="text-xs font-bold text-primary tracking-wide">שלבי נוק-אאוט</h3>
         </div>
         <div className="p-4">
           <BracketTree matrix={matrix} roundLabels={roundLabels} />
@@ -681,9 +681,9 @@ function KnockoutBracket({
   // Fallback: column view (RTL reversed)
   const displayRounds = [...sortedRoundKeys].reverse()
   return (
-    <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
-      <div className="px-4 py-2.5 border-b border-slate-700/40 bg-slate-800/40">
-        <h3 className="text-xs font-bold text-emerald-400 tracking-wide">שלבי נוק-אאוט</h3>
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-border bg-muted/50">
+        <h3 className="text-xs font-bold text-primary tracking-wide">שלבי נוק-אאוט</h3>
       </div>
       <div className="overflow-x-auto p-4">
         <div className="flex gap-4" style={{ direction: 'rtl' }}>
@@ -692,7 +692,7 @@ function KnockoutBracket({
             const label = ROUND_LABEL[roundKey] ?? roundKey
             return (
               <div key={roundKey} className="flex flex-col gap-1 min-w-[155px]">
-                <div className="text-[11px] font-bold text-slate-400 text-center mb-2 whitespace-nowrap">
+                <div className="text-[11px] font-bold text-muted-foreground text-center mb-2 whitespace-nowrap">
                   {label}
                 </div>
                 <div className="flex flex-col gap-3">
@@ -745,16 +745,16 @@ export default function StandingsPage() {
 
   if (loading) return (
     <div className="flex justify-center py-20">
-      <Loader2 className="h-7 w-7 animate-spin text-emerald-500" />
+      <Loader2 className="h-7 w-7 animate-spin text-primary" />
     </div>
   )
 
   if (error) return (
-    <p className="text-center py-16 text-slate-500">{error}</p>
+    <p className="text-center py-16 text-muted-foreground">{error}</p>
   )
 
   if (!standings?.length && !knockoutRounds) return (
-    <p className="text-center py-16 text-slate-500">אין נתוני טבלה לתחרות זו</p>
+    <p className="text-center py-16 text-muted-foreground">אין נתוני טבלה לתחרות זו</p>
   )
 
   const isGroups = (standings?.length ?? 0) > 1
@@ -777,7 +777,7 @@ export default function StandingsPage() {
       ))}
 
       {filteredStandings.length > 0 && (
-        <p className="text-center text-xs text-slate-600 pb-2">מ׳=משחקים · נ׳=נצחון · ת׳=תיקו · ה׳=הפסד · שע׳=שערים · נק׳=נקודות</p>
+        <p className="text-center text-xs text-muted-foreground/60 pb-2">מ׳=משחקים · נ׳=נצחון · ת׳=תיקו · ה׳=הפסד · שע׳=שערים · נק׳=נקודות</p>
       )}
     </div>
   )

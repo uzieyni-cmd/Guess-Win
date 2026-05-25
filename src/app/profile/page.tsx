@@ -31,10 +31,10 @@ function getOutcome(home: number, away: number): 'home' | 'away' | 'draw' {
 
 function StatBox({ label, value, color, sub }: { label: string; value: number | string; color: string; sub?: string }) {
   return (
-    <div className="bg-slate-700/40 rounded-lg p-3 text-center">
+    <div className="bg-muted/60 rounded-lg p-3 text-center">
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      <p className="text-xs text-slate-400 mt-0.5">{label}</p>
-      {sub && <p className="text-xs text-slate-500">{sub}</p>}
+      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+      {sub && <p className="text-xs text-muted-foreground/60">{sub}</p>}
     </div>
   )
 }
@@ -231,17 +231,17 @@ function ProfileContent() {
   const initials = currentUser?.displayName?.charAt(0)?.toUpperCase() ?? '?'
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-surface-deep to-surface-green">
+    <div className="min-h-screen bg-base">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-surface-deep/80 backdrop-blur-md border-b border-white/10">
+      <div className="sticky top-0 z-10 bg-card/80 backdrop-blur-md border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-white/10 transition-colors text-white"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-foreground/8 transition-colors text-foreground"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
-          <span className="font-suez text-xl text-white">הפרופיל שלי</span>
+          <span className="font-suez text-xl text-foreground">הפרופיל שלי</span>
         </div>
       </div>
 
@@ -249,33 +249,33 @@ function ProfileContent() {
         <div className="space-y-4 animate-fade-up">
 
           {/* Profile summary */}
-          <Card className="bg-gray-900/60 border-white/10">
+          <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-3">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={currentUser?.avatarUrl} />
-                    <AvatarFallback delayMs={0} className="bg-indigo-600 text-white text-2xl font-bold">
+                    <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-2xl font-bold">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={avatarLoading}
-                    className="absolute bottom-0 left-0 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 rounded-full p-1.5 transition-colors"
+                    className="absolute bottom-0 left-0 bg-primary hover:bg-primary/90 disabled:opacity-60 rounded-full p-1.5 transition-colors"
                   >
                     {avatarLoading
-                      ? <Loader2 className="h-3.5 w-3.5 text-white animate-spin" />
-                      : <Camera className="h-3.5 w-3.5 text-white" />}
+                      ? <Loader2 className="h-3.5 w-3.5 text-primary-foreground animate-spin" />
+                      : <Camera className="h-3.5 w-3.5 text-primary-foreground" />}
                   </button>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </div>
-                {avatarError && <p className="text-red-400 text-xs">{avatarError}</p>}
+                {avatarError && <p className="text-red-600 text-xs">{avatarError}</p>}
                 <div className="text-center">
-                  <p className="font-suez text-xl text-white">{currentUser?.displayName}</p>
-                  <p className="text-sm text-emerald-300">{currentUser?.email}</p>
+                  <p className="font-suez text-xl text-foreground">{currentUser?.displayName}</p>
+                  <p className="text-sm text-primary">{currentUser?.email}</p>
                   {currentUser?.role === 'admin' && (
-                    <Badge className="mt-1.5 bg-emerald-600 hover:bg-emerald-600 text-white">מנהל</Badge>
+                    <Badge className="mt-1.5 bg-primary hover:bg-primary text-primary-foreground">מנהל</Badge>
                   )}
                 </div>
               </div>
@@ -283,44 +283,44 @@ function ProfileContent() {
           </Card>
 
           {/* Edit name */}
-          <Card className="bg-gray-900/60 border-white/10">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <User className="h-4 w-4 text-emerald-400" />
+              <CardTitle className="text-foreground text-base flex items-center gap-2">
+                <User className="h-4 w-4 text-primary" />
                 עריכת שם
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-emerald-200 text-sm">שם פרטי</Label>
+                  <Label className="text-foreground text-sm">שם פרטי</Label>
                   <Input
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                     placeholder="ישראל"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-emerald-200 text-sm">שם משפחה</Label>
+                  <Label className="text-foreground text-sm">שם משפחה</Label>
                   <Input
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                     placeholder="ישראלי"
                   />
                 </div>
               </div>
-              {nameError && <p className="text-red-400 text-sm">{nameError}</p>}
+              {nameError && <p className="text-red-600 text-sm">{nameError}</p>}
               {nameSuccess && (
-                <p className="text-green-400 text-sm flex items-center gap-1">
+                <p className="text-emerald-600 text-sm flex items-center gap-1">
                   <CheckCircle2 className="h-4 w-4" /> השם עודכן בהצלחה
                 </p>
               )}
               <Button
                 onClick={handleSaveName}
                 disabled={nameLoading || !firstName.trim() || !lastName.trim()}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {nameLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                 שמירה
@@ -329,35 +329,35 @@ function ProfileContent() {
           </Card>
 
           {/* Phone */}
-          <Card className="bg-gray-900/60 border-white/10">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <Phone className="h-4 w-4 text-emerald-400" />
+              <CardTitle className="text-foreground text-base flex items-center gap-2">
+                <Phone className="h-4 w-4 text-primary" />
                 מספר טלפון
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-emerald-200 text-sm">טלפון נייד</Label>
+                <Label className="text-foreground text-sm">טלפון נייד</Label>
                 <Input
                   type="tel"
                   dir="ltr"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                   placeholder="050-0000000"
                 />
               </div>
-              {phoneError && <p className="text-red-400 text-sm">{phoneError}</p>}
+              {phoneError && <p className="text-red-600 text-sm">{phoneError}</p>}
               {phoneSuccess && (
-                <p className="text-green-400 text-sm flex items-center gap-1">
+                <p className="text-emerald-600 text-sm flex items-center gap-1">
                   <CheckCircle2 className="h-4 w-4" /> הטלפון עודכן בהצלחה
                 </p>
               )}
               <Button
                 onClick={handleSavePhone}
                 disabled={phoneLoading}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {phoneLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                 שמירה
@@ -366,54 +366,54 @@ function ProfileContent() {
           </Card>
 
           {/* Change password */}
-          <Card className="bg-gray-900/60 border-white/10">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <Lock className="h-4 w-4 text-emerald-400" />
+              <CardTitle className="text-foreground text-base flex items-center gap-2">
+                <Lock className="h-4 w-4 text-primary" />
                 שינוי סיסמה
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-emerald-200 text-sm">סיסמה נוכחית</Label>
+                <Label className="text-foreground text-sm">סיסמה נוכחית</Label>
                 <Input
                   type="password"
                   value={currentPw}
                   onChange={(e) => setCurrentPw(e.target.value)}
-                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                   placeholder="••••••••"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-emerald-200 text-sm">סיסמה חדשה</Label>
+                <Label className="text-foreground text-sm">סיסמה חדשה</Label>
                 <Input
                   type="password"
                   value={newPw}
                   onChange={(e) => setNewPw(e.target.value)}
-                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                   placeholder="••••••••"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-emerald-200 text-sm">אישור סיסמה חדשה</Label>
+                <Label className="text-foreground text-sm">אישור סיסמה חדשה</Label>
                 <Input
                   type="password"
                   value={confirmPw}
                   onChange={(e) => setConfirmPw(e.target.value)}
-                  className="bg-gray-800/60 border-white/10 text-white placeholder:text-slate-400"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                   placeholder="••••••••"
                 />
               </div>
-              {pwError && <p className="text-red-400 text-sm">{pwError}</p>}
+              {pwError && <p className="text-red-600 text-sm">{pwError}</p>}
               {pwSuccess && (
-                <p className="text-green-400 text-sm flex items-center gap-1">
+                <p className="text-emerald-600 text-sm flex items-center gap-1">
                   <CheckCircle2 className="h-4 w-4" /> הסיסמה עודכנה בהצלחה
                 </p>
               )}
               <Button
                 onClick={handleChangePassword}
                 disabled={pwLoading || !currentPw || !newPw || !confirmPw}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {pwLoading && <Loader2 className="h-4 w-4 animate-spin ml-2" />}
                 שינוי סיסמה
@@ -422,37 +422,37 @@ function ProfileContent() {
           </Card>
 
           {/* Statistics */}
-          <Card className="bg-gray-900/60 border-white/10">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-white text-base flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-emerald-400" />
+              <CardTitle className="text-foreground text-base flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" />
                 סטטיסטיקות אישיות
               </CardTitle>
             </CardHeader>
             <CardContent>
               {statsLoading ? (
                 <div className="flex justify-center py-6">
-                  <Loader2 className="h-6 w-6 text-emerald-400 animate-spin" />
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
                 </div>
               ) : stats && stats.totalBets > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <StatBox label="סה״כ ניחושים" value={stats.totalBets} color="text-white" />
-                  <StatBox label="תחרויות" value={stats.tournaments} color="text-white" />
-                  <StatBox label="סה״כ נקודות" value={stats.totalPoints} color="text-yellow-400" />
-                  <StatBox label="ניחושים שהסתיימו" value={stats.finishedBets} color="text-emerald-300" />
-                  <StatBox label="תוצאה מדויקת" value={stats.exact} color="text-green-400" sub="10 נק׳ כל אחד" />
-                  <StatBox label="כיוון נכון" value={stats.outcome} color="text-blue-400" sub="5 נק׳ כל אחד" />
-                  <StatBox label="החטאה" value={stats.miss} color="text-red-400" sub="0 נק׳" />
+                  <StatBox label="סה״כ ניחושים" value={stats.totalBets} color="text-foreground" />
+                  <StatBox label="תחרויות" value={stats.tournaments} color="text-foreground" />
+                  <StatBox label="סה״כ נקודות" value={stats.totalPoints} color="text-primary" />
+                  <StatBox label="ניחושים שהסתיימו" value={stats.finishedBets} color="text-foreground" />
+                  <StatBox label="תוצאה מדויקת" value={stats.exact} color="text-emerald-600" sub="10 נק׳ כל אחד" />
+                  <StatBox label="כיוון נכון" value={stats.outcome} color="text-blue-600" sub="5 נק׳ כל אחד" />
+                  <StatBox label="החטאה" value={stats.miss} color="text-red-500" sub="0 נק׳" />
                   {stats.finishedBets > 0 && (
                     <StatBox
                       label="אחוז הצלחה"
                       value={`${Math.round(((stats.exact + stats.outcome) / stats.finishedBets) * 100)}%`}
-                      color="text-emerald-300"
+                      color="text-emerald-600"
                     />
                   )}
                 </div>
               ) : (
-                <p className="text-center text-emerald-300 py-4 text-sm">אין ניחושים עדיין</p>
+                <p className="text-center text-muted-foreground py-4 text-sm">אין ניחושים עדיין</p>
               )}
             </CardContent>
           </Card>

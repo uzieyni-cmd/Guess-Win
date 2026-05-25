@@ -106,20 +106,20 @@ function EventIcon({ type, detail }: { type: string; detail: string }) {
 function EventRow({ event, homeTeamId }: { event: MatchEvent; homeTeamId: number }) {
   const isHome = event.teamId === homeTeamId
   return (
-    <div className="grid grid-cols-[1fr_52px_1fr] items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-white/4 transition-colors">
+    <div className="grid grid-cols-[1fr_52px_1fr] items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-foreground/4 transition-colors">
       {/* שמאל — קבוצת חוץ */}
-      <div className={cn('text-xs text-slate-300 text-right truncate', isHome && 'opacity-0 pointer-events-none')}>
+      <div className={cn('text-xs text-muted-foreground text-right truncate', isHome && 'opacity-0 pointer-events-none')}>
         {!isHome && event.player}
       </div>
 
       {/* מרכז — דקה + אייקון */}
       <div className="flex flex-col items-center gap-0.5">
-        <span className="text-xs text-slate-500 font-mono tabular-nums">{event.minute}&apos;</span>
+        <span className="text-xs text-muted-foreground font-mono tabular-nums">{event.minute}&apos;</span>
         <EventIcon type={event.type} detail={event.detail} />
       </div>
 
       {/* ימין — קבוצת בית */}
-      <div className={cn('text-xs text-slate-300 text-left truncate', !isHome && 'opacity-0 pointer-events-none')}>
+      <div className={cn('text-xs text-muted-foreground text-left truncate', !isHome && 'opacity-0 pointer-events-none')}>
         {isHome && event.player}
       </div>
     </div>
@@ -140,7 +140,7 @@ function EventsTimeline({ events, homeTeamId, htScore }: {
 
   if (!hasEvents) {
     return (
-      <div className="text-center py-12 text-slate-500 text-sm">
+      <div className="text-center py-12 text-muted-foreground text-sm">
         אין אירועים רשומים למשחק זה
       </div>
     )
@@ -156,11 +156,11 @@ function EventsTimeline({ events, homeTeamId, htScore }: {
 
       {/* מפריד מחצית */}
       <div className="flex items-center gap-3 py-3 my-1 px-3">
-        <div className="flex-1 h-px bg-slate-700/60" />
-        <span className="text-xs font-bold text-amber-300/90 tracking-wide px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+        <div className="flex-1 h-px bg-border/60" />
+        <span className="text-xs font-bold text-amber-700 tracking-wide px-2 py-0.5 rounded bg-amber-100 border border-amber-400/40">
           הפסקה · {htScore.home ?? 0}–{htScore.away ?? 0}
         </span>
-        <div className="flex-1 h-px bg-slate-700/60" />
+        <div className="flex-1 h-px bg-border/60" />
       </div>
 
       {/* מחצית ראשונה */}
@@ -201,22 +201,22 @@ function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLo
   }
 
   return (
-    <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/40">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-slate-400" />
-          <h3 className="text-sm font-bold text-slate-200">ניחושי משתתפים</h3>
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-bold text-foreground">ניחושי משתתפים</h3>
         </div>
         <button
           onClick={exportExcel}
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1 rounded hover:bg-white/5"
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-foreground/8"
         >
           <Download className="h-3.5 w-3.5" />
           Excel
         </button>
       </div>
 
-      <div className="divide-y divide-slate-800/60 max-h-[480px] overflow-y-auto">
+      <div className="divide-y divide-border/60 max-h-[480px] overflow-y-auto">
         {participants.map(p => {
           const bet    = matchBets.find(b => b.userId === p.id) ?? null
           const isMe   = p.id === currentUserId
@@ -227,20 +227,20 @@ function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLo
           return (
             <div key={p.id} className={cn(
               'flex items-center justify-between px-4 py-3',
-              isMe && 'bg-emerald-500/8 border-r-2 border-emerald-500'
+              isMe && 'bg-primary/8 border-r-2 border-primary'
             )}>
-              <span className={cn('text-sm truncate max-w-[130px]', isMe ? 'text-emerald-300 font-semibold' : 'text-slate-300')}>
+              <span className={cn('text-sm truncate max-w-[130px]', isMe ? 'text-primary font-semibold' : 'text-muted-foreground')}>
                 {p.displayName}
-                {isMe && <span className="text-xs text-emerald-500/70 mr-1">· אני</span>}
+                {isMe && <span className="text-xs text-primary/60 mr-1">· אני</span>}
               </span>
 
               <div className="flex items-center gap-2 shrink-0">
                 {showBet ? (
                   bet
-                    ? <span className="font-mono font-bold text-slate-100 text-sm tabular-nums">{bet.predictedScore.home}–{bet.predictedScore.away}</span>
-                    : <span className="text-xs text-slate-500">לא ניחש</span>
+                    ? <span className="font-mono font-bold text-foreground text-sm tabular-nums">{bet.predictedScore.home}–{bet.predictedScore.away}</span>
+                    : <span className="text-xs text-muted-foreground">לא ניחש</span>
                 ) : (
-                  <span className="text-xs text-slate-600">נעול</span>
+                  <span className="text-xs text-muted-foreground/50">נעול</span>
                 )}
                 {result && <PointsBadge result={result.result} points={result.points} />}
               </div>
@@ -249,7 +249,7 @@ function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLo
         })}
 
         {participants.length === 0 && (
-          <p className="text-center text-slate-500 text-sm py-6">אין משתתפים</p>
+          <p className="text-center text-muted-foreground text-sm py-6">אין משתתפים</p>
         )}
       </div>
     </div>
@@ -270,17 +270,17 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
   const period = match.matchPeriod ? periodLabel[match.matchPeriod] ?? match.matchPeriod : null
 
   return (
-    <div className="bg-gradient-to-b from-surface to-base border-b border-slate-700/30 py-6 px-4">
+    <div className="bg-gradient-to-b from-surface to-base border-b border-border/40 py-6 px-4">
       {/* שם הליגה / סיבוב */}
       {match.round && (
-        <p className="text-center text-xs text-slate-500 mb-4">{translateRound(match.round)}</p>
+        <p className="text-center text-xs text-muted-foreground mb-4">{translateRound(match.round)}</p>
       )}
 
       <div className="max-w-sm mx-auto flex items-center gap-2">
         {/* קבוצת בית */}
         <div className="flex-1 flex flex-col items-center gap-2">
           <TeamFlag team={match.homeTeam} size="xl" />
-          <span className="text-xs font-bold text-slate-100 text-center leading-tight">{match.homeTeam.name}</span>
+          <span className="text-xs font-bold text-foreground text-center leading-tight">{match.homeTeam.name}</span>
         </div>
 
         {/* ציון + סטטוס */}
@@ -291,26 +291,26 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
               </span>
-              <span className="text-xs text-red-400 font-bold tracking-wide">LIVE</span>
+              <span className="text-xs text-red-600 font-bold tracking-wide">LIVE</span>
               {match.liveMinute != null && !['HT','BT'].includes(match.matchPeriod ?? '') && (
-                <span className="text-xs text-red-300 font-mono">{match.liveMinute}&apos;</span>
+                <span className="text-xs text-red-600 font-mono">{match.liveMinute}&apos;</span>
               )}
             </div>
           )}
 
           <div className={cn(
             'text-3xl font-black tabular-nums',
-            isLive ? 'text-white' : isFinished ? 'text-slate-200' : 'text-slate-500'
+            isLive ? 'text-foreground' : isFinished ? 'text-foreground' : 'text-muted-foreground'
           )}>
             {match.status === 'scheduled'
               ? '– : –'
               : `${score?.home ?? 0} : ${score?.away ?? 0}`}
           </div>
 
-          {period && <span className="text-xs text-slate-400">{period}</span>}
-          {isFinished && <span className="text-xs text-emerald-400 font-medium">סיום</span>}
+          {period && <span className="text-xs text-muted-foreground">{period}</span>}
+          {isFinished && <span className="text-xs text-primary font-medium">סיום</span>}
           {match.status === 'scheduled' && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-muted-foreground">
               {new Date(match.matchStartTime).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
@@ -319,7 +319,7 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
         {/* קבוצת חוץ */}
         <div className="flex-1 flex flex-col items-center gap-2">
           <TeamFlag team={match.awayTeam} size="xl" />
-          <span className="text-xs font-bold text-slate-100 text-center leading-tight">{match.awayTeam.name}</span>
+          <span className="text-xs font-bold text-foreground text-center leading-tight">{match.awayTeam.name}</span>
         </div>
       </div>
     </div>
@@ -367,14 +367,14 @@ export default function MatchDetailPage() {
   if (!activeTournament) {
     return (
       <div className="flex justify-center py-16">
-        <Loader2 className="h-7 w-7 animate-spin text-emerald-500" />
+        <Loader2 className="h-7 w-7 animate-spin text-primary" />
       </div>
     )
   }
 
   if (!match?.homeTeam) {
     return (
-      <div className="text-center py-16 text-slate-500">משחק לא נמצא</div>
+      <div className="text-center py-16 text-muted-foreground">משחק לא נמצא</div>
     )
   }
 
@@ -396,7 +396,7 @@ export default function MatchDetailPage() {
       <div className="px-4 pt-3 pb-1">
         <button
           onClick={() => router.push(`/tournament/${tournamentId}/matches`)}
-          className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm"
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm"
         >
           <ArrowRight className="h-4 w-4" />
           חזרה למשחקים
@@ -423,15 +423,15 @@ export default function MatchDetailPage() {
 
           {/* RIGHT — אירועים */}
           <div className="flex-1 order-1 md:order-2">
-            <div className="bg-surface rounded-2xl border border-slate-700/40 overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-700/40">
-                <h3 className="text-sm font-bold text-slate-200">אירועי משחק</h3>
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="text-sm font-bold text-foreground">אירועי משחק</h3>
               </div>
 
               <div className="p-2">
                 {loading && (
                   <div className="flex justify-center py-10">
-                    <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
                 )}
                 {!loading && detail && (
@@ -442,12 +442,12 @@ export default function MatchDetailPage() {
                   />
                 )}
                 {!loading && !detail && match.apiFixtureId && (
-                  <p className="text-center text-slate-500 text-sm py-10">
+                  <p className="text-center text-muted-foreground text-sm py-10">
                     לא ניתן לטעון אירועים
                   </p>
                 )}
                 {!loading && !match.apiFixtureId && (
-                  <p className="text-center text-slate-500 text-sm py-10">
+                  <p className="text-center text-muted-foreground text-sm py-10">
                     אין נתוני אירועים למשחק זה
                   </p>
                 )}

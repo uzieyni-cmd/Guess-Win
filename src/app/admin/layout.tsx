@@ -40,13 +40,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
       <SiteHeader
         left={
           <Link href="/competitions"
-            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-white/8 min-h-[36px]">
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-foreground/8 min-h-[36px]">
             <ArrowRight className="h-4 w-4" />
             <span className="hidden sm:inline">חזרה</span>
           </Link>
         }
         below={
-          <div className="flex gap-0.5 border-t border-white/5">
+          <div className="flex gap-0.5 border-t border-border/30">
             {navItems.map((item) => {
               const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
               return (
@@ -54,8 +54,8 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap',
                     isActive
-                      ? 'text-emerald-400 border-emerald-400'
-                      : 'text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600'
+                      ? 'text-primary border-primary'
+                      : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
                   )}>
                   <item.icon className="h-3.5 w-3.5" />
                   {item.label}

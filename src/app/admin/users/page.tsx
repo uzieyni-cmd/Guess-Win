@@ -23,10 +23,10 @@ const ROLE_LABEL: Record<UserRole, string> = {
 }
 
 const ROLE_COLOR: Record<UserRole, string> = {
-  owner:            'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
-  admin:            'text-blue-400 bg-blue-400/10 border-blue-400/30',
-  tournament_admin: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30',
-  user:             'text-slate-400 bg-slate-700/40 border-slate-600/30',
+  owner:            'text-yellow-600 bg-yellow-400/15 border-yellow-500/30',
+  admin:            'text-blue-600 bg-blue-400/15 border-blue-500/30',
+  tournament_admin: 'text-emerald-600 bg-emerald-400/15 border-emerald-500/30',
+  user:             'text-muted-foreground bg-muted border-border',
 }
 
 export default function AdminUsersPage() {
@@ -166,9 +166,9 @@ export default function AdminUsersPage() {
     <div className="p-6 max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-blue-400" />
-          <h1 className="font-suez text-2xl text-white">הרשאות משתמשים</h1>
-          <span className="text-xs text-slate-500 mr-1">({users.length})</span>
+          <Users className="h-5 w-5 text-primary" />
+          <h1 className="font-suez text-2xl text-foreground">הרשאות משתמשים</h1>
+          <span className="text-xs text-muted-foreground mr-1">({users.length})</span>
         </div>
         <Button variant="outline" size="sm" onClick={exportExcel} className="flex items-center gap-1.5">
           <Download className="h-4 w-4" />
@@ -177,23 +177,23 @@ export default function AdminUsersPage() {
       </div>
 
       {roleMsg && (
-        <div className="mb-4 p-3 rounded-lg text-sm bg-red-500/10 border border-red-500/20 text-red-400">
+        <div className="mb-4 p-3 rounded-lg text-sm bg-red-100 border border-red-300 text-red-700">
           {roleMsg}
         </div>
       )}
 
       <div className="relative mb-5">
-        <Search className="absolute right-3 top-2.5 h-4 w-4 text-slate-500 pointer-events-none" />
+        <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="חיפוש לפי שם, שם משפחה או מייל..."
-          className="pr-9 bg-slate-800/60 border-slate-700 text-slate-100 placeholder:text-slate-500"
+          className="pr-9 bg-background border-border text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-center py-12 text-slate-500">
+        <p className="text-center py-12 text-muted-foreground">
           {search ? 'לא נמצאו משתמשים' : 'אין משתמשים רשומים עדיין.'}
         </p>
       )}
@@ -208,24 +208,24 @@ export default function AdminUsersPage() {
           const canDelete = !isOwner && !isMe && callerRole === 'owner'
 
           return (
-            <div key={user.id} className="rounded-xl bg-slate-800/50 border border-slate-700/40 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/30">
+            <div key={user.id} className="rounded-xl bg-card border border-border overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarFallback className="bg-emerald-700 text-white font-bold text-sm">
+                    <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
                       {user.displayName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-slate-200">{user.displayName}</p>
+                      <p className="text-sm font-medium text-foreground">{user.displayName}</p>
                       <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${ROLE_COLOR[user.role]}`}>
                         {ROLE_LABEL[user.role]}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500">{user.email}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
                     {user.phone && (
-                      <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                         <Phone className="h-3 w-3" />{user.phone}
                       </p>
                     )}
@@ -239,7 +239,7 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => handleSetRole(user.id, 'user')}
                         aria-label="הסר הרשאת מנהל טורניר"
-                        className="p-2 rounded-lg text-emerald-400 hover:text-slate-500 hover:bg-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        className="p-2 rounded-lg text-emerald-600 hover:text-muted-foreground hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         <Settings className="h-4 w-4" />
                       </button>
@@ -247,7 +247,7 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => handleSetRole(user.id, 'tournament_admin')}
                         aria-label="הגדר כמנהל טורניר"
-                        className="p-2 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-emerald-400/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        className="p-2 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         <Settings className="h-4 w-4" />
                       </button>
@@ -260,7 +260,7 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => handleSetRole(user.id, 'user')}
                         aria-label="הסר הרשאת מנהל"
-                        className="p-2 rounded-lg text-blue-400 hover:text-slate-500 hover:bg-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        className="p-2 rounded-lg text-blue-600 hover:text-muted-foreground hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         <ShieldOff className="h-4 w-4" />
                       </button>
@@ -268,7 +268,7 @@ export default function AdminUsersPage() {
                       <button
                         onClick={() => handleSetRole(user.id, 'admin')}
                         aria-label="הגדר כמנהל"
-                        className="p-2 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-400/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        className="p-2 rounded-lg text-muted-foreground hover:text-blue-600 hover:bg-blue-50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         <Shield className="h-4 w-4" />
                       </button>
@@ -278,7 +278,7 @@ export default function AdminUsersPage() {
                   {user.role !== 'owner' && user.role !== 'admin' && user.role !== 'tournament_admin' && (
                     <button
                       onClick={() => save(user.id)}
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-colors min-w-[64px] justify-center"
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors min-w-[64px] justify-center"
                     >
                       {saved.includes(user.id)
                         ? <><CheckCircle2 className="h-3.5 w-3.5" />נשמר</>
@@ -294,14 +294,14 @@ export default function AdminUsersPage() {
                           אישור
                         </button>
                         <button onClick={() => setDeleteConfirm(null)}
-                          className="text-xs px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300">
+                          className="text-xs px-2.5 py-1.5 rounded-lg bg-muted hover:bg-surface-deep text-muted-foreground">
                           ביטול
                         </button>
                       </div>
                     ) : (
                       <button onClick={() => setDeleteConfirm(user.id)}
                         aria-label="מחק משתמש"
-                        className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                        className="p-2 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     )
@@ -312,7 +312,7 @@ export default function AdminUsersPage() {
               {/* Tournament permissions — hide for owner/admin/tournament_admin (they have role-based access) */}
               {user.role !== 'owner' && user.role !== 'admin' && user.role !== 'tournament_admin' && (
                 <div className="px-4 py-3">
-                  <p className="text-xs text-slate-500 mb-2.5">גישה לתחרויות:</p>
+                  <p className="text-xs text-muted-foreground mb-2.5">גישה לתחרויות:</p>
                   <div className="space-y-2">
                     {visibleTournaments.map((t) => (
                       <label key={t.id} className="flex items-center gap-2.5 cursor-pointer group">
@@ -320,9 +320,9 @@ export default function AdminUsersPage() {
                           type="checkbox"
                           checked={(permissions[user.id] ?? []).includes(t.id)}
                           onChange={() => toggle(user.id, t.id)}
-                          className="rounded border-slate-600 bg-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+                          className="rounded border-border bg-background text-primary focus:ring-primary focus:ring-offset-0"
                         />
-                        <span className="text-sm text-slate-300 group-hover:text-white transition-colors">{t.name}</span>
+                        <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{t.name}</span>
                       </label>
                     ))}
                   </div>

@@ -18,9 +18,9 @@ const statusColors = {
 } as const
 
 const statusBorders = {
-  active: 'border-emerald-500',
-  upcoming: 'border-indigo-500',
-  completed: 'border-slate-600',
+  active: 'border-primary',
+  upcoming: 'border-blue-400',
+  completed: 'border-border',
 } as const
 
 const statusLabels = {
@@ -39,7 +39,7 @@ export function CompetitionCard({ tournament, index }: Props) {
         onClick={() => router.push(`/tournament/${tournament.id}/matches`)}
       >
         <CardContent className="p-0">
-          <div className="bg-gradient-to-l from-emerald-700 to-emerald-950 p-4 flex items-center gap-3">
+          <div className="bg-gradient-to-l from-slate-700 to-slate-900 p-4 flex items-center gap-3">
             {tournament.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -55,10 +55,10 @@ export function CompetitionCard({ tournament, index }: Props) {
             )}
             <div className="flex-1 min-w-0">
               <h3 className="font-suez text-white text-lg leading-tight truncate">{tournament.name}</h3>
-              <p className="text-emerald-100 text-sm truncate">{tournament.description}</p>
+              <p className="text-white/70 text-sm truncate">{tournament.description}</p>
             </div>
           </div>
-          <div className="p-4 flex items-center justify-between">
+          <div className="bg-card p-4 flex items-center justify-between">
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Users className="h-4 w-4" />

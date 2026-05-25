@@ -12,7 +12,7 @@ interface Props {
 export function SiteHeader({ left, right, className, below }: Props) {
   return (
     <div className={cn(
-      'sticky top-0 z-20 bg-base/90 backdrop-blur-md border-b border-white/8',
+      'sticky top-0 z-20 bg-base/90 backdrop-blur-md border-b border-border',
       className
     )}>
       <div className="max-w-[1600px] mx-auto px-4">
@@ -22,8 +22,8 @@ export function SiteHeader({ left, right, className, below }: Props) {
             {left && <div className="shrink-0">{left}</div>}
             <Image src="/logo.svg" alt="Guess&Win" width={38} height={44} className="sm:w-[48px] sm:h-[56px] shrink-0" priority />
             <span className="font-suez text-lg sm:text-2xl tracking-wide leading-none whitespace-nowrap select-none">
-              <span className="text-white">GUESS</span>
-              <span className="text-yellow-400"> &amp; WIN</span>
+              <span className="text-foreground">GUESS</span>
+              <span className="text-primary"> &amp; WIN</span>
             </span>
           </div>
 

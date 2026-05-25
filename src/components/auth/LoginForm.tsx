@@ -100,8 +100,8 @@ export function LoginForm() {
     }
   }
 
-  const inputCls = "bg-slate-800/60 border-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:ring-emerald-500 focus-visible:border-emerald-500 pr-9"
-  const iconCls  = "absolute right-3 top-2.5 h-4 w-4 text-slate-500"
+  const inputCls = "bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary pr-9"
+  const iconCls  = "absolute right-3 top-2.5 h-4 w-4 text-muted-foreground"
 
   return (
     <motion.div
@@ -116,11 +116,11 @@ export function LoginForm() {
       </div>
 
       {/* Card */}
-      <div className="rounded-2xl bg-slate-900/80 backdrop-blur-md border border-slate-700/50 shadow-2xl overflow-hidden">
+      <div className="rounded-2xl bg-card/90 backdrop-blur-md border border-border/50 shadow-2xl overflow-hidden">
 
         {/* Tabs (login + register only — forgot is inline) */}
         {tab !== 'forgot' && (
-          <div className="flex border-b border-slate-700/50">
+          <div className="flex border-b border-border/50">
             {(['login', 'register'] as Tab[]).map(t => (
               <button
                 key={t}
@@ -128,8 +128,8 @@ export function LoginForm() {
                 className={cn(
                   'flex-1 py-3 text-sm font-medium transition-all cursor-pointer',
                   tab === t
-                    ? 'text-emerald-400 border-b-2 border-emerald-400 -mb-px bg-emerald-500/5'
-                    : 'text-slate-500 hover:text-slate-300'
+                    ? 'text-primary border-b-2 border-primary -mb-px bg-primary/5'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {t === 'login' ? 'כניסה' : 'הרשמה'}
@@ -153,7 +153,7 @@ export function LoginForm() {
                 className="space-y-4"
               >
                 <div className="space-y-1.5">
-                  <Label htmlFor="login-email" className="text-slate-300">דוא&quot;ל</Label>
+                  <Label htmlFor="login-email" className="text-foreground">דוא&quot;ל</Label>
                   <div className="relative">
                     <Mail className={iconCls} />
                     <Input id="login-email" type="email" placeholder="you@example.com"
@@ -161,13 +161,13 @@ export function LoginForm() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="login-password" className="text-slate-300">סיסמה</Label>
+                  <Label htmlFor="login-password" className="text-foreground">סיסמה</Label>
                   <div className="relative">
                     <Lock className={iconCls} />
                     <Input id="login-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••"
                       className={cn(inputCls, 'pl-9')} value={password} onChange={e => setPassword(e.target.value)} required />
                     <button type="button" onClick={() => setShowPassword(v => !v)}
-                      className="absolute left-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors">
+                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -178,32 +178,32 @@ export function LoginForm() {
                     className={cn(
                       'h-4 w-4 rounded border transition-all shrink-0 flex items-center justify-center',
                       rememberMe
-                        ? 'bg-emerald-500 border-emerald-500'
-                        : 'border-slate-600 bg-slate-800/60 group-hover:border-slate-400'
+                        ? 'bg-primary border-primary'
+                        : 'border-border bg-background group-hover:border-primary/60'
                     )}
                   >
                     {rememberMe && (
-                      <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M1 4l2.5 2.5L9 1" />
                       </svg>
                     )}
                   </div>
                   <span
                     onClick={() => setRememberMe(v => !v)}
-                    className="text-xs text-slate-400 group-hover:text-slate-200 transition-colors"
+                    className="text-xs text-muted-foreground group-hover:text-foreground transition-colors"
                   >
                     זכור אותי
                   </span>
                 </label>
                 {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold mt-2" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold mt-2" disabled={isLoading}>
                   {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                   כניסה
                 </Button>
                 <button
                   type="button"
                   onClick={() => switchTab('forgot')}
-                  className="w-full text-center text-xs text-slate-500 hover:text-emerald-400 transition-colors pt-1"
+                  className="w-full text-center text-xs text-muted-foreground hover:text-primary transition-colors pt-1"
                 >
                   שכחתי סיסמה
                 </button>
@@ -223,7 +223,7 @@ export function LoginForm() {
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="reg-firstname" className="text-slate-300">שם פרטי</Label>
+                    <Label htmlFor="reg-firstname" className="text-foreground">שם פרטי</Label>
                     <div className="relative">
                       <User className={iconCls} />
                       <Input id="reg-firstname" type="text" placeholder="ישראל"
@@ -231,7 +231,7 @@ export function LoginForm() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="reg-lastname" className="text-slate-300">שם משפחה</Label>
+                    <Label htmlFor="reg-lastname" className="text-foreground">שם משפחה</Label>
                     <div className="relative">
                       <User className={iconCls} />
                       <Input id="reg-lastname" type="text" placeholder="ישראלי"
@@ -240,7 +240,7 @@ export function LoginForm() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="reg-phone" className="text-slate-300">מספר טלפון <span className="text-slate-500 text-xs">(אופציונלי)</span></Label>
+                  <Label htmlFor="reg-phone" className="text-foreground">מספר טלפון <span className="text-muted-foreground text-xs">(אופציונלי)</span></Label>
                   <div className="relative">
                     <Phone className={iconCls} />
                     <Input id="reg-phone" type="tel" placeholder="050-0000000" dir="ltr"
@@ -248,7 +248,7 @@ export function LoginForm() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="reg-email" className="text-slate-300">דוא&quot;ל</Label>
+                  <Label htmlFor="reg-email" className="text-foreground">דוא&quot;ל</Label>
                   <div className="relative">
                     <Mail className={iconCls} />
                     <Input id="reg-email" type="email" placeholder="you@example.com"
@@ -256,32 +256,32 @@ export function LoginForm() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="reg-password" className="text-slate-300">סיסמה</Label>
+                  <Label htmlFor="reg-password" className="text-foreground">סיסמה</Label>
                   <div className="relative">
                     <Lock className={iconCls} />
                     <Input id="reg-password" type={showPassword ? 'text' : 'password'} placeholder="לפחות 6 תווים"
                       className={cn(inputCls, 'pl-9')} value={password} onChange={e => setPassword(e.target.value)} required />
                     <button type="button" onClick={() => setShowPassword(v => !v)}
-                      className="absolute left-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors">
+                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="reg-confirm" className="text-slate-300">אימות סיסמה</Label>
+                  <Label htmlFor="reg-confirm" className="text-foreground">אימות סיסמה</Label>
                   <div className="relative">
                     <Lock className={iconCls} />
                     <Input id="reg-confirm" type={showConfirm ? 'text' : 'password'} placeholder="הזן שוב את הסיסמה"
                       className={cn(inputCls, 'pl-9')} value={confirmPass} onChange={e => setConfirmPass(e.target.value)} required />
                     <button type="button" onClick={() => setShowConfirm(v => !v)}
-                      className="absolute left-3 top-2.5 text-slate-500 hover:text-slate-300 transition-colors">
+                      className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors">
                       {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
                 {error   && <p className="text-sm text-red-400 text-center">{error}</p>}
-                {success && <p className="text-sm text-emerald-400 text-center">{success}</p>}
-                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold mt-2" disabled={isLoading}>
+                {success && <p className="text-sm text-primary text-center">{success}</p>}
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold mt-2" disabled={isLoading}>
                   {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                   הרשמה
                 </Button>
@@ -297,15 +297,15 @@ export function LoginForm() {
                 exit={{ opacity: 0, x: -16 }}
                 transition={{ duration: 0.18 }}
               >
-                <p className="text-slate-300 text-sm mb-4 text-center">הזן את כתובת הדוא&quot;ל שלך ונשלח לך קישור לאיפוס הסיסמה</p>
+                <p className="text-foreground text-sm mb-4 text-center">הזן את כתובת הדוא&quot;ל שלך ונשלח לך קישור לאיפוס הסיסמה</p>
                 {success ? (
                   <div className="flex flex-col items-center gap-3 py-2">
-                    <CheckCircle2 className="h-10 w-10 text-emerald-400" />
-                    <p className="text-emerald-400 text-sm text-center">{success}</p>
+                    <CheckCircle2 className="h-10 w-10 text-primary" />
+                    <p className="text-emerald-600 text-sm text-center">{success}</p>
                     <button
                       type="button"
                       onClick={() => switchTab('login')}
-                      className="text-xs text-slate-400 hover:text-slate-200 transition-colors mt-2"
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors mt-2"
                     >
                       חזרה לכניסה
                     </button>
@@ -313,7 +313,7 @@ export function LoginForm() {
                 ) : (
                   <form onSubmit={handleForgotPassword} className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="forgot-email" className="text-slate-300">דוא&quot;ל</Label>
+                      <Label htmlFor="forgot-email" className="text-foreground">דוא&quot;ל</Label>
                       <div className="relative">
                         <Mail className={iconCls} />
                         <Input id="forgot-email" type="email" placeholder="you@example.com"
@@ -321,14 +321,14 @@ export function LoginForm() {
                       </div>
                     </div>
                     {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-                    <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold" disabled={isLoading}>
+                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" disabled={isLoading}>
                       {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                       שלח קישור לאיפוס
                     </Button>
                     <button
                       type="button"
                       onClick={() => switchTab('login')}
-                      className="w-full text-center text-xs text-slate-500 hover:text-slate-300 transition-colors pt-1"
+                      className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors pt-1"
                     >
                       חזרה לכניסה
                     </button>

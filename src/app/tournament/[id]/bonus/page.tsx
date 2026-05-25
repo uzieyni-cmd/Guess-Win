@@ -36,20 +36,20 @@ function DrilldownPanel({
     : options
 
   return (
-    <div className="mt-3 rounded-xl border border-slate-600/50 bg-slate-800/60 overflow-hidden">
+    <div className="mt-3 rounded-xl border border-border bg-surface-deep overflow-hidden">
       {/* Search bar */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700/50">
-        <Search className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
+        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         <input
           ref={inputRef}
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="חיפוש..."
-          className="flex-1 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           dir="rtl"
         />
         {query && (
-          <button onClick={() => setQuery('')} className="text-slate-500 hover:text-slate-300">
+          <button onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground">
             <X className="h-3.5 w-3.5" />
           </button>
         )}
@@ -58,7 +58,7 @@ function DrilldownPanel({
       {/* Options list */}
       <div className="max-h-56 overflow-y-auto py-1 scrollbar-none">
         {filtered.length === 0 ? (
-          <p className="text-center text-xs text-slate-500 py-4">אין תוצאות</p>
+          <p className="text-center text-xs text-muted-foreground py-4">אין תוצאות</p>
         ) : (
           filtered.map(opt => {
             const isSelected = selected === opt
@@ -73,20 +73,20 @@ function DrilldownPanel({
                 className={cn(
                   'w-full text-right px-4 py-2.5 text-sm flex items-center justify-between gap-3 transition-colors',
                   isCorrect
-                    ? 'bg-emerald-600/20 text-emerald-300'
+                    ? 'bg-primary/20 text-primary'
                     : isWrong
-                    ? 'bg-red-900/20 text-red-400 line-through'
+                    ? 'bg-destructive/20 text-destructive line-through'
                     : isSelected
-                    ? 'bg-emerald-600/10 text-emerald-300'
+                    ? 'bg-primary/10 text-primary'
                     : isLocked
-                    ? 'text-slate-500 cursor-default'
-                    : 'text-slate-200 hover:bg-slate-700/40'
+                    ? 'text-muted-foreground cursor-default'
+                    : 'text-foreground hover:bg-foreground/8'
                 )}
               >
                 <span className="flex-1 truncate">{opt}</span>
-                {isCorrect && <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />}
+                {isCorrect && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
                 {isSelected && !isCorrect && !isWrong && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
                 )}
               </button>
             )
@@ -120,12 +120,12 @@ function QuestionCard({
   }
 
   return (
-    <div className="bg-surface border border-slate-700/40 rounded-2xl p-4">
+    <div className="bg-card border border-border rounded-2xl p-4">
       {/* Header row */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-100 leading-snug">{q.question}</p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="font-semibold text-foreground leading-snug">{q.question}</p>
+          <p className="text-xs text-muted-foreground mt-1">
             {hasResult
               ? `תשובה נכונה: ${q.correctOption}`
               : isLocked
@@ -134,8 +134,8 @@ function QuestionCard({
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {isLocked && <Lock className="h-3.5 w-3.5 text-slate-500" />}
-          <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+          {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+          <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
             {q.points} נק'
           </span>
         </div>
@@ -148,18 +148,18 @@ function QuestionCard({
         className={cn(
           'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border text-sm transition-all',
           open
-            ? 'border-emerald-500/60 bg-emerald-600/10 text-emerald-300'
+            ? 'border-primary/60 bg-primary/10 text-primary'
             : selected
-            ? 'border-emerald-500/40 bg-emerald-600/10 text-emerald-300 hover:border-emerald-500/60'
+            ? 'border-primary/40 bg-primary/10 text-primary hover:border-primary/60'
             : isLocked
-            ? 'border-slate-700/30 bg-slate-800/30 text-slate-500 cursor-default'
-            : 'border-slate-600/40 bg-slate-800/50 text-slate-400 hover:border-slate-500/60 hover:text-slate-200'
+            ? 'border-border/50 bg-muted text-muted-foreground cursor-default'
+            : 'border-border bg-surface-deep text-muted-foreground hover:border-primary/40 hover:text-foreground'
         )}
       >
         <span className="flex items-center gap-2 flex-1 min-w-0">
           {selected
-            ? <span className="truncate font-medium text-slate-100">{selected}</span>
-            : <span className="text-slate-500">בחר תשובה...</span>}
+            ? <span className="truncate font-medium text-foreground">{selected}</span>
+            : <span className="text-muted-foreground">בחר תשובה...</span>}
         </span>
         {!isLocked && (
           <ChevronDown className={cn('h-4 w-4 shrink-0 transition-transform duration-200', open && 'rotate-180')} />
@@ -183,7 +183,7 @@ function QuestionCard({
       {hasResult && pick && (
         <p className={cn(
           'text-xs font-semibold mt-3',
-          pick.pointsAwarded ? 'text-emerald-400' : 'text-slate-500'
+          pick.pointsAwarded ? 'text-primary' : 'text-muted-foreground'
         )}>
           {pick.pointsAwarded
             ? `✓ קיבלת ${pick.pointsAwarded} נקודות!`
@@ -226,9 +226,9 @@ export default function BonusPage() {
 
   if (questions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-3">
-        <Gift className="h-10 w-10 text-slate-600" />
-        <p className="font-semibold text-slate-300">אין הימורי בונוס עדיין</p>
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+        <Gift className="h-10 w-10 text-muted-foreground/50" />
+        <p className="font-semibold text-foreground">אין הימורי בונוס עדיין</p>
         <p className="text-sm">המנהל יוסיף שאלות בונוס בקרוב</p>
       </div>
     )
@@ -237,8 +237,8 @@ export default function BonusPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <div className="flex items-center gap-2 mb-4">
-        <Gift className="h-5 w-5 text-emerald-500" />
-        <h2 className="font-suez text-xl text-slate-100">הימורי בונוס</h2>
+        <Gift className="h-5 w-5 text-primary" />
+        <h2 className="font-suez text-xl text-foreground">הימורי בונוס</h2>
       </div>
 
       {questions.map(q => (

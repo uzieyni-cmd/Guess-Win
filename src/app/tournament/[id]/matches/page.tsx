@@ -78,23 +78,23 @@ export default function MatchesPage() {
   return (
     <div>
       {/* שם הטורניר + לוגו */}
-      <div className="flex items-center gap-3 mb-6 pb-5 border-b border-slate-700/50">
+      <div className="flex items-center gap-3 mb-6 pb-5 border-b border-border/50">
         {activeTournament.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={activeTournament.logoUrl} alt={activeTournament.name}
             className="h-14 w-14 object-contain rounded-lg shrink-0" />
         ) : (
-          <Trophy className="h-10 w-10 text-slate-500 shrink-0" />
+          <Trophy className="h-10 w-10 text-muted-foreground/50 shrink-0" />
         )}
-        <h1 className="font-suez text-2xl text-slate-100 leading-tight">{activeTournament.name}</h1>
+        <h1 className="font-suez text-2xl text-foreground leading-tight">{activeTournament.name}</h1>
       </div>
 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Target className="h-5 w-5 text-emerald-500" />
-          <h2 className="font-suez text-xl text-slate-100">ניחושי משחקים</h2>
+          <Target className="h-5 w-5 text-primary" />
+          <h2 className="font-suez text-xl text-foreground">ניחושי משחקים</h2>
           {realMatches.length > 0 && (
-            <span className="text-xs text-slate-300 bg-slate-700 px-2 py-0.5 rounded-full">
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {realMatches.length} משחקים
             </span>
           )}
@@ -105,7 +105,7 @@ export default function MatchesPage() {
           {finishedCount > 0 && (
             <button
               onClick={() => setHideFinished(v => !v)}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors cursor-pointer min-h-[44px] px-2"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer min-h-[44px] px-2"
             >
               {hideFinished
                 ? <><Eye className="h-3.5 w-3.5" />הצג הכל ({finishedCount})</>
@@ -118,7 +118,7 @@ export default function MatchesPage() {
             <button
               onClick={handleLoadPast}
               disabled={loadingAll}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 disabled:opacity-50 transition-colors border border-slate-600 rounded-full px-3 py-2.5 min-h-[44px] hover:border-slate-400"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors border border-border rounded-full px-3 py-2.5 min-h-[44px] hover:border-foreground/60"
             >
               {loadingAll
                 ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />טוען...</>

@@ -42,25 +42,19 @@ export function ChatBot({ tournamentId }: Props) {
     setInput('')
     setLoading(true)
 
-    // שלח רק הודעות user/assistant אמיתיות — לא הברכה הראשונית
     const apiMessages = next.filter((m, i) => !(i === 0 && m.role === 'assistant'))
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: apiMessages,
-          tournamentId,
-          userId: currentUser?.id,
-        }),
+        body: JSON.stringify({ messages: apiMessages, tournamentId, userId: currentUser?.id }),
       })
 
       if (!res.ok) throw new Error('שגיאת שרת')
 
       const data = await res.json()
-      const assistantText = data.text ?? 'מצטער, לא הצלחתי לענות.'
-      setMessages(prev => [...prev, { role: 'assistant', content: assistantText }])
+      setMessages(prev => [...prev, { role: 'assistant', content: data.text ?? 'מצטער, לא הצלחתי לענות.' }])
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: 'מצטער, הייתה שגיאה. נסה שוב.' }])
     } finally {
@@ -76,29 +70,31 @@ export function ChatBot({ tournamentId }: Props) {
         className={cn(
           'fixed bottom-5 left-5 z-50 w-13 h-13 rounded-full flex items-center justify-center shadow-lg transition-all duration-200',
           open
-            ? 'bg-slate-700 hover:bg-slate-600'
-            : 'bg-emerald-600 hover:bg-emerald-500 hover:scale-105'
+            ? 'bg-card border border-border hover:bg-surface-deep'
+            : 'bg-primary hover:bg-primary/90 hover:scale-105'
         )}
         aria-label="פתח צ'אט עזרה"
       >
-        {open ? <X className="h-5 w-5 text-white" /> : <MessageCircle className="h-5 w-5 text-white" />}
+        {open
+          ? <X className="h-5 w-5 text-foreground" />
+          : <MessageCircle className="h-5 w-5 text-primary-foreground" />}
       </button>
 
       {/* Chat window */}
       {open && (
         <div
           dir="rtl"
-          className="fixed bottom-22 left-5 z-50 w-[320px] sm:w-[360px] rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50 flex flex-col bg-surface"
+          className="fixed bottom-22 left-5 z-50 w-[320px] sm:w-[360px] rounded-2xl overflow-hidden shadow-2xl border border-border flex flex-col bg-card"
           style={{ maxHeight: '70vh' }}
         >
           {/* Header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-slate-700/40 bg-surface-deep">
-            <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
-              <Bot className="h-4 w-4 text-white" />
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-surface-deep">
+            <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
+              <Bot className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-100 leading-none">עוזר Guess & Win</p>
-              <p className="text-[10px] text-emerald-400 mt-0.5">מחובר</p>
+              <p className="text-sm font-bold text-foreground leading-none">עוזר Guess & Win</p>
+              <p className="text-[10px] text-primary mt-0.5">מחובר</p>
             </div>
           </div>
 
@@ -109,14 +105,14 @@ export function ChatBot({ tournamentId }: Props) {
                 <div className={cn(
                   'max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed',
                   msg.role === 'user'
-                    ? 'bg-emerald-600/20 border border-emerald-600/30 text-slate-100 rounded-tr-sm'
-                    : 'bg-slate-700/50 border border-slate-600/30 text-slate-200 rounded-tl-sm'
+                    ? 'bg-primary/15 border border-primary/30 text-foreground rounded-tr-sm'
+                    : 'bg-surface-deep border border-border/60 text-foreground rounded-tl-sm'
                 )}>
                   {msg.content || (loading && i === messages.length - 1
                     ? <span className="flex gap-1 items-center py-0.5">
-                        <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </span>
                     : null
                   )}
@@ -127,7 +123,7 @@ export function ChatBot({ tournamentId }: Props) {
           </div>
 
           {/* Input */}
-          <div className="px-3 py-2.5 border-t border-slate-700/40 flex gap-2">
+          <div className="px-3 py-2.5 border-t border-border/50 flex gap-2">
             <input
               ref={inputRef}
               value={input}
@@ -135,14 +131,14 @@ export function ChatBot({ tournamentId }: Props) {
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
               placeholder="שאל שאלה על הטורניר..."
               disabled={loading}
-              className="flex-1 bg-slate-800/60 border border-slate-600/40 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 min-w-0"
+              className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 min-w-0"
             />
             <button
               onClick={send}
               disabled={!input.trim() || loading}
-              className="w-9 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors shrink-0"
+              className="w-9 h-9 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors shrink-0"
             >
-              <Send className="h-4 w-4 text-white" />
+              <Send className="h-4 w-4 text-primary-foreground" />
             </button>
           </div>
         </div>

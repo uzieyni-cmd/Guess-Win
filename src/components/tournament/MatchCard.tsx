@@ -57,9 +57,9 @@ export function translateRound(round: string): string {
   // Regular Season - N → מחזור N
   const rsMatch = round.match(/^Regular Season - (\d+)$/)
   if (rsMatch) return `מחזור ${rsMatch[1]}`
-  // Group Stage - N → סיבוב N
+  // Group Stage - N → מחזור N
   const gsMatch = round.match(/^Group Stage - (\d+)$/)
-  if (gsMatch) return `סיבוב ${gsMatch[1]}`
+  if (gsMatch) return `מחזור ${gsMatch[1]}`
   // League Stage - N (fallback)
   const lsMatch = round.match(/^League Stage - (\d+)$/)
   if (lsMatch) return `שלב הליגה - ${lsMatch[1]}`
@@ -161,17 +161,17 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     <div className="animate-fade-up h-full">
       <Card className={cn(
         'overflow-hidden h-full flex flex-col',
-        isFinished && 'border-green-300 bg-green-50/60',
-        isLive && 'border-red-500/40 bg-red-950/10',
+        isFinished && 'border-emerald-400/50 bg-emerald-50/40',
+        isLive && 'border-red-400/50 bg-red-50/40',
         isUrgent && 'border-orange-400/60',
-        !isFinished && !isLive && !isUrgent && userBet && 'border-emerald-500/30',
+        !isFinished && !isLive && !isUrgent && userBet && 'border-primary/30',
       )}>
         {/* ── Header bar — לחיצה פותחת מסך פרטי משחק ──────────── */}
         <div
           className={cn(
             'flex items-center justify-between px-4 py-2 text-xs cursor-pointer',
-            isFinished  ? 'bg-green-100/70 text-muted-foreground hover:bg-green-200/40' :
-            isLive      ? 'bg-red-950/30 text-red-300 hover:bg-red-950/50' :
+            isFinished  ? 'bg-emerald-100/60 text-muted-foreground hover:bg-emerald-100' :
+            isLive      ? 'bg-red-100 text-red-700 hover:bg-red-200/60' :
                           'bg-muted/50 text-muted-foreground hover:bg-muted/70',
           )}
           onClick={() => router.push(`/tournament/${match.tournamentId}/match/${match.id}`)}
@@ -188,7 +188,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
           {/* מרכז: שלב */}
           {roundStr && (
             <div className="flex-1 flex justify-center">
-              <span className={cn('font-medium whitespace-nowrap text-xs leading-tight text-center', isLive ? 'text-red-300' : 'text-emerald-400')}>
+              <span className={cn('font-medium whitespace-nowrap text-xs leading-tight text-center', isLive ? 'text-red-700' : 'text-primary')}>
                 {roundStr}
               </span>
             </div>
@@ -206,7 +206,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             {/* קבוצת בית */}
             <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
               <TeamFlag team={match.homeTeam} className="h-14 w-14 sm:h-20 sm:w-20" />
-              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>
+              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-foreground')}>
                 {match.homeTeam.name}
               </span>
             </div>
@@ -218,24 +218,24 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                 /* ── ציון LIVE / תוצאה סופית ─── */
                 <div className="flex flex-col items-center gap-1 min-h-[36px] justify-center">
                   <div className="flex items-center gap-2">
-                    <span className={cn('font-condensed text-3xl font-bold tabular-nums w-8 text-center', isLive ? 'text-white' : 'text-slate-800')}>
+                    <span className="font-condensed text-3xl font-bold tabular-nums w-8 text-center text-foreground">
                       {match.actualScore?.home ?? 0}
                     </span>
-                    <span className={cn('text-base font-bold', isLive ? 'text-slate-400' : 'text-slate-500')}>–</span>
-                    <span className={cn('font-condensed text-3xl font-bold tabular-nums w-8 text-center', isLive ? 'text-white' : 'text-slate-800')}>
+                    <span className="text-base font-bold text-muted-foreground">–</span>
+                    <span className="font-condensed text-3xl font-bold tabular-nums w-8 text-center text-foreground">
                       {match.actualScore?.away ?? 0}
                     </span>
                   </div>
                   {/* ניחוש המשתמש + נקודות מתחת לתוצאה */}
                   {userBet ? (
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap justify-center">
-                      <span className={cn('text-xs', isLive ? 'text-slate-300' : 'text-slate-500')}>
-                        ניחוש: <span className={cn('font-condensed font-semibold tabular-nums text-sm', isLive ? 'text-slate-200' : 'text-slate-600')}>{userBet.predictedScore.home}–{userBet.predictedScore.away}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ניחוש: <span className="font-condensed font-semibold tabular-nums text-sm text-foreground">{userBet.predictedScore.home}–{userBet.predictedScore.away}</span>
                       </span>
                       {userResult && <PointsBadge result={userResult.result} points={userResult.points} />}
                     </div>
                   ) : (
-                    <span className={cn('text-xs mt-0.5', isLive ? 'text-slate-400' : 'text-slate-500')}>לא ניחשת</span>
+                    <span className="text-xs mt-0.5 text-muted-foreground">לא ניחשת</span>
                   )}
                 </div>
               ) : (
@@ -273,7 +273,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                     </div>
                   )}
                   {submittedLabel && !isInputLocked && !dirty && (
-                    <span className="flex items-center gap-1 text-xs text-emerald-500">
+                    <span className="flex items-center gap-1 text-xs text-emerald-600">
                       <Check className="h-2.5 w-2.5" />
                       {submittedLabel.isUpdated ? 'עודכן' : 'הוגש'} ב-{submittedLabel.text}
                     </span>
@@ -290,7 +290,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             {/* קבוצת חוץ */}
             <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
               <TeamFlag team={match.awayTeam} className="h-14 w-14 sm:h-20 sm:w-20" />
-              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-slate-200')}>
+              <span className={cn('text-xs font-semibold text-center leading-tight line-clamp-2 w-full break-words', isLive && 'text-foreground')}>
                 {match.awayTeam.name}
               </span>
             </div>
@@ -353,7 +353,7 @@ function OddsBar({ odds }: { odds: { home: number; draw: number; away: number } 
     <div className="flex items-center justify-between gap-1">
       <div className="flex-1 flex flex-col items-center gap-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-1.5 px-2">
         <span className="text-muted-foreground font-medium">1</span>
-        <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{odds.home.toFixed(2)}</span>
+        <span className="font-bold tabular-nums text-emerald-600">{odds.home.toFixed(2)}</span>
       </div>
       <div className="flex-1 flex flex-col items-center gap-0.5 bg-slate-500/10 border border-slate-500/20 rounded-lg py-1.5 px-2">
         <span className="text-muted-foreground font-medium">X</span>
@@ -361,7 +361,7 @@ function OddsBar({ odds }: { odds: { home: number; draw: number; away: number } 
       </div>
       <div className="flex-1 flex flex-col items-center gap-0.5 bg-blue-500/10 border border-blue-500/20 rounded-lg py-1.5 px-2">
         <span className="text-muted-foreground font-medium">2</span>
-        <span className="font-bold tabular-nums text-blue-600 dark:text-blue-400">{odds.away.toFixed(2)}</span>
+        <span className="font-bold tabular-nums text-blue-600">{odds.away.toFixed(2)}</span>
       </div>
     </div>
     </div>
@@ -382,9 +382,9 @@ function BetDistributionBar({ bets, totalParticipants }: { bets: Bet[]; totalPar
   return (
     <div className="mt-3 space-y-1.5">
       <div className="flex justify-between items-center text-xs font-medium px-0.5">
-        <span className="text-emerald-600 dark:text-emerald-400">{homePct}% בית</span>
+        <span className="text-emerald-600">{homePct}% בית</span>
         <span className="text-muted-foreground/60 text-[9px]">{total}/{totalParticipants} ניחשו</span>
-        <span className="text-blue-500 dark:text-blue-400">{awayPct}% חוץ</span>
+        <span className="text-blue-600">{awayPct}% חוץ</span>
       </div>
       <div className="h-1.5 rounded-full overflow-hidden flex bg-muted/40">
         {homePct > 0 && (
@@ -423,39 +423,39 @@ function OtherBetsDialog({ open, onClose, match, bets, participants, isFinished 
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           dir="rtl"
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-surface border border-slate-700/50 shadow-2xl overflow-hidden focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4 data-[state=closed]:slide-out-to-bottom-4 duration-200"
+          className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-card border border-border shadow-2xl overflow-hidden focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4 data-[state=closed]:slide-out-to-bottom-4 duration-200"
         >
           <DialogPrimitive.Title className="sr-only">ניחושי משתתפים</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">ניחושי שאר המשתתפים למשחק</DialogPrimitive.Description>
 
           {/* handle */}
           <div className="flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 rounded-full bg-slate-600" />
+            <div className="w-10 h-1 rounded-full bg-border" />
           </div>
 
           {/* header */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/40">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
             <div>
-              <p className="text-sm font-bold text-slate-100">
-                {match.homeTeam.name} <span className="text-slate-500 font-normal">נגד</span> {match.awayTeam.name}
+              <p className="text-sm font-bold text-foreground">
+                {match.homeTeam.name} <span className="text-muted-foreground font-normal">נגד</span> {match.awayTeam.name}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">ניחושי המשתתפים · {bets.length}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">ניחושי המשתתפים · {bets.length}</p>
             </div>
-            <DialogPrimitive.Close className="p-1.5 rounded-full hover:bg-white/10 transition-colors text-slate-400">
+            <DialogPrimitive.Close className="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-muted-foreground">
               <X className="h-4 w-4" />
             </DialogPrimitive.Close>
           </div>
 
           {/* list */}
-          <div className="overflow-y-auto max-h-64 divide-y divide-slate-800/60">
+          <div className="overflow-y-auto max-h-64 divide-y divide-border/60">
             {bets.map((bet) => {
               const betUser = participants.find((u) => u.id === bet.userId)
               const result = isFinished && match.actualScore ? calculateScore(bet, match) : null
               return (
                 <div key={bet.id} className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-slate-300">{betUser?.displayName ?? 'משתתף'}</span>
+                  <span className="text-sm text-muted-foreground">{betUser?.displayName ?? 'משתתף'}</span>
                   <div className="flex items-center gap-2.5">
-                    <span className="font-mono font-bold text-slate-100 tabular-nums text-sm">
+                    <span className="font-mono font-bold text-foreground tabular-nums text-sm">
                       {bet.predictedScore.home} – {bet.predictedScore.away}
                     </span>
                     {result && <PointsBadge result={result.result} points={result.points} />}
@@ -466,8 +466,8 @@ function OtherBetsDialog({ open, onClose, match, bets, participants, isFinished 
           </div>
 
           {/* footer */}
-          <div className="px-4 py-3 border-t border-slate-800/60">
-            <DialogPrimitive.Close className="w-full text-xs text-slate-400 hover:text-slate-200 transition-colors py-1">
+          <div className="px-4 py-3 border-t border-border/60">
+            <DialogPrimitive.Close className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
               סגור
             </DialogPrimitive.Close>
           </div>
@@ -481,11 +481,11 @@ function OtherBetsDialog({ open, onClose, match, bets, participants, isFinished 
 function LiveIndicator({ minute, period }: { minute?: number; period?: string }) {
   // תצוגת זמן לפי period
   const timeChip = (() => {
-    if (period === 'HT') return { label: 'מחצית', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
-    if (period === 'BT') return { label: 'הפסקה לפני הארכה', cls: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' }
-    if (period === 'P')  return { label: 'פנדלים', cls: 'bg-purple-500/20 text-purple-300 border border-purple-500/30' }
-    if (period === 'ET') return { label: minute != null ? `${minute}′` : 'הארכה', cls: 'bg-orange-500/20 text-orange-300 border border-orange-500/30' }
-    if (minute != null)  return { label: `${minute}′`, cls: 'bg-red-500/20 text-red-200 border border-red-500/40' }
+    if (period === 'HT') return { label: 'מחצית', cls: 'bg-amber-100 text-amber-700 border border-amber-400/50' }
+    if (period === 'BT') return { label: 'הפסקה לפני הארכה', cls: 'bg-amber-100 text-amber-700 border border-amber-400/50' }
+    if (period === 'P')  return { label: 'פנדלים', cls: 'bg-purple-100 text-purple-700 border border-purple-400/50' }
+    if (period === 'ET') return { label: minute != null ? `${minute}′` : 'הארכה', cls: 'bg-orange-100 text-orange-700 border border-orange-400/50' }
+    if (minute != null)  return { label: `${minute}′`, cls: 'bg-red-100 text-red-700 border border-red-400/50' }
     return null
   })()
 

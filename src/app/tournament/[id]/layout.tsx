@@ -37,7 +37,7 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
       <SiteHeader
         left={
           <button onClick={() => router.push('/competitions')}
-            className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors px-2 py-1.5 rounded-lg hover:bg-white/8 min-h-[36px]">
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-foreground/8 min-h-[36px]">
             <ArrowRight className="h-4 w-4" />
             <span className="hidden sm:inline text-sm">חזרה</span>
           </button>
@@ -47,19 +47,19 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
             {currentUser?.role === 'admin' && (
               <button onClick={() => router.push(`/admin/tournaments/${id}`)}
                 aria-label="ניהול תחרות"
-                className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/8 min-h-[44px] min-w-[44px] flex items-center justify-center">
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-foreground/8 min-h-[44px] min-w-[44px] flex items-center justify-center">
                 <Settings className="h-4 w-4" />
               </button>
             )}
             <button onClick={() => { logout(); router.push('/login') }}
               aria-label="התנתקות"
-              className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/8 min-h-[44px] min-w-[44px] flex items-center justify-center">
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-foreground/8 min-h-[44px] min-w-[44px] flex items-center justify-center">
               <LogOut className="h-4 w-4" />
             </button>
           </div>
         }
         below={
-          <div className="flex gap-0.5 border-t border-white/5 overflow-x-auto scrollbar-none">
+          <div className="flex gap-0.5 border-t border-border/30 overflow-x-auto scrollbar-none">
             {NAV_TABS.map((tab) => {
               const isActive = pathname.endsWith(`/${tab.href}`)
               return (
@@ -67,8 +67,8 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap',
                     isActive
-                      ? 'text-emerald-400 border-emerald-400'
-                      : 'text-slate-500 border-transparent hover:text-slate-300 hover:border-slate-600'
+                      ? 'text-primary border-primary'
+                      : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
                   )}>
                   <tab.icon className="h-3.5 w-3.5 shrink-0" />
                   {tab.label}

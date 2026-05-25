@@ -39,15 +39,15 @@ export default function StatsPage() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="h-5 w-5 text-emerald-500" />
-        <h2 className="font-suez text-xl text-slate-100">הסטטיסטיקה שלי</h2>
+        <TrendingUp className="h-5 w-5 text-primary" />
+        <h2 className="font-suez text-xl text-foreground">הסטטיסטיקה שלי</h2>
       </div>
       <div className="grid grid-cols-2 gap-3 mb-4 stagger">
         {[
-          { label: 'סך הנקודות', value: stats.totalPoints, icon: Zap, color: 'text-emerald-500' },
-          { label: 'דיוק', value: `${stats.accuracy}%`, icon: Target, color: 'text-green-400' },
-          { label: 'פגיעות מדויקות', value: stats.exactHits, icon: Target, color: 'text-yellow-400' },
-          { label: 'כיוון נכון', value: stats.outcomeHits, icon: Target, color: 'text-blue-400' },
+          { label: 'סך הנקודות', value: stats.totalPoints, icon: Zap, color: 'text-primary' },
+          { label: 'דיוק', value: `${stats.accuracy}%`, icon: Target, color: 'text-emerald-600' },
+          { label: 'פגיעות מדויקות', value: stats.exactHits, icon: Target, color: 'text-amber-600' },
+          { label: 'כיוון נכון', value: stats.outcomeHits, icon: Target, color: 'text-blue-600' },
         ].map((item) => (
           <div key={item.label} className="animate-pop-in">
             <Card>

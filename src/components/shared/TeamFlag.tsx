@@ -30,7 +30,7 @@ export function TeamFlag({ team, size = 'md', className }: Props) {
           fallback?.classList.remove('hidden')
         }}
       />
-      <span className="hidden text-xs font-bold text-white">{team.shortCode}</span>
+      <span className="hidden text-xs font-bold text-foreground">{team.shortCode}</span>
     </div>
   )
 }

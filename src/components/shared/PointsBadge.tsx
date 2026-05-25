@@ -9,9 +9,9 @@ interface Props {
 }
 
 const config = {
-  exact:   { label: '10 נק׳', className: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400' },
-  outcome: { label: '5 נק׳',  className: 'border-amber-400/40 bg-amber-400/10 text-amber-400' },
-  miss:    { label: '0 נק׳',  className: 'border-red-500/40 bg-red-500/10 text-red-500' },
+  exact:   { label: '10 נק׳', className: 'border-emerald-500/40 bg-emerald-100 text-emerald-700' },
+  outcome: { label: '5 נק׳',  className: 'border-amber-500/40 bg-amber-100 text-amber-700' },
+  miss:    { label: '0 נק׳',  className: 'border-red-400/40 bg-red-50 text-red-600' },
 } as const
 
 export function PointsBadge({ result, className }: Props) {

@@ -204,8 +204,8 @@ export default function AdminTournamentsPage() {
                     <button key={l.id} type="button" onClick={() => selectLeague(l)}
                       className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                         leagueId === String(l.id)
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'border-gray-300 text-gray-700 hover:border-emerald-400'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'border-border text-foreground hover:border-primary/50'
                       }`}>
                       {l.name}
                     </button>
@@ -213,7 +213,7 @@ export default function AdminTournamentsPage() {
                   <button
                     type="button"
                     onClick={openLeagueBrowser}
-                    className="text-xs px-2.5 py-1 rounded-full border border-dashed border-gray-400 text-gray-500 hover:border-emerald-500 hover:text-emerald-600 transition-colors flex items-center gap-1"
+                    className="text-xs px-2.5 py-1 rounded-full border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center gap-1"
                   >
                     <ChevronDown className="h-3 w-3" />
                     בחירה אחרת
@@ -233,7 +233,7 @@ export default function AdminTournamentsPage() {
                       placeholder="חפש ליגה או מדינה..."
                       value={leagueSearch}
                       onChange={(e) => setLeagueSearch(e.target.value)}
-                      className="w-full border rounded-md py-2 pr-9 pl-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full border border-border rounded-md py-2 pr-9 pl-3 text-sm outline-none focus:ring-2 focus:ring-primary bg-background text-foreground placeholder:text-muted-foreground"
                     />
                   </div>
                   <div className="flex-1 overflow-y-auto space-y-0.5 min-h-0">
@@ -302,11 +302,11 @@ export default function AdminTournamentsPage() {
                           }}
                           className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
                             season === String(s.year)
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : 'border-gray-300 text-gray-700 hover:border-indigo-300'
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'border-border text-foreground hover:border-primary/50'
                           }`}>
                           {s.label}
-                          {s.current && <span className="mr-1 text-green-400">●</span>}
+                          {s.current && <span className="mr-1 text-emerald-600">●</span>}
                         </button>
                       ))}
                     </div>
@@ -426,7 +426,7 @@ export default function AdminTournamentsPage() {
                     <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t)} aria-label="מחיקת תחרות" className="min-h-[44px] min-w-[44px]">
-                    <Trash2 className="h-4 w-4 text-red-400" />
+                    <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                   <Link href={`/admin/tournaments/${t.id}`}>
                     <Button variant="outline" size="sm">ניהול</Button>
@@ -533,8 +533,8 @@ export default function AdminTournamentsPage() {
                   <button key={opt.value} type="button" onClick={() => setEditStatus(opt.value)}
                     className={`flex-1 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
                       editStatus === opt.value
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'border-gray-200 text-gray-600 hover:border-indigo-300'
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-border text-foreground hover:border-primary/50'
                     }`}>
                     {opt.label}
                   </button>
@@ -543,7 +543,7 @@ export default function AdminTournamentsPage() {
             </div>
             <Button type="submit" className="w-full" disabled={editSaving || editSaved}>
               {editSaved
-                ? <><CheckCircle2 className="h-4 w-4 ml-1 text-green-400" />נשמר בהצלחה!</>
+                ? <><CheckCircle2 className="h-4 w-4 ml-1 text-emerald-600" />נשמר בהצלחה!</>
                 : editSaving
                   ? <><Loader2 className="h-4 w-4 ml-1 animate-spin" />שומר...</>
                   : 'שמור שינויים'}
