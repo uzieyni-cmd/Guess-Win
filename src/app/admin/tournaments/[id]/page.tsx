@@ -730,7 +730,7 @@ export default function AdminTournamentDetailPage() {
                   <div>
                     <Label>סוג</Label>
                     <select
-                      className="w-full mt-1 border rounded-md px-3 py-2 text-sm bg-background"
+                      className="w-full mt-1 border border-border rounded-md px-3 py-2 text-sm bg-background text-foreground"
                       value={newBonus.type}
                       onChange={e => setNewBonus(p => ({ ...p, type: e.target.value as BonusQuestion['type'] }))}
                     >
@@ -805,7 +805,7 @@ export default function AdminTournamentDetailPage() {
               {!q.correctOption && (
                 <div className="flex items-center gap-2 pt-1">
                   <select
-                    className="flex-1 border rounded-md px-2 py-1 text-sm bg-background"
+                    className="flex-1 border border-border rounded-md px-2 py-1 text-sm bg-background text-foreground"
                     value={bonusResultPick[q.id] ?? ''}
                     onChange={e => setBonusResultPick(p => ({ ...p, [q.id]: e.target.value }))}
                   >
@@ -835,7 +835,7 @@ export default function AdminTournamentDetailPage() {
             <div>
               <Label>סוג</Label>
               <select
-                className="w-full mt-1 border rounded-md px-3 py-2 text-sm bg-background"
+                className="w-full mt-1 border border-border rounded-md px-3 py-2 text-sm bg-background text-foreground"
                 value={editBonus.type}
                 onChange={e => setEditBonus(p => ({ ...p, type: e.target.value as BonusQuestion['type'] }))}
               >
