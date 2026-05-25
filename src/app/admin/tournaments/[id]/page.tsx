@@ -260,7 +260,7 @@ export default function AdminTournamentDetailPage() {
   // ── Bonus questions state ──────────────────────────────────────
   const [bonusQuestions, setBonusQuestions] = useState<BonusQuestion[]>([])
   const [bonusMsg, setBonusMsg] = useState('')
-  const [bonusResultPick, setBonusResultPick] = useState<Record<string, string>>({})
+  const [bonusResultPicks, setBonusResultPicks] = useState<Record<string, string[]>>({})
   const [syncingLocks, setSyncingLocks] = useState(false)
   const [syncLockInfo, setSyncLockInfo] = useState('')
   const [addBonusOpen, setAddBonusOpen] = useState(false)
@@ -394,9 +394,9 @@ export default function AdminTournamentDetailPage() {
   }
 
   const handleSetBonusResult = async (qId: string) => {
-    const correct = bonusResultPick[qId]
-    if (!correct) return
-    const res = await setBonusResult(qId, correct)
+    const corrects = bonusResultPicks[qId] ?? []
+    if (!corrects.length) return
+    const res = await setBonusResult(qId, corrects)
     if (res.ok) {
       setBonusMsg(`✓ ${res.awarded} משתתפים קיבלו נקודות`)
       loadBonusQuestions()
@@ -404,6 +404,18 @@ export default function AdminTournamentDetailPage() {
       setBonusMsg(res.error ?? 'שגיאה')
     }
     setTimeout(() => setBonusMsg(''), 3000)
+  }
+
+  const toggleBonusResultPick = (qId: string, opt: string) => {
+    setBonusResultPicks(prev => {
+      const current = prev[qId] ?? []
+      return {
+        ...prev,
+        [qId]: current.includes(opt)
+          ? current.filter(o => o !== opt)
+          : [...current, opt],
+      }
+    })
   }
 
   // ── טעינת משחקים אמיתיים תמיד בכניסה לדף ─────────────────────
@@ -816,30 +828,48 @@ export default function AdminTournamentDetailPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {q.options.map(opt => (
-                  <Badge key={opt} variant={q.correctOption === opt ? 'default' : 'outline'}
-                    className={q.correctOption === opt ? 'bg-primary text-primary-foreground' : ''}>
-                    {opt}
-                  </Badge>
-                ))}
+                {q.options.map(opt => {
+                  const isCorrect = q.correctOptions?.includes(opt)
+                  return (
+                    <Badge key={opt} variant={isCorrect ? 'default' : 'outline'}
+                      className={isCorrect ? 'bg-primary text-primary-foreground' : ''}>
+                      {opt}
+                    </Badge>
+                  )
+                })}
               </div>
-              {!q.correctOption && (
-                <div className="flex items-center gap-2 pt-1">
-                  <select
-                    className="flex-1 border border-border rounded-md px-2 py-1 text-sm bg-background text-foreground"
-                    value={bonusResultPick[q.id] ?? ''}
-                    onChange={e => setBonusResultPick(p => ({ ...p, [q.id]: e.target.value }))}
-                  >
-                    <option value="">— סמן תוצאה —</option>
-                    {q.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                  <Button size="sm" disabled={!bonusResultPick[q.id]} onClick={() => handleSetBonusResult(q.id)}>
-                    <CheckCircle2 className="h-4 w-4 ml-1" />אשר
+              {!q.correctOptions && (
+                <div className="pt-1 space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium">סמן תשובה/ות נכונות:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {q.options.map(opt => {
+                      const checked = (bonusResultPicks[q.id] ?? []).includes(opt)
+                      return (
+                        <label key={opt}
+                          className={`flex items-center gap-1.5 cursor-pointer rounded-lg border px-3 py-1.5 text-sm transition-colors select-none
+                            ${checked
+                              ? 'border-primary bg-primary/10 text-primary font-medium'
+                              : 'border-border bg-background text-foreground hover:border-primary/40'}`}>
+                          <input
+                            type="checkbox"
+                            className="accent-primary h-3.5 w-3.5"
+                            checked={checked}
+                            onChange={() => toggleBonusResultPick(q.id, opt)}
+                          />
+                          {opt}
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <Button size="sm" disabled={!(bonusResultPicks[q.id]?.length)} onClick={() => handleSetBonusResult(q.id)}>
+                    <CheckCircle2 className="h-4 w-4 ml-1" />אשר תוצאה
                   </Button>
                 </div>
               )}
-              {q.correctOption && (
-                <p className="text-xs text-emerald-600 font-medium">✓ תוצאה סופית: {q.correctOption}</p>
+              {q.correctOptions && (
+                <p className="text-xs text-emerald-600 font-medium">
+                  ✓ תוצאה סופית: {q.correctOptions.join(' / ')}
+                </p>
               )}
             </div>
           ))}

@@ -168,7 +168,7 @@ function DrilldownPanel({
 }: {
   options: string[]
   selected: string | undefined
-  correct: string | null
+  correct: string[] | null
   isLocked: boolean
   isPending: boolean
   onSelect: (opt: string) => void
@@ -212,8 +212,8 @@ function DrilldownPanel({
         ) : (
           filtered.map(opt => {
             const isSelected = selected === opt
-            const isCorrect  = !!correct && correct === opt
-            const isWrong    = !!correct && isSelected && !isCorrect
+            const isCorrect  = !!correct?.length && correct.includes(opt)
+            const isWrong    = !!correct?.length && isSelected && !isCorrect
 
             return (
               <button
@@ -265,7 +265,7 @@ function QuestionCard({
 }) {
   const [open, setOpen] = useState(false)
   const isLocked  = new Date() >= new Date(q.lockTime)
-  const hasResult = !!q.correctOption
+  const hasResult = !!(q.correctOptions?.length)
   const selected  = pick?.pick
   const justSaved = savedId === q.id
   const hasError  = errorId === q.id
@@ -286,7 +286,11 @@ function QuestionCard({
           </div>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {hasResult ? (
-              <p className="text-xs text-muted-foreground">{`תשובה נכונה: ${q.correctOption}`}</p>
+              <p className="text-xs text-muted-foreground">
+                {q.correctOptions!.length === 1
+                  ? `תשובה נכונה: ${q.correctOptions![0]}`
+                  : `תשובות נכונות: ${q.correctOptions!.join(' / ')}`}
+              </p>
             ) : isLocked ? (
               <p className="text-xs text-muted-foreground">ההימור נעול</p>
             ) : (
@@ -340,7 +344,7 @@ function QuestionCard({
         <DrilldownPanel
           options={q.options}
           selected={selected}
-          correct={q.correctOption}
+          correct={q.correctOptions}
           isLocked={isLocked}
           isPending={isPending}
           onSelect={opt => onPick(q, opt)}

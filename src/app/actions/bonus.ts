@@ -11,7 +11,7 @@ type DbBonusQuestion = {
   type: string
   question: string
   options: string[]
-  correct_option: string | null
+  correct_option: string[] | null   // text[] column in DB
   points: number
   lock_time: string
 }
@@ -32,7 +32,7 @@ function mapQuestion(r: DbBonusQuestion): BonusQuestion {
     type: r.type as BonusQuestion['type'],
     question: r.question,
     options: r.options,
-    correctOption: r.correct_option,
+    correctOptions: r.correct_option,   // DB column = correct_option (text[])
     points: r.points,
     lockTime: r.lock_time,
   }
@@ -202,17 +202,18 @@ export async function deleteBonusQuestion(id: string): Promise<{ ok: boolean; er
   return { ok: true }
 }
 
-// ── Admin: mark correct answer + award points ────────────────────
+// ── Admin: mark correct answers (multiple allowed) + award points ─
 export async function setBonusResult(
   questionId: string,
-  correctOption: string
+  correctOptions: string[]   // מערך תשובות נכונות
 ): Promise<{ ok: boolean; awarded: number; error?: string }> {
   await requireAdmin()
+  if (!correctOptions.length) return { ok: false, awarded: 0, error: 'לא נבחרה תשובה נכונה' }
 
-  // Save correct answer
+  // Save correct answers as text[] array
   const { error: qErr } = await supabaseAdmin
     .from('bonus_questions')
-    .update({ correct_option: correctOption, updated_at: new Date().toISOString() })
+    .update({ correct_option: correctOptions, updated_at: new Date().toISOString() })
     .eq('id', questionId)
   if (qErr) return { ok: false, awarded: 0, error: qErr.message }
 
@@ -224,20 +225,21 @@ export async function setBonusResult(
     .single()
   const pts = (q as { points: number } | null)?.points ?? 0
 
-  // Award points to correct picks, 0 to wrong ones
+  // Award points to anyone who picked any of the correct options, 0 to the rest
   const { data: picks } = await supabaseAdmin
     .from('bonus_picks')
     .select('id, pick')
     .eq('bonus_question_id', questionId)
 
+  const correctSet = new Set(correctOptions)
   let awarded = 0
   for (const pick of (picks ?? []) as { id: string; pick: string }[]) {
-    const pointsAwarded = pick.pick === correctOption ? pts : 0
+    const isCorrect = correctSet.has(pick.pick)
     await supabaseAdmin
       .from('bonus_picks')
-      .update({ points_awarded: pointsAwarded, updated_at: new Date().toISOString() })
+      .update({ points_awarded: isCorrect ? pts : 0, updated_at: new Date().toISOString() })
       .eq('id', pick.id)
-    if (pick.pick === correctOption) awarded++
+    if (isCorrect) awarded++
   }
 
   return { ok: true, awarded }

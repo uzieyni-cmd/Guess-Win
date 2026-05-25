@@ -86,7 +86,7 @@ export interface BonusQuestion {
   type: BonusQuestionType
   question: string
   options: string[]
-  correctOption: string | null
+  correctOptions: string[] | null   // null = לא נקבע עדיין; [] = ריק; [x,y] = תשובות מרובות
   points: number
   lockTime: string
 }
