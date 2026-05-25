@@ -27,6 +27,20 @@ export async function POST(req: NextRequest) {
 
     // ── שלוף context מ-Supabase ──────────────────────────────────
     let contextBlock = ''
+    let tournamentName = ''
+    let currentUserName = ''
+
+    // Fetch tournament name + current user name in parallel upfront
+    const [tournamentRes, userProfileRes] = await Promise.all([
+      tournamentId
+        ? supabaseAdmin.from('tournaments').select('name').eq('id', tournamentId).single()
+        : Promise.resolve({ data: null }),
+      userId
+        ? supabaseAdmin.from('profiles').select('display_name').eq('id', userId).single()
+        : Promise.resolve({ data: null }),
+    ])
+    if (tournamentRes.data) tournamentName = (tournamentRes.data as { name: string }).name
+    if (userProfileRes.data) currentUserName = (userProfileRes.data as { display_name: string }).display_name
 
     if (tournamentId) {
       const [participantsRes, finishedMatchesRes, upcomingMatchesRes, userBetsRes, scoredBetsRes, bonusPicksRes] = await Promise.all([
@@ -179,6 +193,7 @@ export async function POST(req: NextRequest) {
       const nowISO = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
       contextBlock = `
 === נתוני הטורניר ===
+שם הטורניר: ${tournamentName || tournamentId}
 שעה נוכחית (ישראל): ${nowISO}
 
 טבלת דירוג:
@@ -198,6 +213,7 @@ ${userBets.length ? `הניחושים שלך:\n${userBets.join('\n')}` : ''}
 ענה רק על שאלות על האתר: דירוגים, ניחושים, תוצאות משחקים, כללי ניקוד.
 אם שואלים על נושא אחר — סרב בנימוס.
 ענה בעברית, קצר וברור.
+${currentUserName ? `\nאתה מדבר עם ${currentUserName}.` : ''}${tournamentName ? `\nהטורניר הנוכחי: ${tournamentName}.` : ''}
 
 כללי ניקוד: תוצאה מדויקת (בול) = 10 נק', כיוון נכון (ניצחון/תיקו/הפסד) = 5 נק', טעות = 0.
 
@@ -218,7 +234,6 @@ ${userBets.length ? `הניחושים שלך:\n${userBets.join('\n')}` : ''}
 - אם משחק מרוחק יותר מ-24 שעות — ציין שהתחזית תינתן קרוב יותר לתאריך המשחק.
 - כשמישהו שואל "היום" — הכוונה ל-24 השעות הקרובות (לא רק יום קלנדרי). כלול משחקים שמתחילים תוך 24 שעות.
 - כשמישהו שואל על "המשחק הקרוב" / "המשחק הבא" / "הבא שלנו" — זהו המשחק עם הערך הנמוך ביותר של "בעוד X שעות" ברשימת המשחקים העתידיים (הראשון ברשימה, שהיא ממוינת לפי זמן עולה).
->>>>>>> origin/main
 ${contextBlock}`
 
     // סנן הודעות assistant ראשונות — LLM צריך להתחיל עם user
