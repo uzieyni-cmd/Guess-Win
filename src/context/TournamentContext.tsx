@@ -94,7 +94,18 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [activeTournamentId, setActiveTournamentIdState] = useState<string | null>(null)
   const [bets, setBets] = useState<Bet[]>([])
   const [participants, setParticipants] = useState<User[]>([])
-  const [bonusPointsByUser, setBonusPointsByUser] = useState<Record<string, number>>({})
+  // Raw bonus picks — Realtime מעדכן שורות בודדות; הסכום נגזר ב-useMemo
+  type BonusPickRaw = { id: string; userId: string; pointsAwarded: number | null }
+  const [bonusPicksRaw, setBonusPicksRaw] = useState<BonusPickRaw[]>([])
+
+  const bonusPointsByUser = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const p of bonusPicksRaw) {
+      if (p.pointsAwarded === null) continue
+      map[p.userId] = (map[p.userId] ?? 0) + p.pointsAwarded
+    }
+    return map
+  }, [bonusPicksRaw])
 
   // baseStandings — נגזר מ-bets state (מתעדכן ב-Realtime) + bonus picks
   // זה מתקן באג שבו הניקוד התאפס בסיום משחק: כי baseStandings היה state קבוע
@@ -305,18 +316,19 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         }))
         setParticipants(profileUsers)
 
-        // Load bonus picks — ניקוד בטים נגזר מ-bets state (Realtime) ב-useMemo
+        // Load bonus picks — כל הרשומות (כולל points_awarded=null) כדי שה-Realtime יוכל לעדכן שורות בודדות
         const { data: bonusPicks } = await supabase
           .from('bonus_picks')
-          .select('user_id, points_awarded')
+          .select('id, user_id, points_awarded')
           .eq('tournament_id', activeTournamentId)
-          .not('points_awarded', 'is', null)
 
-        const newBonusPoints: Record<string, number> = {}
-        for (const row of (bonusPicks ?? []) as { user_id: string; points_awarded: number }[]) {
-          newBonusPoints[row.user_id] = (newBonusPoints[row.user_id] ?? 0) + row.points_awarded
-        }
-        setBonusPointsByUser(newBonusPoints)
+        setBonusPicksRaw(
+          (bonusPicks ?? []).map((p: { id: string; user_id: string; points_awarded: number | null }) => ({
+            id: p.id,
+            userId: p.user_id,
+            pointsAwarded: p.points_awarded,
+          }))
+        )
       }
     }
 
@@ -368,6 +380,42 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
     return () => { supabase.removeChannel(channel) }
   }, [activeTournamentId, tournaments])
+
+  // ── Realtime: bonus_picks — כשהמנהל קובע תשובה נכונה, הדירוג מתעדכן מיד ──
+  useEffect(() => {
+    if (!activeTournamentId) return
+
+    const upsertPick = (row: { id: string; user_id: string; points_awarded: number | null }) => {
+      const pick = { id: row.id, userId: row.user_id, pointsAwarded: row.points_awarded }
+      setBonusPicksRaw(prev => {
+        const idx = prev.findIndex(p => p.id === row.id)
+        if (idx >= 0) {
+          const next = [...prev]
+          next[idx] = pick
+          return next
+        }
+        return [...prev, pick]
+      })
+    }
+
+    const channel = supabase
+      .channel(`bonus-picks-${activeTournamentId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'bonus_picks',
+        filter: `tournament_id=eq.${activeTournamentId}`,
+      }, payload => upsertPick(payload.new as { id: string; user_id: string; points_awarded: number | null }))
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bonus_picks',
+        filter: `tournament_id=eq.${activeTournamentId}`,
+      }, payload => upsertPick(payload.new as { id: string; user_id: string; points_awarded: number | null }))
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [activeTournamentId])
 
   const setActiveTournamentId = useCallback((id: string) => {
     setActiveTournamentIdState(id)
