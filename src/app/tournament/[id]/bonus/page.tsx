@@ -82,10 +82,10 @@ function HeroCountdown({ lockTime }: { lockTime: string }) {
   const warning = r.totalSec < 60 * 60
 
   const blocks = [
-    { value: pad(r.seconds), label: 'שניות'  },
-    { value: pad(r.minutes), label: 'דקות'   },
-    { value: pad(r.hours),   label: 'שעות'   },
     { value: String(r.days), label: 'ימים'   },
+    { value: pad(r.hours),   label: 'שעות'   },
+    { value: pad(r.minutes), label: 'דקות'   },
+    { value: pad(r.seconds), label: 'שניות'  },
   ]
 
   return (
