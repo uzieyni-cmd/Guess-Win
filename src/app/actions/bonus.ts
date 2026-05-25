@@ -161,6 +161,39 @@ export async function updateBonusQuestion(
   return { ok: true }
 }
 
+// ── Admin: sync lock_time for ALL bonus questions in tournament ───
+export async function syncAllBonusLockTimes(
+  tournamentId: string
+): Promise<{ ok: boolean; lockTime?: string; firstMatch?: string; error?: string }> {
+  await requireAdmin()
+
+  const { data: firstMatch } = await supabaseAdmin
+    .from('matches')
+    .select('match_start_time, home_team_name, away_team_name')
+    .eq('tournament_id', tournamentId)
+    .order('match_start_time', { ascending: true })
+    .limit(1)
+    .single()
+
+  if (!firstMatch) return { ok: false, error: 'אין משחקים בטורניר' }
+
+  const fm = firstMatch as { match_start_time: string; home_team_name: string; away_team_name: string }
+  const lockTime = new Date(new Date(fm.match_start_time).getTime() - 10 * 60 * 1000).toISOString()
+
+  console.log('[syncAllBonusLockTimes] firstMatch:', fm.home_team_name, 'vs', fm.away_team_name,
+    '| match_start_time:', fm.match_start_time, '| lock_time:', lockTime)
+
+  const { error } = await supabaseAdmin
+    .from('bonus_questions')
+    .update({ lock_time: lockTime, updated_at: new Date().toISOString() })
+    .eq('tournament_id', tournamentId)
+
+  if (error) return { ok: false, error: error.message }
+
+  const firstMatchLabel = `${fm.home_team_name} נגד ${fm.away_team_name} — ${fm.match_start_time}`
+  return { ok: true, lockTime, firstMatch: firstMatchLabel }
+}
+
 // ── Admin: delete bonus question ─────────────────────────────────
 export async function deleteBonusQuestion(id: string): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin()

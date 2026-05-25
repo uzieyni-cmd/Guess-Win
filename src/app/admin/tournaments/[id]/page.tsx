@@ -1,11 +1,11 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil } from 'lucide-react'
+import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil, Clock } from 'lucide-react'
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
-import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonusQuestion, setBonusResult } from '@/app/actions/bonus'
+import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonusQuestion, setBonusResult, syncAllBonusLockTimes } from '@/app/actions/bonus'
 import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -261,6 +261,8 @@ export default function AdminTournamentDetailPage() {
   const [bonusQuestions, setBonusQuestions] = useState<BonusQuestion[]>([])
   const [bonusMsg, setBonusMsg] = useState('')
   const [bonusResultPick, setBonusResultPick] = useState<Record<string, string>>({})
+  const [syncingLocks, setSyncingLocks] = useState(false)
+  const [syncLockInfo, setSyncLockInfo] = useState('')
   const [addBonusOpen, setAddBonusOpen] = useState(false)
   const [newBonus, setNewBonus] = useState({
     type: 'custom' as BonusQuestion['type'],
@@ -283,6 +285,22 @@ export default function AdminTournamentDetailPage() {
   }, [id])
 
   useEffect(() => { loadBonusQuestions() }, [loadBonusQuestions])
+
+  const handleSyncLockTimes = async () => {
+    setSyncingLocks(true)
+    setSyncLockInfo('')
+    const res = await syncAllBonusLockTimes(id)
+    setSyncingLocks(false)
+    if (res.ok) {
+      const lockISO = res.lockTime!
+      const lockIsrael = new Date(lockISO).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      setSyncLockInfo(`✓ נועל: ${lockIsrael} | משחק: ${res.firstMatch}`)
+      loadBonusQuestions()
+    } else {
+      setSyncLockInfo(`שגיאה: ${res.error}`)
+    }
+    setTimeout(() => setSyncLockInfo(''), 8000)
+  }
 
   const handleAddBonus = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -710,7 +728,12 @@ export default function AdminTournamentDetailPage() {
               <Gift className="h-4 w-4 text-emerald-500" />
               הימורי בונוס
             </CardTitle>
-            <Dialog open={addBonusOpen} onOpenChange={setAddBonusOpen}>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={handleSyncLockTimes} disabled={syncingLocks} title="חשב מחדש זמן נעילה לכל הבונוסים (10 דק' לפני המשחק הראשון)">
+                {syncingLocks ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Clock className="h-4 w-4 ml-1" />}
+                סנכרן נעילות
+              </Button>
+              <Dialog open={addBonusOpen} onOpenChange={setAddBonusOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline"><Plus className="h-4 w-4 ml-1" />הוסף שאלה</Button>
               </DialogTrigger>
@@ -753,9 +776,15 @@ export default function AdminTournamentDetailPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
+          {syncLockInfo && (
+            <p className={`text-sm px-3 py-2 rounded-lg ${syncLockInfo.startsWith('✓') ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-red-50 text-red-700'}`}>
+              {syncLockInfo}
+            </p>
+          )}
           {bonusMsg && (
             <p className={`text-sm px-3 py-2 rounded-lg ${bonusMsg.startsWith('✓') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
               {bonusMsg}
