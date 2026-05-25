@@ -184,11 +184,12 @@ export async function awardRoundBonusForMatch(matchId: string): Promise<void> {
   const winner  = m.actual_home_score > m.actual_away_score ? m.home_team_name : m.away_team_name
   const stage   = normaliseStage(m.round)
 
+  // מחפשים את כל הבחירות של הנבחרת המנצחת בטורניר זה —
+  // ללא סינון לפי שלב, כי הניקוד ניתן לאורך כל הטורניר
   const { data: picks } = await supabaseAdmin
     .from('round_bonus_picks')
     .select('id, points_awarded')
     .eq('tournament_id', m.tournament_id)
-    .eq('stage', stage)
     .eq('team_name', winner)
 
   if (!picks?.length) return
