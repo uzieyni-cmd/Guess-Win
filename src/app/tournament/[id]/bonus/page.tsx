@@ -3,7 +3,7 @@ import { useEffect, useState, useTransition, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { Gift, Lock, CheckCircle2, ChevronDown, Search, X, Timer, Medal } from 'lucide-react'
 import { getBonusQuestions, getMyBonusPicks, submitBonusPick } from '@/app/actions/bonus'
-import { getRoundBonusStages, getMyRoundBonusPicks, submitRoundBonusPick, type RoundBonusStage, type RoundBonusPick } from '@/app/actions/roundBonus'
+import { getTournamentPickConfig, getMyTournamentPick, submitTournamentPick, type TournamentPickConfig, type RoundBonusPick } from '@/app/actions/roundBonus'
 import { translateTeam } from '@/lib/teams-he'
 import { BonusQuestion, BonusPick } from '@/types'
 import { cn } from '@/lib/utils'
@@ -369,39 +369,45 @@ function QuestionCard({
   )
 }
 
-// ── Round picks — card per stage ─────────────────────────────────
-function RoundPickCard({
-  stage, myPick, tournamentId, onPicked,
-}: {
-  stage: RoundBonusStage
-  myPick: RoundBonusPick | undefined
-  tournamentId: string
-  onPicked: (teamName: string) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [saving, startSave] = useTransition()
+// ── Tournament pick section — בחירה אחת לכל הטורניר ─────────────
+function TournamentPickSection({ tournamentId }: { tournamentId: string }) {
+  const [config,  setConfig]  = useState<TournamentPickConfig | null>(null)
+  const [myPick,  setMyPick]  = useState<RoundBonusPick | null>(null)
+  const [open,    setOpen]    = useState(false)
+  const [query,   setQuery]   = useState('')
+  const [saving,  startSave]  = useTransition()
   const [savedOk, setSavedOk] = useState(false)
-  const [err, setErr] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [err,     setErr]     = useState('')
+  const inputRef   = useRef<HTMLInputElement>(null)
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isLocked = new Date() >= new Date(stage.lockTime)
+  useEffect(() => {
+    getTournamentPickConfig(tournamentId).then(setConfig)
+    getMyTournamentPick(tournamentId).then(setMyPick)
+  }, [tournamentId])
+
+  useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current) }, [])
+
+  if (!config) return null
+
+  const isLocked = new Date() >= new Date(config.lockTime)
   const selected = myPick?.teamName
   const pts      = myPick?.pointsAwarded ?? 0
 
   const filtered = query.trim()
-    ? stage.teams.filter(t => t.toLowerCase().includes(query.toLowerCase()) || translateTeam(t).includes(query))
-    : stage.teams
+    ? config.teams.filter(t =>
+        t.toLowerCase().includes(query.toLowerCase()) ||
+        translateTeam(t).includes(query))
+    : config.teams
 
   const handleSelect = (team: string) => {
     if (isLocked || saving) return
     setOpen(false)
     setErr('')
     startSave(async () => {
-      const res = await submitRoundBonusPick(tournamentId, stage.stage, team)
+      const res = await submitTournamentPick(tournamentId, team)
       if (res.ok) {
-        onPicked(team)
+        setMyPick(prev => ({ ...(prev ?? { id: '', tournamentId, userId: '' }), teamName: team, pointsAwarded: prev?.pointsAwarded ?? 0 }))
         setSavedOk(true)
         if (savedTimer.current) clearTimeout(savedTimer.current)
         savedTimer.current = setTimeout(() => setSavedOk(false), 2500)
@@ -411,149 +417,111 @@ function RoundPickCard({
     })
   }
 
-  useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current) }, [])
-
-  return (
-    <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-foreground">{stage.stageHe}</p>
-            {savedOk && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 transition-all duration-300">
-                <CheckCircle2 className="h-3 w-3" />נשמר
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            {isLocked ? (
-              <p className="text-xs text-muted-foreground">ההימור נעול</p>
-            ) : (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  {`נועל: ${new Date(stage.lockTime).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
-                </p>
-                <Countdown lockTime={stage.lockTime} />
-              </>
-            )}
-          </div>
-          {err && <p className="text-xs text-destructive mt-0.5">{err}</p>}
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-          {pts > 0 && (
-            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-              +{pts} נק'
-            </span>
-          )}
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            2 נק' לניצחון
-          </span>
-        </div>
-      </div>
-
-      {/* Trigger button */}
-      <button
-        onClick={() => { if (!isLocked) { setOpen(v => !v); setTimeout(() => inputRef.current?.focus(), 50) } }}
-        disabled={isLocked || saving}
-        className={cn(
-          'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border text-sm transition-all',
-          open
-            ? 'border-primary/60 bg-primary/10'
-            : selected
-            ? 'border-primary/40 bg-primary/10 hover:border-primary/60'
-            : isLocked
-            ? 'border-border/50 bg-muted text-muted-foreground cursor-default'
-            : 'border-border bg-surface-deep text-muted-foreground hover:border-primary/40 hover:text-foreground'
-        )}
-      >
-        <span className="flex-1 min-w-0 text-right font-medium text-foreground truncate">
-          {selected ? translateTeam(selected) : <span className="text-muted-foreground font-normal">בחר נבחרת...</span>}
-        </span>
-        {!isLocked && <ChevronDown className={cn('h-4 w-4 shrink-0 transition-transform duration-200', open && 'rotate-180')} />}
-      </button>
-
-      {/* Drilldown */}
-      {open && (
-        <div className="rounded-xl border border-border bg-surface-deep overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
-            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="חיפוש נבחרת..."
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-              dir="rtl"
-            />
-            {query && <button onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>}
-          </div>
-          <div className="max-h-56 overflow-y-auto py-1 scrollbar-none">
-            {filtered.length === 0
-              ? <p className="text-center text-xs text-muted-foreground py-4">אין תוצאות</p>
-              : filtered.map(team => (
-                <button key={team} onClick={() => handleSelect(team)}
-                  className={cn(
-                    'w-full text-right px-4 py-2.5 text-sm flex items-center justify-between gap-3 transition-colors',
-                    selected === team
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-foreground hover:bg-foreground/8'
-                  )}>
-                  <span className="flex-1 truncate">{translateTeam(team)}</span>
-                  {selected === team && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
-                </button>
-              ))
-            }
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Round picks section ───────────────────────────────────────────
-function RoundPicksSection({ tournamentId }: { tournamentId: string }) {
-  const [stages, setStages]   = useState<RoundBonusStage[]>([])
-  const [myPicks, setMyPicks] = useState<RoundBonusPick[]>([])
-
-  useEffect(() => {
-    getRoundBonusStages(tournamentId).then(setStages)
-    getMyRoundBonusPicks(tournamentId).then(setMyPicks)
-  }, [tournamentId])
-
-  if (!stages.length) return null
-
-  const totalRoundPts = myPicks.reduce((s, p) => s + p.pointsAwarded, 0)
-
   return (
     <div className="mt-8 space-y-4">
+      {/* Section header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Medal className="h-5 w-5 text-primary" />
-          <h2 className="font-suez text-xl text-foreground">בחירת נבחרת לדרג</h2>
+          <h2 className="font-suez text-xl text-foreground">בחירת נבחרת לטורניר</h2>
         </div>
-        {totalRoundPts > 0 && (
+        {pts > 0 && (
           <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
-            סה״כ {totalRoundPts} נק'
+            סה״כ {pts} נק'
           </span>
         )}
       </div>
-      <p className="text-xs text-muted-foreground -mt-2">
-        בחר נבחרת לכל שלב — 2 נקודות על כל ניצחון של הנבחרת שבחרת
-      </p>
-      {stages.map(stage => (
-        <RoundPickCard
-          key={stage.stage}
-          stage={stage}
-          myPick={myPicks.find(p => p.stage === stage.stage)}
-          tournamentId={tournamentId}
-          onPicked={teamName => setMyPicks(prev => [
-            ...prev.filter(p => p.stage !== stage.stage),
-            { id: '', tournamentId, userId: '', stage: stage.stage, teamName, pointsAwarded: 0 },
-          ])}
-        />
-      ))}
+
+      {/* Card */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        {/* Lock info */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0 space-y-1">
+            <p className="text-sm text-muted-foreground">
+              בחר נבחרת אחת — 2 נקודות על כל ניצחון שלה לאורך כל הטורניר
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {isLocked ? (
+                <p className="text-xs text-muted-foreground">ההימור נעול</p>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    {`נועל: ${new Date(config.lockTime).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                  </p>
+                  <Countdown lockTime={config.lockTime} />
+                </>
+              )}
+            </div>
+            {err && <p className="text-xs text-destructive">{err}</p>}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {savedOk && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                <CheckCircle2 className="h-3 w-3" />נשמר
+              </span>
+            )}
+            {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+          </div>
+        </div>
+
+        {/* Trigger */}
+        <button
+          onClick={() => { if (!isLocked) { setOpen(v => !v); setTimeout(() => inputRef.current?.focus(), 50) } }}
+          disabled={isLocked || saving}
+          className={cn(
+            'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border text-sm transition-all',
+            open
+              ? 'border-primary/60 bg-primary/10'
+              : selected
+              ? 'border-primary/40 bg-primary/10 hover:border-primary/60'
+              : isLocked
+              ? 'border-border/50 bg-muted text-muted-foreground cursor-default'
+              : 'border-border bg-surface-deep text-muted-foreground hover:border-primary/40 hover:text-foreground'
+          )}
+        >
+          <span className="flex-1 min-w-0 text-right font-medium text-foreground truncate">
+            {selected
+              ? translateTeam(selected)
+              : <span className="text-muted-foreground font-normal">בחר נבחרת...</span>}
+          </span>
+          {!isLocked && <ChevronDown className={cn('h-4 w-4 shrink-0 transition-transform duration-200', open && 'rotate-180')} />}
+        </button>
+
+        {/* Drilldown */}
+        {open && (
+          <div className="rounded-xl border border-border bg-surface-deep overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
+              <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="חיפוש נבחרת..."
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                dir="rtl"
+              />
+              {query && <button onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>}
+            </div>
+            <div className="max-h-64 overflow-y-auto py-1 scrollbar-none">
+              {filtered.length === 0
+                ? <p className="text-center text-xs text-muted-foreground py-4">אין תוצאות</p>
+                : filtered.map(team => (
+                  <button key={team} onClick={() => handleSelect(team)}
+                    className={cn(
+                      'w-full text-right px-4 py-2.5 text-sm flex items-center justify-between gap-3 transition-colors',
+                      selected === team
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-foreground hover:bg-foreground/8'
+                    )}>
+                    <span className="flex-1 truncate">{translateTeam(team)}</span>
+                    {selected === team && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
+                  </button>
+                ))
+              }
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -637,8 +605,8 @@ export default function BonusPage() {
         />
       ))}
 
-      {/* Round picks section */}
-      <RoundPicksSection tournamentId={id} />
+      {/* Tournament team pick — 2 pts per win throughout tournament */}
+      <TournamentPickSection tournamentId={id} />
     </div>
   )
 }
