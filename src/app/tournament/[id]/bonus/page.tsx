@@ -62,6 +62,85 @@ function Countdown({ lockTime }: { lockTime: string }) {
   )
 }
 
+// ── Hero countdown banner ────────────────────────────────────────
+function HeroCountdown({ lockTime }: { lockTime: string }) {
+  const r = useCountdown(lockTime)
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  if (!r) {
+    // All picks are locked
+    return (
+      <div className="w-full rounded-2xl bg-foreground px-6 py-8 text-center mb-6">
+        <Lock className="h-8 w-8 text-muted-foreground/60 mx-auto mb-2" />
+        <p className="font-suez text-lg text-white/60">הבחירות נסגרו</p>
+      </div>
+    )
+  }
+
+  const urgent  = r.totalSec < 5 * 60
+  const warning = r.totalSec < 60 * 60
+
+  const blocks = [
+    { value: pad(r.seconds), label: 'שניות'  },
+    { value: pad(r.minutes), label: 'דקות'   },
+    { value: pad(r.hours),   label: 'שעות'   },
+    { value: String(r.days), label: 'ימים'   },
+  ]
+
+  return (
+    <div
+      className={cn(
+        'w-full rounded-2xl px-6 py-7 mb-6 transition-colors duration-1000',
+        urgent
+          ? 'bg-destructive/90'
+          : 'bg-foreground'
+      )}
+    >
+      <p className={cn(
+        'text-center text-sm font-medium mb-5 tracking-wide',
+        urgent ? 'text-white/80' : 'text-white/50'
+      )}>
+        סגירת הבחירות בעוד
+      </p>
+
+      <div className="flex justify-center gap-3 sm:gap-6" dir="ltr">
+        {blocks.map(({ value, label }) => (
+          <div key={label} className="flex flex-col items-center gap-1.5 min-w-[52px]">
+            <span
+              className={cn(
+                'font-condensed tabular-nums leading-none',
+                urgent  ? 'text-white text-5xl sm:text-6xl font-black'
+                : warning ? 'text-amber-400 text-5xl sm:text-6xl font-black'
+                : 'text-primary text-5xl sm:text-6xl font-black'
+              )}
+            >
+              {value}
+            </span>
+            <span className={cn(
+              'text-xs tracking-widest uppercase',
+              urgent ? 'text-white/70' : 'text-white/40'
+            )}>
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {warning && !urgent && (
+        <p className="text-center text-xs text-amber-400/80 mt-4 animate-pulse">
+          פחות משעה — מהרו להגיש!
+        </p>
+      )}
+      {urgent && (
+        <p className="text-center text-xs text-white/80 mt-4 animate-pulse font-semibold">
+          פחות מ-5 דקות — מהרו!
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ── Mini toast ───────────────────────────────────────────────────
 function SavedBadge({ show }: { show: boolean }) {
   return (
@@ -338,9 +417,15 @@ export default function BonusPage() {
     )
   }
 
+  // All questions share the same lock_time — use the first one for the hero
+  const lockTime = questions[0]?.lockTime
+
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <div className="flex items-center gap-2 mb-4">
+      {/* Hero countdown */}
+      {lockTime && <HeroCountdown lockTime={lockTime} />}
+
+      <div className="flex items-center gap-2 mb-2">
         <Gift className="h-5 w-5 text-primary" />
         <h2 className="font-suez text-xl text-foreground">הימורי בונוס</h2>
       </div>
