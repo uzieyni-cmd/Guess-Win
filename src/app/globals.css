@@ -131,6 +131,9 @@
   * {
     @apply border-border outline-ring/50;
   }
+  input, textarea, select {
+    color: var(--foreground);
+  }
   html, body {
     overflow-x: clip;
   }
