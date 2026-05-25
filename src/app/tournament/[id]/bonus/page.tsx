@@ -1,10 +1,66 @@
 'use client'
 import { useEffect, useState, useTransition, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { Gift, Lock, CheckCircle2, ChevronDown, Search, X } from 'lucide-react'
+import { Gift, Lock, CheckCircle2, ChevronDown, Search, X, Timer } from 'lucide-react'
 import { getBonusQuestions, getMyBonusPicks, submitBonusPick } from '@/app/actions/bonus'
 import { BonusQuestion, BonusPick } from '@/types'
 import { cn } from '@/lib/utils'
+
+// ── Countdown hook ───────────────────────────────────────────────
+function useCountdown(lockTime: string) {
+  const getRemaining = () => {
+    const diff = new Date(lockTime).getTime() - Date.now()
+    if (diff <= 0) return null
+    const totalSec = Math.floor(diff / 1000)
+    return {
+      days:    Math.floor(totalSec / 86400),
+      hours:   Math.floor((totalSec % 86400) / 3600),
+      minutes: Math.floor((totalSec % 3600) / 60),
+      seconds: totalSec % 60,
+      totalSec,
+    }
+  }
+
+  const [remaining, setRemaining] = useState(getRemaining)
+
+  useEffect(() => {
+    const id = setInterval(() => setRemaining(getRemaining()), 1000)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockTime])
+
+  return remaining
+}
+
+// ── Countdown display ────────────────────────────────────────────
+function Countdown({ lockTime }: { lockTime: string }) {
+  const r = useCountdown(lockTime)
+
+  if (!r) return null   // locked — parent shows lock icon
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  // urgency tiers
+  const urgent  = r.totalSec < 5 * 60          // < 5 min  → red pulse
+  const warning = r.totalSec < 60 * 60          // < 1 hour → amber
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 font-condensed text-xs tracking-wide',
+        urgent  ? 'text-destructive animate-pulse'
+        : warning ? 'text-amber-600'
+        : 'text-muted-foreground'
+      )}
+    >
+      <Timer className="h-3 w-3 shrink-0" />
+      {r.days > 0 && <span>{r.days}י׳ </span>}
+      <span className="tabular-nums">
+        {r.hours > 0 ? `${pad(r.hours)}:` : ''}{pad(r.minutes)}:{pad(r.seconds)}
+      </span>
+    </span>
+  )
+}
 
 // ── Mini toast ───────────────────────────────────────────────────
 function SavedBadge({ show }: { show: boolean }) {
@@ -149,13 +205,20 @@ function QuestionCard({
             <p className="font-semibold text-foreground leading-snug">{q.question}</p>
             <SavedBadge show={justSaved} />
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {hasResult
-              ? `תשובה נכונה: ${q.correctOption}`
-              : isLocked
-              ? 'ההימור נעול'
-              : `נועל: ${new Date(q.lockTime).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
-          </p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {hasResult ? (
+              <p className="text-xs text-muted-foreground">{`תשובה נכונה: ${q.correctOption}`}</p>
+            ) : isLocked ? (
+              <p className="text-xs text-muted-foreground">ההימור נעול</p>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {`נועל: ${new Date(q.lockTime).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                </p>
+                <Countdown lockTime={q.lockTime} />
+              </>
+            )}
+          </div>
           {hasError && (
             <p className="text-xs text-destructive mt-1">שגיאה בשמירה — נסה שוב</p>
           )}
