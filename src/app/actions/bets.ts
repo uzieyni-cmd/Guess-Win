@@ -3,6 +3,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { requireAdmin } from '@/lib/auth-server'
+import { awardRoundBonusForMatch } from './roundBonus'
 
 const MIN = 0
 const MAX = 30
@@ -121,6 +122,9 @@ export async function setActualScoreAction(
       .update({ points, result })
       .eq('id', bet.id)
   }
+
+  // Award 2 pts round bonus to users who picked the winning team in this stage
+  await awardRoundBonusForMatch(matchId)
 
   return { ok: true }
 }
