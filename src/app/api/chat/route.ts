@@ -71,10 +71,9 @@ export async function POST(req: NextRequest) {
         userId
           ? supabaseAdmin
               .from('bets')
-              .select('match_id, predicted_home, predicted_away, points, result, matches(home_team_name, away_team_name, actual_home_score, actual_away_score, status, match_start_time)')
+              .select('match_id, predicted_home, predicted_away, points, result')
               .eq('tournament_id', tournamentId)
               .eq('user_id', userId)
-              .order('match_id')
           : Promise.resolve({ data: [] }),
 
         // All bets for standings
@@ -183,36 +182,42 @@ export async function POST(req: NextRequest) {
         return `${home} נגד ${away}${score} | ${status}${r.round ? ` | ${r.round}` : ''}${timeStr}${oddsStr}${formStr}`
       })
 
-      // user bets — sorted by match time, full detail
-      type UserBetRow = {
-        predicted_home: number
-        predicted_away: number
-        points: number | null
-        result: 'exact' | 'outcome' | 'miss' | null
-        matches: {
-          home_team_name: string
-          away_team_name: string
-          actual_home_score: number | null
-          actual_away_score: number | null
-          status: string
-          match_start_time: string | null
-        } | null
+      // user bets — fetch match details separately to avoid FK join issues
+      type RawBet = { match_id: string; predicted_home: number; predicted_away: number; points: number | null; result: 'exact' | 'outcome' | 'miss' | null }
+      type MatchDetail = { id: string; home_team_name: string; away_team_name: string; actual_home_score: number | null; actual_away_score: number | null; status: string; match_start_time: string | null }
+
+      const rawBets = (userBetsRes.data ?? []) as unknown as RawBet[]
+      console.log('[chat] userBets raw count:', rawBets.length, 'userId:', userId, 'tournamentId:', tournamentId)
+
+      let matchDetailsMap: Record<string, MatchDetail> = {}
+      if (rawBets.length > 0) {
+        const matchIds = rawBets.map(b => b.match_id)
+        const { data: matchRows, error: matchErr } = await supabaseAdmin
+          .from('matches')
+          .select('id, home_team_name, away_team_name, actual_home_score, actual_away_score, status, match_start_time')
+          .in('id', matchIds)
+        if (matchErr) console.error('[chat] match details error:', matchErr.message)
+        for (const m of (matchRows ?? []) as unknown as MatchDetail[]) {
+          matchDetailsMap[m.id] = m
+        }
       }
-      const RESULT_HE: Record<string, string> = { exact: 'מדויק ✓✓', outcome: 'כיוון ✓', miss: 'החטאה ✗' }
-      const rawBets = (userBetsRes.data ?? []) as unknown as UserBetRow[]
+
       const sortedBets = [...rawBets].sort((a, b) => {
-        const ta = a.matches?.match_start_time ? new Date(a.matches.match_start_time).getTime() : 0
-        const tb = b.matches?.match_start_time ? new Date(b.matches.match_start_time).getTime() : 0
+        const ta = matchDetailsMap[a.match_id]?.match_start_time ? new Date(matchDetailsMap[a.match_id].match_start_time!).getTime() : 0
+        const tb = matchDetailsMap[b.match_id]?.match_start_time ? new Date(matchDetailsMap[b.match_id].match_start_time!).getTime() : 0
         return ta - tb
       })
+
+      const RESULT_HE: Record<string, string> = { exact: 'מדויק ✓✓', outcome: 'כיוון ✓', miss: 'החטאה ✗' }
       const userBets = sortedBets.map(r => {
-        const home = translateTeam(r.matches?.home_team_name ?? '')
-        const away = translateTeam(r.matches?.away_team_name ?? '')
-        const finished = r.matches?.status === 'finished'
-        const actualScore = finished && r.matches?.actual_home_score !== null
-          ? `${r.matches!.actual_home_score}:${r.matches!.actual_away_score}`
+        const m = matchDetailsMap[r.match_id]
+        const home = translateTeam(m?.home_team_name ?? '')
+        const away = translateTeam(m?.away_team_name ?? '')
+        const finished = m?.status === 'finished'
+        const actualScore = finished && m?.actual_home_score !== null && m?.actual_home_score !== undefined
+          ? `${m.actual_home_score}:${m.actual_away_score}`
           : null
-        const resultLabel = r.result ? RESULT_HE[r.result] ?? r.result : (finished ? 'לא ניחש' : 'ממתין')
+        const resultLabel = r.result ? (RESULT_HE[r.result] ?? r.result) : (finished ? 'לא ניחש' : 'ממתין')
         const pts = r.points !== null && r.points !== undefined ? `${r.points} נק'` : (finished ? '0 נק\'' : '')
         const actualStr = actualScore ? ` | תוצאה בפועל: ${actualScore}` : ''
         return `${home} נגד ${away}: ניחשת ${r.predicted_home}:${r.predicted_away}${actualStr} | ${resultLabel}${pts ? ` | ${pts}` : ''}`
@@ -220,6 +225,7 @@ export async function POST(req: NextRequest) {
       const totalPoints = sortedBets.reduce((sum, r) => sum + (r.points ?? 0), 0)
       const exactCount   = sortedBets.filter(r => r.result === 'exact').length
       const outcomeCount = sortedBets.filter(r => r.result === 'outcome').length
+      console.log('[chat] userBets formatted:', userBets.length, 'totalPoints:', totalPoints)
 
       const nowISO = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem' })
       contextBlock = `
