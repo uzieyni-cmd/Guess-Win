@@ -275,7 +275,6 @@ export default function AdminTournamentDetailPage() {
     question: '',
     optionsRaw: '',
     points: '10',
-    lockTime: '',
   })
 
   const loadBonusQuestions = useCallback(async () => {
@@ -307,17 +306,11 @@ export default function AdminTournamentDetailPage() {
 
   const openEditBonus = (q: BonusQuestion) => {
     setEditingBonus(q)
-    // convert lockTime ISO → datetime-local format (YYYY-MM-DDTHH:mm)
-    const localLock = q.lockTime
-      ? new Date(new Date(q.lockTime).getTime() - new Date().getTimezoneOffset() * 60000)
-          .toISOString().slice(0, 16)
-      : ''
     setEditBonus({
       type: q.type,
       question: q.question,
       optionsRaw: q.options.join(', '),
       points: String(q.points),
-      lockTime: localLock,
     })
     setEditBonusOpen(true)
   }
@@ -332,7 +325,6 @@ export default function AdminTournamentDetailPage() {
       question: editBonus.question,
       options,
       points: parseInt(editBonus.points) || 10,
-      lockTime: editBonus.lockTime || undefined,
     })
     if (res.ok) {
       setEditBonusOpen(false)
@@ -862,12 +854,9 @@ export default function AdminTournamentDetailPage() {
                 value={editBonus.points}
                 onChange={e => setEditBonus(p => ({ ...p, points: e.target.value }))} />
             </div>
-            <div>
-              <Label>זמן נעילה</Label>
-              <Input className="mt-1" type="datetime-local"
-                value={editBonus.lockTime}
-                onChange={e => setEditBonus(p => ({ ...p, lockTime: e.target.value }))} />
-            </div>
+            <p className="text-xs text-muted-foreground bg-muted/60 rounded-lg px-3 py-2">
+              זמן הנעילה מחושב אוטומטית — 10 דקות לפני תחילת המשחק הראשון בטורניר.
+            </p>
             <div className="flex gap-2">
               <Button type="submit" className="flex-1">
                 <Save className="h-4 w-4 ml-1" />שמור שינויים

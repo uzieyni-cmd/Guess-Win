@@ -116,10 +116,32 @@ export async function updateBonusQuestion(
     question: string
     options: string[]
     points: number
-    lockTime?: string
   }
 ): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin()
+
+  // Fetch the tournament_id for this question so we can recalculate lock_time
+  const { data: qRow } = await supabaseAdmin
+    .from('bonus_questions')
+    .select('tournament_id')
+    .eq('id', id)
+    .single()
+
+  let lockTime: string | undefined
+  if (qRow) {
+    const { data: firstMatch } = await supabaseAdmin
+      .from('matches')
+      .select('match_start_time')
+      .eq('tournament_id', (qRow as { tournament_id: string }).tournament_id)
+      .order('match_start_time', { ascending: true })
+      .limit(1)
+      .single()
+    if (firstMatch) {
+      lockTime = new Date(
+        new Date((firstMatch as { match_start_time: string }).match_start_time).getTime() - 10 * 60 * 1000
+      ).toISOString()
+    }
+  }
 
   const update: Record<string, unknown> = {
     type: input.type,
@@ -128,7 +150,7 @@ export async function updateBonusQuestion(
     points: input.points,
     updated_at: new Date().toISOString(),
   }
-  if (input.lockTime) update.lock_time = new Date(input.lockTime).toISOString()
+  if (lockTime) update.lock_time = lockTime
 
   const { error } = await supabaseAdmin
     .from('bonus_questions')
