@@ -23,34 +23,24 @@ export default function ResetPasswordPage() {
   const [error, setError]           = useState('')
   const [isLoading, setIsLoading]   = useState(false)
 
-  // ── Detect & exchange Supabase reset tokens ───────────────────
+  // ── Session is already set by /auth/callback route handler.
+  //    Just wait for the PASSWORD_RECOVERY event, or verify via getSession. ──
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const code = urlParams.get('code')           // PKCE flow (new Supabase projects)
-    const hash = window.location.hash            // implicit flow (older / classic)
-    const isRecoveryHash = hash.includes('type=recovery')
+    // Check if we already have an active recovery session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) { setStage('form'); return }
+    })
 
-    if (code) {
-      // Exchange the PKCE code for a session
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) setStage('invalid')
-        else setStage('form')
-      })
-      return
-    }
+    // Also listen for PASSWORD_RECOVERY in case event fires after mount
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) setStage('form')
+      if (event === 'SIGNED_IN' && session) setStage('form')
+    })
 
-    if (isRecoveryHash) {
-      // Supabase parses hash tokens automatically; listen for the PASSWORD_RECOVERY event
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-        if (event === 'PASSWORD_RECOVERY') setStage('form')
-      })
-      // Safety timeout — if event never fires the link is expired/invalid
-      const t = setTimeout(() => setStage(s => s === 'loading' ? 'invalid' : s), 6000)
-      return () => { subscription.unsubscribe(); clearTimeout(t) }
-    }
+    // Timeout — if no session arrives within 5s, the link is invalid/expired
+    const t = setTimeout(() => setStage(s => s === 'loading' ? 'invalid' : s), 5000)
 
-    // No token in URL at all
-    setStage('invalid')
+    return () => { subscription.unsubscribe(); clearTimeout(t) }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
