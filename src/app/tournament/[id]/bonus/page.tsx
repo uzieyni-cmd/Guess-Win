@@ -295,12 +295,9 @@ function QuestionCard({
             ) : isLocked ? (
               <p className="text-xs text-muted-foreground">ההימור נעול</p>
             ) : (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  {`נועל: ${new Date(q.lockTime).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
-                </p>
-                <Countdown lockTime={q.lockTime} />
-              </>
+              <p className="text-xs text-muted-foreground">
+                {`נועל: ${new Date(q.lockTime).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+              </p>
             )}
           </div>
           {hasError && (
