@@ -1,10 +1,8 @@
 'use client'
 import { useEffect, useState, useTransition, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { Gift, Lock, CheckCircle2, ChevronDown, Search, X, Timer, Medal } from 'lucide-react'
+import { Gift, Lock, CheckCircle2, ChevronDown, Search, X, Timer } from 'lucide-react'
 import { getBonusQuestions, getMyBonusPicks, submitBonusPick } from '@/app/actions/bonus'
-import { getTournamentPickConfig, getMyTournamentPick, submitTournamentPick, type TournamentPickConfig, type RoundBonusPick } from '@/app/actions/roundBonus'
-import { translateTeam } from '@/lib/teams-he'
 import { BonusQuestion, BonusPick } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -34,36 +32,6 @@ function useCountdown(lockTime: string) {
   return remaining
 }
 
-// ── Countdown display ────────────────────────────────────────────
-function Countdown({ lockTime }: { lockTime: string }) {
-  const r = useCountdown(lockTime)
-
-  if (!r) return null   // locked — parent shows lock icon
-
-  const pad = (n: number) => String(n).padStart(2, '0')
-
-  // urgency tiers
-  const urgent  = r.totalSec < 5 * 60          // < 5 min  → red pulse
-  const warning = r.totalSec < 60 * 60          // < 1 hour → amber
-
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 font-condensed text-xs tracking-wide',
-        urgent  ? 'text-destructive animate-pulse'
-        : warning ? 'text-amber-600'
-        : 'text-muted-foreground'
-      )}
-    >
-      <Timer className="h-3 w-3 shrink-0" />
-      {r.days > 0 && <span>{r.days}י׳ </span>}
-      <span className="tabular-nums">
-        {r.hours > 0 ? `${pad(r.hours)}:` : ''}{pad(r.minutes)}:{pad(r.seconds)}
-      </span>
-    </span>
-  )
-}
-
 // ── Hero countdown banner ────────────────────────────────────────
 function HeroCountdown({ lockTime }: { lockTime: string }) {
   const r = useCountdown(lockTime)
@@ -71,7 +39,6 @@ function HeroCountdown({ lockTime }: { lockTime: string }) {
   const pad = (n: number) => String(n).padStart(2, '0')
 
   if (!r) {
-    // All picks are locked
     return (
       <div className="w-full rounded-2xl bg-foreground px-6 py-8 text-center mb-6">
         <Lock className="h-8 w-8 text-muted-foreground/60 mx-auto mb-2" />
@@ -94,9 +61,7 @@ function HeroCountdown({ lockTime }: { lockTime: string }) {
     <div
       className={cn(
         'w-full rounded-2xl px-6 py-7 mb-6 transition-colors duration-1000',
-        urgent
-          ? 'bg-destructive/90'
-          : 'bg-foreground'
+        urgent ? 'bg-destructive/90' : 'bg-foreground'
       )}
     >
       <p className={cn(
@@ -143,7 +108,7 @@ function HeroCountdown({ lockTime }: { lockTime: string }) {
   )
 }
 
-// ── Mini toast ───────────────────────────────────────────────────
+// ── Mini saved toast ─────────────────────────────────────────────
 function SavedBadge({ show }: { show: boolean }) {
   return (
     <span
@@ -158,7 +123,7 @@ function SavedBadge({ show }: { show: boolean }) {
   )
 }
 
-// ── Drilldown panel for a single question ────────────────────────
+// ── Drilldown panel ──────────────────────────────────────────────
 function DrilldownPanel({
   options,
   selected,
@@ -177,10 +142,6 @@ function DrilldownPanel({
   onClose: () => void
 }) {
   const [query, setQuery] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  // לא מבצעים auto-focus — ימנע קפיצת מקלדת על מובייל
-  // המשתמש יכול ללחוץ על שדה החיפוש בעצמו כשירצה לסנן
 
   const filtered = query.trim()
     ? options.filter(o => o.toLowerCase().includes(query.toLowerCase()))
@@ -188,11 +149,9 @@ function DrilldownPanel({
 
   return (
     <div className="mt-3 rounded-xl border border-border bg-surface-deep overflow-hidden">
-      {/* Search bar */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
         <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         <input
-          ref={inputRef}
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="חיפוש..."
@@ -206,43 +165,40 @@ function DrilldownPanel({
         )}
       </div>
 
-      {/* Options list */}
       <div className="max-h-56 overflow-y-auto py-1 scrollbar-none overscroll-y-contain">
         {filtered.length === 0 ? (
           <p className="text-center text-xs text-muted-foreground py-4">אין תוצאות</p>
-        ) : (
-          filtered.map(opt => {
-            const isSelected = selected === opt
-            const isCorrect  = !!correct?.length && correct.includes(opt)
-            const isWrong    = !!correct?.length && isSelected && !isCorrect
+        ) : filtered.map(opt => {
+          const isSelected = selected === opt
+          const isCorrect  = !!correct?.length && correct.includes(opt)
+          const isWrong    = !!correct?.length && isSelected && !isCorrect
 
-            return (
-              <button
-                key={opt}
-                disabled={isLocked || isPending}
-                onClick={() => { onSelect(opt); onClose() }}
-                className={cn(
-                  'w-full text-right px-4 py-2.5 text-sm flex items-center justify-between gap-3 transition-colors',
-                  isCorrect
-                    ? 'bg-primary/20 text-primary'
-                    : isWrong
-                    ? 'bg-destructive/20 text-destructive line-through'
-                    : isSelected
-                    ? 'bg-primary/10 text-primary'
-                    : isLocked
-                    ? 'text-muted-foreground cursor-default'
-                    : 'text-foreground hover:bg-foreground/8'
-                )}
-              >
-                <span className="flex-1 truncate">{opt}</span>
-                {isCorrect && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
-                {isSelected && !isCorrect && !isWrong && (
-                  <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
-                )}
-              </button>
-            )
-          })
-        )}
+          return (
+            <button
+              key={opt}
+              disabled={isLocked || isPending}
+              onClick={() => { onSelect(opt); onClose() }}
+              className={cn(
+                'w-full text-right px-4 py-2.5 text-sm flex items-center justify-between gap-3 transition-colors',
+                isCorrect
+                  ? 'bg-primary/20 text-primary'
+                  : isWrong
+                  ? 'bg-destructive/20 text-destructive line-through'
+                  : isSelected
+                  ? 'bg-primary/10 text-primary'
+                  : isLocked
+                  ? 'text-muted-foreground cursor-default'
+                  : 'text-foreground hover:bg-foreground/8'
+              )}
+            >
+              <span className="flex-1 truncate">{opt}</span>
+              {isCorrect && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+              {isSelected && !isCorrect && !isWrong && (
+                <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -271,21 +227,16 @@ function QuestionCard({
   const justSaved = savedId === q.id
   const hasError  = errorId === q.id
 
-  const toggleOpen = () => {
-    if (isLocked) return
-    setOpen(v => !v)
-  }
-
   return (
     <div className="bg-card border border-border rounded-2xl p-4">
-      {/* Header row */}
+      {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-foreground leading-snug">{q.question}</p>
             <SavedBadge show={justSaved} />
           </div>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <div className="mt-1">
             {hasResult ? (
               <p className="text-xs text-muted-foreground">
                 {q.correctOptions!.length === 1
@@ -296,9 +247,7 @@ function QuestionCard({
               <p className="text-xs text-muted-foreground">ההימור נעול</p>
             ) : null}
           </div>
-          {hasError && (
-            <p className="text-xs text-destructive mt-1">שגיאה בשמירה — נסה שוב</p>
-          )}
+          {hasError && <p className="text-xs text-destructive mt-1">שגיאה בשמירה — נסה שוב</p>}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
@@ -308,9 +257,9 @@ function QuestionCard({
         </div>
       </div>
 
-      {/* Current selection / trigger */}
+      {/* Trigger */}
       <button
-        onClick={toggleOpen}
+        onClick={() => { if (!isLocked) setOpen(v => !v) }}
         disabled={isLocked || isPending}
         className={cn(
           'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border text-sm transition-all',
@@ -323,7 +272,7 @@ function QuestionCard({
             : 'border-border bg-surface-deep text-muted-foreground hover:border-primary/40 hover:text-foreground'
         )}
       >
-        <span className="flex items-center gap-2 flex-1 min-w-0">
+        <span className="flex-1 min-w-0">
           {selected
             ? <span className="truncate font-medium text-foreground">{selected}</span>
             : <span className="text-muted-foreground">בחר תשובה...</span>}
@@ -361,163 +310,6 @@ function QuestionCard({
   )
 }
 
-// ── Tournament pick section — בחירה אחת לכל הטורניר ─────────────
-function TournamentPickSection({ tournamentId }: { tournamentId: string }) {
-  const [config,  setConfig]  = useState<TournamentPickConfig | null>(null)
-  const [myPick,  setMyPick]  = useState<RoundBonusPick | null>(null)
-  const [open,    setOpen]    = useState(false)
-  const [query,   setQuery]   = useState('')
-  const [saving,  startSave]  = useTransition()
-  const [savedOk, setSavedOk] = useState(false)
-  const [err,     setErr]     = useState('')
-  const inputRef   = useRef<HTMLInputElement>(null)
-  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    getTournamentPickConfig(tournamentId).then(setConfig)
-    getMyTournamentPick(tournamentId).then(setMyPick)
-  }, [tournamentId])
-
-  useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current) }, [])
-
-  if (!config) return null
-
-  const isLocked = new Date() >= new Date(config.lockTime)
-  const selected = myPick?.teamName
-  const pts      = myPick?.pointsAwarded ?? 0
-
-  const filtered = query.trim()
-    ? config.teams.filter(t =>
-        t.toLowerCase().includes(query.toLowerCase()) ||
-        translateTeam(t).includes(query))
-    : config.teams
-
-  const handleSelect = (team: string) => {
-    if (isLocked || saving) return
-    setOpen(false)
-    setErr('')
-    startSave(async () => {
-      const res = await submitTournamentPick(tournamentId, team)
-      if (res.ok) {
-        setMyPick(prev => ({ ...(prev ?? { id: '', tournamentId, userId: '' }), teamName: team, pointsAwarded: prev?.pointsAwarded ?? 0 }))
-        setSavedOk(true)
-        if (savedTimer.current) clearTimeout(savedTimer.current)
-        savedTimer.current = setTimeout(() => setSavedOk(false), 2500)
-      } else {
-        setErr(res.error ?? 'שגיאה בשמירה')
-      }
-    })
-  }
-
-  return (
-    <div className="mt-8 space-y-4">
-      {/* Section header */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Medal className="h-5 w-5 text-primary" />
-          <h2 className="font-suez text-xl text-foreground">בחירת נבחרת לטורניר</h2>
-        </div>
-        {pts > 0 && (
-          <span className="text-sm font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
-            סה״כ {pts} נק'
-          </span>
-        )}
-      </div>
-
-      {/* Card */}
-      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-        {/* Lock info */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0 space-y-1">
-            <p className="text-sm text-muted-foreground">
-              בחר נבחרת אחת — 2 נקודות על כל ניצחון שלה לאורך כל הטורניר
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {isLocked ? (
-                <p className="text-xs text-muted-foreground">ההימור נעול</p>
-              ) : (
-                <>
-                  <p className="text-xs text-muted-foreground">
-                    {`נועל: ${new Date(config.lockTime).toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
-                  </p>
-                  <Countdown lockTime={config.lockTime} />
-                </>
-              )}
-            </div>
-            {err && <p className="text-xs text-destructive">{err}</p>}
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {savedOk && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
-                <CheckCircle2 className="h-3 w-3" />נשמר
-              </span>
-            )}
-            {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
-          </div>
-        </div>
-
-        {/* Trigger */}
-        <button
-          onClick={() => { if (!isLocked) setOpen(v => !v) }}
-          disabled={isLocked || saving}
-          className={cn(
-            'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border text-sm transition-all',
-            open
-              ? 'border-primary/60 bg-primary/10'
-              : selected
-              ? 'border-primary/40 bg-primary/10 hover:border-primary/60'
-              : isLocked
-              ? 'border-border/50 bg-muted text-muted-foreground cursor-default'
-              : 'border-border bg-surface-deep text-muted-foreground hover:border-primary/40 hover:text-foreground'
-          )}
-        >
-          <span className="flex-1 min-w-0 text-right font-medium text-foreground truncate">
-            {selected
-              ? translateTeam(selected)
-              : <span className="text-muted-foreground font-normal">בחר נבחרת...</span>}
-          </span>
-          {!isLocked && <ChevronDown className={cn('h-4 w-4 shrink-0 transition-transform duration-200', open && 'rotate-180')} />}
-        </button>
-
-        {/* Drilldown */}
-        {open && (
-          <div className="rounded-xl border border-border bg-surface-deep overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
-              <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="חיפוש נבחרת..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                dir="rtl"
-              />
-              {query && <button onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>}
-            </div>
-            <div className="max-h-64 overflow-y-auto py-1 scrollbar-none overscroll-y-contain">
-              {filtered.length === 0
-                ? <p className="text-center text-xs text-muted-foreground py-4">אין תוצאות</p>
-                : filtered.map(team => (
-                  <button key={team} onClick={() => handleSelect(team)}
-                    className={cn(
-                      'w-full text-right px-4 py-2.5 text-sm flex items-center justify-between gap-3 transition-colors',
-                      selected === team
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-foreground hover:bg-foreground/8'
-                    )}>
-                    <span className="flex-1 truncate">{translateTeam(team)}</span>
-                    {selected === team && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
-                  </button>
-                ))
-              }
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ── Page ─────────────────────────────────────────────────────────
 export default function BonusPage() {
   const { id } = useParams<{ id: string }>()
@@ -533,18 +325,15 @@ export default function BonusPage() {
     getMyBonusPicks(id).then(setPicks)
   }, [id])
 
-  // cleanup timer on unmount
   useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current) }, [])
 
-  const myPick = (questionId: string) =>
-    picks.find(p => p.bonusQuestionId === questionId)
+  const myPick = (questionId: string) => picks.find(p => p.bonusQuestionId === questionId)
 
   const handlePick = (q: BonusQuestion, option: string) => {
     if (myPick(q.id)?.pick === option) return
     if (new Date() >= new Date(q.lockTime)) return
 
     setErrorId(null)
-
     startTransition(async () => {
       const res = await submitBonusPick(q.id, id, option)
       if (res.ok) {
@@ -552,7 +341,6 @@ export default function BonusPage() {
           ...prev.filter(p => p.bonusQuestionId !== q.id),
           { id: '', bonusQuestionId: q.id, tournamentId: id, userId: '', pick: option, pointsAwarded: null },
         ])
-        // Show "נשמר ✓" badge for 2.5 s
         setSavedId(q.id)
         if (savedTimer.current) clearTimeout(savedTimer.current)
         savedTimer.current = setTimeout(() => setSavedId(null), 2500)
@@ -572,12 +360,10 @@ export default function BonusPage() {
     )
   }
 
-  // All questions share the same lock_time — use the first one for the hero
   const lockTime = questions[0]?.lockTime
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      {/* Hero countdown */}
       {lockTime && <HeroCountdown lockTime={lockTime} />}
 
       <div className="flex items-center gap-2 mb-2">
@@ -596,9 +382,6 @@ export default function BonusPage() {
           onPick={handlePick}
         />
       ))}
-
-      {/* Tournament team pick — 2 pts per win throughout tournament */}
-      <TournamentPickSection tournamentId={id} />
     </div>
   )
 }

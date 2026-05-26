@@ -78,7 +78,7 @@ export interface BetResult {
   points: number
 }
 
-export type BonusQuestionType = 'winner' | 'top_scorer' | 'custom'
+export type BonusQuestionType = 'winner' | 'top_scorer' | 'custom' | 'team_pick'
 
 export interface BonusQuestion {
   id: string

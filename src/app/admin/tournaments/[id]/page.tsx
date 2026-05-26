@@ -1,12 +1,13 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil, Clock } from 'lucide-react'
+import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil, Clock, ArrowUp } from 'lucide-react'
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
 import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonusQuestion, setBonusResult, syncAllBonusLockTimes } from '@/app/actions/bonus'
 import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
+import { awardAdvancementBonus, syncExistingTeamPicks, getTeamPickTeams } from '@/app/actions/roundBonus'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { Match, BonusQuestion, UserRole } from '@/types'
 import { ApiFixture } from '@/lib/api-football'
+import { cn } from '@/lib/utils'
 import { translateTeam } from '@/lib/teams-he'
 
 // ── BracketConfigSection ─────────────────────────────────────────
@@ -230,6 +232,131 @@ function BracketConfigSection({ tournamentId }: { tournamentId: string }) {
               )}
             </div>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ── Advancement bonus section (+5 per team that advanced a round) ─
+function AdvancementBonusSection({ tournamentId }: { tournamentId: string }) {
+  const [teams,      setTeams]      = useState<string[]>([])
+  const [selected,   setSelected]   = useState<Set<string>>(new Set())
+  const [loading,    setLoading]    = useState(true)
+  const [syncing,    setSyncing]    = useState(false)
+  const [awarding,   setAwarding]   = useState(false)
+  const [msg,        setMsg]        = useState('')
+
+  useEffect(() => {
+    getTeamPickTeams(tournamentId).then(t => { setTeams(t); setLoading(false) })
+  }, [tournamentId])
+
+  const toggleTeam = (team: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(team) ? next.delete(team) : next.add(team)
+      return next
+    })
+  }
+
+  const handleAward = async () => {
+    if (!selected.size) return
+    setAwarding(true)
+    setMsg('')
+    const res = await awardAdvancementBonus(tournamentId, Array.from(selected))
+    setAwarding(false)
+    if (res.ok) {
+      setMsg(`✓ הוענקו 5 נק' ל-${res.awarded} בחירות`)
+      setSelected(new Set())
+    } else {
+      setMsg(`שגיאה: ${res.error}`)
+    }
+    setTimeout(() => setMsg(''), 4000)
+  }
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setMsg('')
+    const res = await syncExistingTeamPicks(tournamentId)
+    setSyncing(false)
+    // Refresh teams list
+    getTeamPickTeams(tournamentId).then(setTeams)
+    setMsg(res.ok ? `✓ סונכרנו ${res.synced} בחירות` : `שגיאה: ${res.error}`)
+    setTimeout(() => setMsg(''), 4000)
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ArrowUp className="h-4 w-4 text-emerald-500" />
+            עליה לשלב הבא — +5 נק' לכל מי שבחר
+          </CardTitle>
+          <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing} title="סנכרן בחירות קיימות מ-bonus_picks ל-round_bonus_picks">
+            {syncing ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-1" />}
+            סנכרן בחירות
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          סמן את הנבחרות שעלו לשלב הבא ולחץ &quot;הענק 5 נק'&quot;. ניתן להפעיל מספר פעמים לפי שלב.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {msg && (
+          <p className={`text-sm px-3 py-2 rounded-lg ${msg.startsWith('✓') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700'}`}>
+            {msg}
+          </p>
+        )}
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground py-4">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">טוען נבחרות...</span>
+          </div>
+        ) : teams.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            אין נבחרות בטבלה — לחץ &quot;סנכרן בחירות&quot; אחרי שהמשתמשים בחרו
+          </p>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2">
+              {teams.map(team => {
+                const checked = selected.has(team)
+                return (
+                  <label key={team}
+                    className={cn(
+                      'flex items-center gap-2 cursor-pointer rounded-xl border px-3 py-2 text-sm transition-colors select-none',
+                      checked
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-medium'
+                        : 'border-border bg-background text-foreground hover:border-emerald-300'
+                    )}>
+                    <input
+                      type="checkbox"
+                      className="accent-emerald-500 h-3.5 w-3.5"
+                      checked={checked}
+                      onChange={() => toggleTeam(team)}
+                    />
+                    {team}
+                  </label>
+                )
+              })}
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <Button
+                size="sm"
+                onClick={handleAward}
+                disabled={awarding || !selected.size}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {awarding
+                  ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+                  : <ArrowUp className="h-4 w-4 ml-1" />}
+                הענק 5 נק' ({selected.size} נבחרות)
+              </Button>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
@@ -686,6 +813,9 @@ export default function AdminTournamentDetailPage() {
 
       <BracketConfigSection tournamentId={id} />
 
+      {/* ── עליה לשלב הבא — +5 נק' ───────────────────────────────── */}
+      <AdvancementBonusSection tournamentId={id} />
+
       {/* ── מנהלי טורניר ─────────────────────────────────────────── */}
       <Card className="mt-6">
         <CardHeader>
@@ -764,6 +894,7 @@ export default function AdminTournamentDetailPage() {
                       <option value="winner">מנצחת הטורניר</option>
                       <option value="top_scorer">מלך השערים</option>
                       <option value="custom">מותאם אישית</option>
+                      <option value="team_pick">בחירת נבחרת (מדורגת)</option>
                     </select>
                   </div>
                   <div>
@@ -893,6 +1024,7 @@ export default function AdminTournamentDetailPage() {
                 <option value="winner">מנצחת הטורניר</option>
                 <option value="top_scorer">מלך השערים</option>
                 <option value="custom">מותאם אישית</option>
+                <option value="team_pick">בחירת נבחרת (מדורגת)</option>
               </select>
             </div>
             <div>
