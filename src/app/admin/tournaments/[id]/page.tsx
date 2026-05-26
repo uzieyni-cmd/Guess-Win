@@ -405,6 +405,7 @@ export default function AdminTournamentDetailPage() {
     optionsRaw: '',
     points: '10',
   })
+  const [editBonusError, setEditBonusError] = useState('')
 
   const loadBonusQuestions = useCallback(async () => {
     const qs = await getBonusQuestions(id)
@@ -462,21 +463,28 @@ export default function AdminTournamentDetailPage() {
 
   const handleEditBonus = async (e: React.FormEvent) => {
     e.preventDefault()
+    setEditBonusError('')
     if (!editingBonus) return
     const options = editBonus.optionsRaw.split(',').map(s => s.trim()).filter(Boolean)
-    if (!editBonus.question || options.length < 2) return
-    const res = await updateBonusQuestion(editingBonus.id, {
-      type: editBonus.type,
-      question: editBonus.question,
-      options,
-      points: parseInt(editBonus.points) || 10,
-    })
-    if (res.ok) {
-      setEditBonusOpen(false)
-      setEditingBonus(null)
-      loadBonusQuestions()
-    } else {
-      setBonusMsg(res.error ?? 'שגיאה')
+    if (!editBonus.question) { setEditBonusError('חסרה כותרת שאלה'); return }
+    if (options.length < 2) { setEditBonusError('נדרשות לפחות 2 אפשרויות'); return }
+    try {
+      const res = await updateBonusQuestion(editingBonus.id, {
+        type: editBonus.type,
+        question: editBonus.question,
+        options,
+        points: parseInt(editBonus.points) || 10,
+      })
+      if (res.ok) {
+        setEditBonusOpen(false)
+        setEditingBonus(null)
+        setEditBonusError('')
+        loadBonusQuestions()
+      } else {
+        setEditBonusError(res.error ?? 'שגיאה בשמירה')
+      }
+    } catch (err) {
+      setEditBonusError(err instanceof Error ? err.message : 'שגיאה בלתי צפויה')
     }
   }
 
@@ -1048,11 +1056,16 @@ export default function AdminTournamentDetailPage() {
             <p className="text-xs text-muted-foreground bg-muted/60 rounded-lg px-3 py-2">
               זמן הנעילה מחושב אוטומטית — 10 דקות לפני תחילת המשחק הראשון בטורניר.
             </p>
+            {editBonusError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {editBonusError}
+              </p>
+            )}
             <div className="flex gap-2">
               <Button type="submit" className="flex-1">
                 <Save className="h-4 w-4 ml-1" />שמור שינויים
               </Button>
-              <Button type="button" variant="outline" onClick={() => setEditBonusOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => { setEditBonusOpen(false); setEditBonusError('') }}>
                 ביטול
               </Button>
             </div>
