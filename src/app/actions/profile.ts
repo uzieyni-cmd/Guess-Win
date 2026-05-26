@@ -29,3 +29,28 @@ export async function uploadAvatar(
   if (error) return { error: error.message }
   return { url: dataUrl }
 }
+
+// ── Change password (server-side to avoid SSR cookie conflicts) ───
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) return { ok: false, error: 'לא מחובר' }
+
+  // Verify current password
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  })
+  if (signInError) return { ok: false, error: 'הסיסמה הנוכחית שגויה' }
+
+  // Update password via admin (bypasses session issues)
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+    password: newPassword,
+  })
+  if (error) return { ok: false, error: error.message }
+
+  return { ok: true }
+}

@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
-import { uploadAvatar } from '@/app/actions/profile'
+import { uploadAvatar, changePassword } from '@/app/actions/profile'
 
 interface Stats {
   totalBets: number
@@ -168,12 +168,11 @@ function ProfileContent() {
 
     setPwLoading(true)
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email: currentUser.email, password: currentPw })
-      if (signInError) { setPwError('הסיסמה הנוכחית שגויה'); return }
-
-      const { error } = await supabase.auth.updateUser({ password: newPw })
-      if (error) throw error
-
+      const res = await changePassword(currentPw, newPw)
+      if (!res.ok) {
+        setPwError(res.error ?? 'שגיאה בשינוי הסיסמה')
+        return
+      }
       setPwSuccess(true)
       setCurrentPw(''); setNewPw(''); setConfirmPw('')
       setTimeout(() => setPwSuccess(false), 3000)
