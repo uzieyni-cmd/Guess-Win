@@ -179,9 +179,8 @@ function DrilldownPanel({
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+  // לא מבצעים auto-focus — ימנע קפיצת מקלדת על מובייל
+  // המשתמש יכול ללחוץ על שדה החיפוש בעצמו כשירצה לסנן
 
   const filtered = query.trim()
     ? options.filter(o => o.toLowerCase().includes(query.toLowerCase()))
@@ -208,7 +207,7 @@ function DrilldownPanel({
       </div>
 
       {/* Options list */}
-      <div className="max-h-56 overflow-y-auto py-1 scrollbar-none">
+      <div className="max-h-56 overflow-y-auto py-1 scrollbar-none overscroll-y-contain">
         {filtered.length === 0 ? (
           <p className="text-center text-xs text-muted-foreground py-4">אין תוצאות</p>
         ) : (
@@ -466,7 +465,7 @@ function TournamentPickSection({ tournamentId }: { tournamentId: string }) {
 
         {/* Trigger */}
         <button
-          onClick={() => { if (!isLocked) { setOpen(v => !v); setTimeout(() => inputRef.current?.focus(), 50) } }}
+          onClick={() => { if (!isLocked) setOpen(v => !v) }}
           disabled={isLocked || saving}
           className={cn(
             'w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl border text-sm transition-all',
@@ -502,7 +501,7 @@ function TournamentPickSection({ tournamentId }: { tournamentId: string }) {
               />
               {query && <button onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>}
             </div>
-            <div className="max-h-64 overflow-y-auto py-1 scrollbar-none">
+            <div className="max-h-64 overflow-y-auto py-1 scrollbar-none overscroll-y-contain">
               {filtered.length === 0
                 ? <p className="text-center text-xs text-muted-foreground py-4">אין תוצאות</p>
                 : filtered.map(team => (
