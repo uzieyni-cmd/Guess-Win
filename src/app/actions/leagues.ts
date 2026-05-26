@@ -1,6 +1,7 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdmin } from '@/lib/auth-server'
 
 const BASE_URL = 'https://v3.football.api-sports.io'
 
@@ -43,6 +44,7 @@ export interface LeagueItem {
 // מחזיר את כל הליגות והגביעים
 // סדר עדיפויות: in-memory → Supabase DB → API Football (fallback ראשוני בלבד)
 export async function fetchAllLeagues(): Promise<LeagueItem[]> {
+  await requireAdmin()
   // 1. in-memory cache (מהיר ביותר)
   if (allLeaguesCache) return allLeaguesCache
 
@@ -68,7 +70,7 @@ export async function fetchAllLeagues(): Promise<LeagueItem[]> {
 }
 
 // פונקציה פנימית — שולפת מה-API ומחזירה רשימה מסודרת
-export async function fetchLeaguesFromApi(): Promise<LeagueItem[]> {
+async function fetchLeaguesFromApi(): Promise<LeagueItem[]> {
   const [leagues, cups] = await Promise.all([
     apiFetch<ApiLeagueResponse[]>('/leagues?type=league'),
     apiFetch<ApiLeagueResponse[]>('/leagues?type=cup'),
@@ -89,6 +91,7 @@ export async function fetchLeaguesFromApi(): Promise<LeagueItem[]> {
 export async function fetchLeagueSeasons(
   leagueId: number
 ): Promise<{ seasons: { year: number; label: string; current: boolean }[]; logoUrl: string }> {
+  await requireAdmin()
   const rows = await apiFetch<ApiLeagueResponse[]>(`/leagues?id=${leagueId}`)
   if (!rows?.length) return { seasons: [], logoUrl: '' }
 
