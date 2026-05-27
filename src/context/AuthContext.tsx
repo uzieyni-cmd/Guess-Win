@@ -190,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut()
+    await supabase.auth.signOut({ scope: 'global' })
     setCurrentUser(null)
     setUserId(null)
   }, [])

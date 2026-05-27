@@ -51,7 +51,7 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
                 <Settings className="h-4 w-4" />
               </button>
             )}
-            <button onClick={() => { logout(); router.push('/login') }}
+            <button onClick={async () => { await logout(); router.push('/login') }}
               aria-label="התנתקות"
               className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-foreground/8 min-h-[44px] min-w-[44px] flex items-center justify-center">
               <LogOut className="h-4 w-4" />

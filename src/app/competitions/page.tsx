@@ -28,7 +28,7 @@ function CompetitionsContent() {
     <div className="min-h-screen bg-gradient-to-b from-base to-surface-deep">
       <SiteHeader
         left={
-          <button onClick={() => { logout(); router.push('/login') }}
+          <button onClick={async () => { await logout(); router.push('/login') }}
             className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-foreground/8 min-h-[36px]">
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">יציאה</span>
