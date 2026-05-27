@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { BackgroundBeamsWithCollision } from '@/components/ui/background-beams-with-collision'
 import { LoginForm } from '@/components/auth/LoginForm'
 
@@ -9,7 +10,9 @@ export default function LoginPage() {
           Guess&amp;Win
         </h1>
         <p className="text-primary mb-8 text-center text-lg font-medium">ליגת ניחושי כדורגל</p>
-        <LoginForm />
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </BackgroundBeamsWithCollision>
   )
