@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { fetchLeaguesFromApi } from '@/app/actions/leagues'
+import { fetchLeaguesFromApi } from '@/lib/leagues-api'
 
 // Vercel Cron — פעם בשבוע ראשון בחצות (vercel.json)
 export const runtime = 'nodejs'
