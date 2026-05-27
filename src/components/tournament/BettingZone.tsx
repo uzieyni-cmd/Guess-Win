@@ -65,14 +65,14 @@ export function BettingZone({ matches }: Props) {
         <div className={cn(
           'flex items-center justify-between rounded-xl px-4 py-3 border transition-colors',
           jokersLeft === 0
-            ? 'bg-violet-600/10 border-violet-500/30'
-            : 'bg-violet-50 border-violet-200',
+            ? 'bg-red-600/10 border-red-500/30'
+            : 'bg-red-50 border-red-200',
         )}>
           <div className="flex items-center gap-2.5">
-            <JokerCardIcon className="h-5 w-5 text-violet-600" active />
+            <JokerCardIcon className="h-5 w-5 text-red-600" active />
             <div>
-              <p className="text-sm font-bold text-violet-800">ג&apos;וקר — כפילת ניקוד</p>
-              <p className="text-xs text-violet-600 leading-tight">
+              <p className="text-sm font-bold text-red-800">ג&apos;וקר — כפילת ניקוד</p>
+              <p className="text-xs text-red-600 leading-tight">
                 סמן עד {MAX_JOKERS} משחקים בשלב הבתים לקבל ×2 על הניחוש
               </p>
             </div>
@@ -85,8 +85,8 @@ export function BettingZone({ matches }: Props) {
                 className={cn(
                   'w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all',
                   i < myJokerCount
-                    ? 'bg-violet-600 border-violet-600 text-white'
-                    : 'border-violet-300 bg-transparent'
+                    ? 'bg-red-600 border-red-600 text-white'
+                    : 'border-red-300 bg-transparent'
                 )}
               >
                 {i < myJokerCount && (
