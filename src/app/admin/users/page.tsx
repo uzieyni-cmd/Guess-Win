@@ -29,7 +29,7 @@ const ROLE_COLOR: Record<UserRole, string> = {
 
 export default function AdminUsersPage() {
   const { tournaments, updateUserPermissions } = useTournament()
-  const { currentUser } = useAuth()
+  const { currentUser, isProfileReady } = useAuth()
   const [users, setUsers]             = useState<FullUser[]>([])
   const [permissions, setPermissions] = useState<Record<string, string[]>>({})
   const [saved, setSaved]             = useState<string[]>([])
@@ -38,7 +38,8 @@ export default function AdminUsersPage() {
   const [roleMsg, setRoleMsg]         = useState('')
   const [myTournamentIds, setMyTournamentIds] = useState<string[] | 'all'>('all')
 
-  const callerRole = currentUser?.role as UserRole
+  // Wait for full profile so role is authoritative (not the 'user' default)
+  const callerRole = (isProfileReady ? currentUser?.role : undefined) as UserRole | undefined
   const isFullAdmin = callerRole === 'admin'
   const isTournamentAdmin = callerRole === 'tournament_admin'
 
@@ -201,10 +202,10 @@ const handleSetRole = async (userId: string, newRole: UserRole) => {
           const isMe = user.id === currentUser?.id
           // admin can promote/demote to tournament_admin
           const canSetTournamentAdmin = !isMe && callerRole === 'admin' && user.role !== 'admin'
-          // admin + tournament_admin can delete regular users
+          // admin + tournament_admin can delete any non-admin user
           const canDelete = !isMe &&
             (callerRole === 'admin' || callerRole === 'tournament_admin') &&
-            user.role === 'user'
+            user.role !== 'admin'
 
           return (
             <div key={user.id} className="rounded-xl bg-card border border-border overflow-hidden">
