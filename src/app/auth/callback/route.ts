@@ -20,14 +20,11 @@ export async function GET(request: NextRequest) {
   const type       = searchParams.get('type')
   const next       = searchParams.get('next') ?? '/'
 
-  console.log('[auth/callback] params:', { code: !!code, token_hash: !!token_hash, type, next, url: request.nextUrl.toString() })
-
   const supabase = await createSupabaseServerClient()
 
   // ── 1. PKCE code exchange ─────────────────────────────────────────
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    console.log('[auth/callback] code exchange result:', { error: error?.message })
     if (!error) {
       const destination = type === 'recovery' ? '/reset-password' : next
       return NextResponse.redirect(new URL(destination, origin))

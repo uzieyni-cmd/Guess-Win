@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, Mail, Lock, User, Phone, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import Image from 'next/image'
@@ -16,10 +16,19 @@ type Tab = 'login' | 'register' | 'forgot'
 export function LoginForm() {
   const { login, register, currentUser } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     if (currentUser) router.push('/competitions')
   }, [currentUser, router])
+
+  useEffect(() => {
+    const err = searchParams.get('error')
+    if (err === 'link_expired') {
+      setError('קישור האיפוס פג תוקף. שלח בקשה חדשה.')
+      setTab('forgot')
+    }
+  }, [searchParams])
 
   const [tab, setTab] = useState<Tab>('login')
   const [email, setEmail]             = useState('')
