@@ -28,13 +28,20 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     // Check if we already have an active recovery session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) { setStage('form'); return }
+      if (session) setStage('form')
     })
 
-    // Also listen for PASSWORD_RECOVERY in case event fires after mount
+    // Listen for all relevant auth events (server-side PKCE exchange emits INITIAL_SESSION
+    // or SIGNED_IN on the client, not necessarily PASSWORD_RECOVERY)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' && session) setStage('form')
-      if (event === 'SIGNED_IN' && session) setStage('form')
+      if (session && (
+        event === 'PASSWORD_RECOVERY' ||
+        event === 'SIGNED_IN' ||
+        event === 'INITIAL_SESSION'
+      )) {
+        setStage('form')
+      }
+      if (event === 'SIGNED_OUT') setStage('invalid')
     })
 
     // Timeout — if no session arrives within 5s, the link is invalid/expired
@@ -50,14 +57,24 @@ export default function ResetPasswordPage() {
     if (password !== confirm) { setError('הסיסמאות אינן תואמות'); return }
 
     setIsLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
-    setIsLoading(false)
-
-    if (error) {
-      setError(error.message)
-    } else {
-      setStage('success')
-      setTimeout(() => router.push('/login'), 3000)
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) {
+        setError(
+          error.message.includes('same password')
+            ? 'הסיסמה החדשה זהה לסיסמה הנוכחית. בחר סיסמה שונה.'
+            : error.message.includes('session')
+            ? 'פג תוקף הסשן. שלח בקשת איפוס חדשה.'
+            : error.message
+        )
+      } else {
+        setStage('success')
+        setTimeout(() => router.push('/login'), 3000)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'שגיאה בעדכון הסיסמה. נסה שנית.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
