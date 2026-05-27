@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -12,46 +12,62 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 function ResetPasswordContent() {
-  const router = useRouter()
-  const [ready, setReady]           = useState(false)   // session confirmed
-  const [invalid, setInvalid]       = useState(false)   // link expired/bad
-  const [password, setPassword]     = useState('')
-  const [confirm, setConfirm]       = useState('')
-  const [showPass, setShowPass]     = useState(false)
-  const [showConf, setShowConf]     = useState(false)
-  const [error, setError]           = useState('')
-  const [isLoading, setIsLoading]   = useState(false)
-  const [success, setSuccess]       = useState(false)
+  const router      = useRouter()
+  const searchParams = useSearchParams()
+  const [ready, setReady]       = useState(false)
+  const [invalid, setInvalid]   = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm]   = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [showConf, setShowConf] = useState(false)
+  const [error, setError]       = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [success, setSuccess]   = useState(false)
 
   useEffect(() => {
-    // Check if session already set (e.g. navigated back)
-    supabaseReset.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true)
-    })
+    const code       = searchParams.get('code')
+    const token_hash = searchParams.get('token_hash')
+    const type       = searchParams.get('type')
 
-    // supabaseReset (standard createClient) auto-exchanges ?code= from URL
-    // and fires PASSWORD_RECOVERY or SIGNED_IN — exactly like mondial-yashir
-    const { data: { subscription } } = supabaseReset.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-        setReady(true)
-      }
-    })
-
-    // Fallback: if no event after 6s, mark invalid
-    const t = setTimeout(() => {
-      supabaseReset.auth.getSession().then(({ data: { session } }) => {
-        if (!session) setInvalid(true)
+    // ── A: PKCE code — exchange manually with the localStorage client ─
+    if (code) {
+      supabaseReset.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (error || !data.session) {
+          setInvalid(true)
+        } else {
+          setReady(true)
+        }
       })
-    }, 6000)
+      return
+    }
 
-    return () => { subscription.unsubscribe(); clearTimeout(t) }
-  }, [])
+    // ── B: token_hash (older Supabase email format) ───────────────────
+    if (token_hash && type) {
+      supabaseReset.auth.verifyOtp({ token_hash, type: type as 'recovery' | 'email' })
+        .then(({ error }) => {
+          if (error) setInvalid(true)
+          else setReady(true)
+        })
+      return
+    }
+
+    // ── C: no params — check for existing session (navigated back) ────
+    supabaseReset.auth.getSession().then(({ data: { session } }) => {
+      if (session) { setReady(true); return }
+      // listen for auth event in case fired before mount
+      const { data: { subscription } } = supabaseReset.auth.onAuthStateChange((event, s) => {
+        if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && s) setReady(true)
+      })
+      const t = setTimeout(() => setInvalid(true), 6000)
+      return () => { subscription.unsubscribe(); clearTimeout(t) }
+    })
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (password.length < 6)         { setError('הסיסמה חייבת להכיל לפחות 6 תווים'); return }
-    if (password !== confirm)         { setError('הסיסמאות אינן תואמות'); return }
+    if (password.length < 6)   { setError('הסיסמה חייבת להכיל לפחות 6 תווים'); return }
+    if (password !== confirm)   { setError('הסיסמאות אינן תואמות'); return }
 
     setIsLoading(true)
     try {
@@ -63,7 +79,6 @@ function ResetPasswordContent() {
             : err.message
         )
       } else {
-        // Sign out the recovery session — user logs in fresh with new password
         await supabaseReset.auth.signOut()
         setSuccess(true)
         setTimeout(() => router.push('/login'), 2000)
@@ -92,7 +107,6 @@ function ResetPasswordContent() {
 
         <div className="rounded-2xl bg-card/90 backdrop-blur-md border border-border/50 shadow-2xl p-6">
 
-          {/* ── Loading ── */}
           {!ready && !invalid && !success && (
             <div className="flex flex-col items-center gap-3 py-6">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -100,22 +114,18 @@ function ResetPasswordContent() {
             </div>
           )}
 
-          {/* ── Invalid / expired ── */}
           {invalid && (
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <AlertCircle className="h-10 w-10 text-red-500" />
               <p className="font-semibold text-foreground">הקישור אינו תקין או פג תוקף</p>
               <p className="text-sm text-muted-foreground">בקש קישור חדש מדף ההתחברות</p>
-              <Button
-                className="mt-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={() => router.push('/login')}
-              >
+              <Button className="mt-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={() => router.push('/login')}>
                 חזרה לכניסה
               </Button>
             </div>
           )}
 
-          {/* ── Success ── */}
           {success && (
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <CheckCircle2 className="h-10 w-10 text-emerald-500" />
@@ -124,7 +134,6 @@ function ResetPasswordContent() {
             </div>
           )}
 
-          {/* ── Form ── */}
           {ready && !success && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="mb-2">
@@ -162,7 +171,8 @@ function ResetPasswordContent() {
 
               {error && <p className="text-sm text-red-400 text-center">{error}</p>}
 
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
                 {isLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                 עדכן סיסמה
               </Button>
