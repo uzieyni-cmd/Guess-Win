@@ -361,7 +361,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
               {(isLocked || isLive || isFinished) ? (
                 /* לאחר נעילה: תצוגת קריאה בלבד */
                 isMyJoker && (
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-700 bg-violet-100/80 border border-violet-300/60 rounded-full px-3 py-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-100/80 border border-red-300/60 rounded-full px-3 py-1.5">
                     <JokerCardIcon className="h-3.5 w-3.5" active />
                     ג&apos;וקר פעיל · ×2
                   </div>
@@ -376,9 +376,9 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                     className={cn(
                       'flex items-center gap-1.5 text-xs px-4 py-2 rounded-full font-semibold border-2 transition-all min-h-[44px]',
                       isMyJoker
-                        ? 'bg-violet-600 border-violet-500 text-white shadow-md shadow-violet-500/25 hover:bg-violet-700'
+                        ? 'bg-red-600 border-red-500 text-white shadow-md shadow-red-500/25 hover:bg-red-700'
                         : canAddJoker
-                        ? 'bg-transparent border-violet-400/50 text-violet-600 hover:border-violet-500 hover:bg-violet-50'
+                        ? 'bg-transparent border-red-400/50 text-red-600 hover:border-red-500 hover:bg-red-50'
                         : 'bg-transparent border-muted text-muted-foreground opacity-50 cursor-not-allowed'
                     )}
                   >
