@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -15,6 +15,7 @@ type Stage = 'loading' | 'form' | 'success' | 'invalid'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [stage, setStage]           = useState<Stage>('loading')
   const [password, setPassword]     = useState('')
   const [confirm, setConfirm]       = useState('')
@@ -23,32 +24,46 @@ export default function ResetPasswordPage() {
   const [error, setError]           = useState('')
   const [isLoading, setIsLoading]   = useState(false)
 
-  // ── Session is already set by /auth/callback route handler.
-  //    Just wait for the PASSWORD_RECOVERY event, or verify via getSession. ──
   useEffect(() => {
-    // Check if we already have an active recovery session
+    const code       = searchParams.get('code')
+    const token_hash = searchParams.get('token_hash')
+    const type       = searchParams.get('type')
+
+    // ── Option A: PKCE code in URL — exchange client-side ────────────
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ error }) => {
+          if (error) { setError('קישור לא תקין: ' + error.message); setStage('invalid') }
+          else setStage('form')
+        })
+      return
+    }
+
+    // ── Option B: token_hash in URL (older flow) ──────────────────────
+    if (token_hash && type) {
+      supabase.auth.verifyOtp({ token_hash, type: type as 'recovery' | 'email' })
+        .then(({ error }) => {
+          if (error) { setError('קישור לא תקין: ' + error.message); setStage('invalid') }
+          else setStage('form')
+        })
+      return
+    }
+
+    // ── Option C: session already set (e.g. navigated back) ──────────
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setStage('form')
+      if (session) { setStage('form'); return }
     })
 
-    // Listen for all relevant auth events (server-side PKCE exchange emits INITIAL_SESSION
-    // or SIGNED_IN on the client, not necessarily PASSWORD_RECOVERY)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (
-        event === 'PASSWORD_RECOVERY' ||
-        event === 'SIGNED_IN' ||
-        event === 'INITIAL_SESSION'
-      )) {
+      if (session && (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
         setStage('form')
       }
       if (event === 'SIGNED_OUT') setStage('invalid')
     })
 
-    // Timeout — if no session arrives within 5s, the link is invalid/expired
     const t = setTimeout(() => setStage(s => s === 'loading' ? 'invalid' : s), 5000)
-
     return () => { subscription.unsubscribe(); clearTimeout(t) }
-  }, [])
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +78,7 @@ export default function ResetPasswordPage() {
         setError(
           error.message.includes('same password')
             ? 'הסיסמה החדשה זהה לסיסמה הנוכחית. בחר סיסמה שונה.'
-            : error.message.includes('session')
+            : error.message.includes('session') || error.message.includes('Auth')
             ? 'פג תוקף הסשן. שלח בקשת איפוס חדשה.'
             : error.message
         )
@@ -109,6 +124,7 @@ export default function ResetPasswordPage() {
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <AlertCircle className="h-10 w-10 text-red-500" />
               <p className="font-semibold text-foreground">הקישור אינו תקין או פג תוקף</p>
+              {error && <p className="text-sm text-red-400">{error}</p>}
               <p className="text-sm text-muted-foreground">בקש קישור חדש מדף ההתחברות</p>
               <Button
                 className="mt-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground"
