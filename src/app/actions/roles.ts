@@ -5,24 +5,15 @@ import { requireAdmin } from '@/lib/auth-server'
 import { UserRole } from '@/types'
 
 /**
- * Owner/admin: set a user's role.
- * - Owner cannot be demoted.
- * - Only owner can promote to admin.
+ * Admin: set a user's role.
+ * - Cannot change another admin's role.
  */
 export async function setUserRole(
   targetUserId: string,
   newRole: UserRole
 ): Promise<{ ok: boolean; error?: string }> {
   try {
-    const callerId = await requireAdmin()
-
-    // Fetch caller role
-    const { data: caller } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', callerId)
-      .single()
-    const callerRole = caller?.role as string
+    await requireAdmin()
 
     // Fetch target role
     const { data: target } = await supabaseAdmin
@@ -32,16 +23,8 @@ export async function setUserRole(
       .single()
     const targetRole = target?.role as string
 
-    // Owner is immutable
-    if (targetRole === 'owner') return { ok: false, error: 'לא ניתן לשנות תפקיד הבעלים' }
-
-    // Only owner can promote to admin
-    if (newRole === 'admin' && callerRole !== 'owner') {
-      return { ok: false, error: 'רק הבעלים יכול להגדיר מנהלים' }
-    }
-
-    // Owner cannot be set as new role by non-owner
-    if (newRole === 'owner') return { ok: false, error: 'לא ניתן להגדיר בעלים נוסף' }
+    // Cannot change another admin
+    if (targetRole === 'admin') return { ok: false, error: 'לא ניתן לשנות תפקיד של מנהל' }
 
     const { error } = await supabaseAdmin
       .from('profiles')

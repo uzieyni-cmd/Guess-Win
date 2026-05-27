@@ -45,7 +45,7 @@ export async function placeBetAction(
     .select('role')
     .eq('id', user.id)
     .single()
-  const isElevated = ['admin', 'owner', 'tournament_admin'].includes(profile?.role ?? '')
+  const isElevated = ['admin', 'tournament_admin'].includes(profile?.role ?? '')
 
   if (isElevated) {
     // מנהל — רשום אוטומטית לטורניר כדי להופיע בדירוגים

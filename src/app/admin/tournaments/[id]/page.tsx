@@ -511,7 +511,7 @@ export default function AdminTournamentDetailPage() {
     const { supabase: sb } = await import('@/lib/supabase')
     const { data: profile } = await sb.from('profiles').select('id, display_name, role').eq('email', assignEmail.trim()).single()
     if (!profile) { setAdminMsg('משתמש לא נמצא'); return }
-    if ((profile.role as UserRole) === 'owner') { setAdminMsg('לא ניתן להגדיר בעלים כמנהל טורניר'); return }
+    if ((profile.role as UserRole) === 'admin') { setAdminMsg('מנהל כבר בעל גישה מלאה'); return }
     const res = await assignTournamentAdmin(id, profile.id)
     if (res.ok) {
       setAssignEmail('')

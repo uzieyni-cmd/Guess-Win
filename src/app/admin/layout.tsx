@@ -17,7 +17,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   const role = currentUser?.role ?? ''
-  const isFullAdmin = role === 'admin' || role === 'owner'
+  const isFullAdmin = role === 'admin'
   const isTournamentAdmin = role === 'tournament_admin'
 
   useEffect(() => {

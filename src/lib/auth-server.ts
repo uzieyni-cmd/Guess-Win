@@ -3,7 +3,7 @@ import 'server-only'
 import { createSupabaseServerClient } from './supabase-server'
 import { supabaseAdmin } from './supabase-admin'
 
-export const ADMIN_ROLES = ['admin', 'owner'] as const
+export const ADMIN_ROLES = ['admin'] as const
 export type AdminRole = typeof ADMIN_ROLES[number]
 
 /**

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Users, Save, CheckCircle2, Phone, Search, Trash2, Download, Shield, ShieldOff, Settings } from 'lucide-react'
+import { Users, Save, CheckCircle2, Phone, Search, Trash2, Download, Settings } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { setUserRole, getMyAdminTournamentIds } from '@/app/actions/roles'
@@ -16,14 +16,12 @@ interface FullUser extends User {
 }
 
 const ROLE_LABEL: Record<UserRole, string> = {
-  owner: '👑 בעלים',
   admin: '🛡 מנהל',
   tournament_admin: '⚙️ מנהל טורניר',
   user: 'משתמש',
 }
 
 const ROLE_COLOR: Record<UserRole, string> = {
-  owner:            'text-yellow-600 bg-yellow-400/15 border-yellow-500/30',
   admin:            'text-blue-600 bg-blue-400/15 border-blue-500/30',
   tournament_admin: 'text-emerald-600 bg-emerald-400/15 border-emerald-500/30',
   user:             'text-muted-foreground bg-muted border-border',
@@ -41,7 +39,7 @@ export default function AdminUsersPage() {
   const [myTournamentIds, setMyTournamentIds] = useState<string[] | 'all'>('all')
 
   const callerRole = currentUser?.role as UserRole
-  const isFullAdmin = callerRole === 'admin' || callerRole === 'owner'
+  const isFullAdmin = callerRole === 'admin'
   const isTournamentAdmin = callerRole === 'tournament_admin'
 
   const load = async () => {
@@ -105,7 +103,7 @@ export default function AdminUsersPage() {
     setDeleteConfirm(null)
   }
 
-  const handleSetRole = async (userId: string, newRole: UserRole) => {
+const handleSetRole = async (userId: string, newRole: UserRole) => {
     try {
       const res = await setUserRole(userId, newRole)
       if (res.ok) {
@@ -200,12 +198,13 @@ export default function AdminUsersPage() {
 
       <div className="space-y-3">
         {filtered.map((user) => {
-          const isOwner = user.role === 'owner'
           const isMe = user.id === currentUser?.id
-          // owner can change anyone (except other owner); admin can set tournament_admin/user (not admin)
-          const canSetTournamentAdmin = !isOwner && !isMe && (callerRole === 'owner' || callerRole === 'admin') && user.role !== 'admin'
-          const canSetAdmin = !isOwner && !isMe && callerRole === 'owner'
-          const canDelete = !isOwner && !isMe && callerRole === 'owner'
+          // admin can promote/demote to tournament_admin
+          const canSetTournamentAdmin = !isMe && callerRole === 'admin' && user.role !== 'admin'
+          // admin + tournament_admin can delete regular users
+          const canDelete = !isMe &&
+            (callerRole === 'admin' || callerRole === 'tournament_admin') &&
+            user.role === 'user'
 
           return (
             <div key={user.id} className="rounded-xl bg-card border border-border overflow-hidden">
@@ -254,28 +253,7 @@ export default function AdminUsersPage() {
                     )
                   )}
 
-                  {/* Admin toggle — owner only */}
-                  {canSetAdmin && (
-                    user.role === 'admin' ? (
-                      <button
-                        onClick={() => handleSetRole(user.id, 'user')}
-                        aria-label="הסר הרשאת מנהל"
-                        className="p-2 rounded-lg text-blue-600 hover:text-muted-foreground hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      >
-                        <ShieldOff className="h-4 w-4" />
-                      </button>
-                    ) : user.role !== 'tournament_admin' && (
-                      <button
-                        onClick={() => handleSetRole(user.id, 'admin')}
-                        aria-label="הגדר כמנהל"
-                        className="p-2 rounded-lg text-muted-foreground hover:text-blue-600 hover:bg-blue-50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      >
-                        <Shield className="h-4 w-4" />
-                      </button>
-                    )
-                  )}
-
-                  {user.role !== 'owner' && user.role !== 'admin' && user.role !== 'tournament_admin' && (
+                  {user.role !== 'admin' && user.role !== 'tournament_admin' && (
                     <button
                       onClick={() => save(user.id)}
                       className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors min-w-[64px] justify-center"
@@ -306,11 +284,12 @@ export default function AdminUsersPage() {
                       </button>
                     )
                   )}
+
                 </div>
               </div>
 
-              {/* Tournament permissions — hide for owner/admin/tournament_admin (they have role-based access) */}
-              {user.role !== 'owner' && user.role !== 'admin' && user.role !== 'tournament_admin' && (
+              {/* Tournament permissions — hide for admin/tournament_admin (they have role-based access) */}
+              {user.role !== 'admin' && user.role !== 'tournament_admin' && (
                 <div className="px-4 py-3">
                   <p className="text-xs text-muted-foreground mb-2.5">גישה לתחרויות:</p>
                   <div className="space-y-2">
