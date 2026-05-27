@@ -72,21 +72,40 @@ function ResetPasswordContent() {
     if (password !== confirm) { setError('הסיסמאות אינן תואמות'); return }
 
     setIsLoading(true)
+
+    // Timeout of 10s so the spinner never hangs forever
+    const timeoutId = setTimeout(() => {
+      setError('הבקשה לא הגיבה. נסה שנית.')
+      setIsLoading(false)
+    }, 10_000)
+
     try {
+      // Verify session exists before attempting update
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        clearTimeout(timeoutId)
+        setError('פג תוקף הסשן. שלח קישור איפוס חדש.')
+        setIsLoading(false)
+        return
+      }
+
       const { error } = await supabase.auth.updateUser({ password })
+      clearTimeout(timeoutId)
+
       if (error) {
         setError(
-          error.message.includes('same password')
+          error.message.includes('same password') || error.message.includes('different')
             ? 'הסיסמה החדשה זהה לסיסמה הנוכחית. בחר סיסמה שונה.'
-            : error.message.includes('session') || error.message.includes('Auth')
-            ? 'פג תוקף הסשן. שלח בקשת איפוס חדשה.'
             : error.message
         )
       } else {
+        // Sign out the recovery session so the user must log in fresh
+        await supabase.auth.signOut()
         setStage('success')
-        setTimeout(() => router.push('/login'), 3000)
+        setTimeout(() => router.push('/login'), 2000)
       }
     } catch (err) {
+      clearTimeout(timeoutId)
       setError(err instanceof Error ? err.message : 'שגיאה בעדכון הסיסמה. נסה שנית.')
     } finally {
       setIsLoading(false)
