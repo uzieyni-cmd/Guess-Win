@@ -92,7 +92,7 @@ export function LoginForm() {
         redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
       })
       if (error) throw new Error(error.message)
-      setSuccess('נשלח אליך מייל לאיפוס הסיסמה. בדוק את תיבת הדואר שלך.')
+      setSuccess('נשלח אליך מייל לאיפוס הסיסמה. אם לא מופיע בתיבת הדואר — בדוק בתיקיית הספאם.')
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
       if (msg.toLowerCase().includes('rate limit')) {
