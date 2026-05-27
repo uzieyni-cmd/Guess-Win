@@ -300,7 +300,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                           saveError
                             ? 'bg-red-100 text-red-600 cursor-default'
                             : dirty && !saved
-                            ? 'bg-orange-500 text-white hover:bg-orange-600'
+                            ? 'bg-yellow-400 text-black hover:bg-yellow-500'
                             : 'bg-muted text-muted-foreground cursor-default'
                         )}
                       >
