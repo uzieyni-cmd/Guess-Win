@@ -5,34 +5,42 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { supabaseReset } from '@/lib/supabase-reset'
+import { supabase } from '@/lib/supabase'   // createBrowserClient — holds the PKCE verifier in cookies
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 
 function ResetPasswordContent() {
-  const router      = useRouter()
+  const router       = useRouter()
   const searchParams = useSearchParams()
-  const [ready, setReady]       = useState(false)
-  const [invalid, setInvalid]   = useState(false)
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm]   = useState('')
-  const [showPass, setShowPass] = useState(false)
-  const [showConf, setShowConf] = useState(false)
-  const [error, setError]       = useState('')
+  const [ready, setReady]         = useState(false)
+  const [invalid, setInvalid]     = useState(false)
+  const [invalidMsg, setInvalidMsg] = useState('')
+  const [password, setPassword]   = useState('')
+  const [confirm, setConfirm]     = useState('')
+  const [showPass, setShowPass]   = useState(false)
+  const [showConf, setShowConf]   = useState(false)
+  const [error, setError]         = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [success, setSuccess]   = useState(false)
+  const [success, setSuccess]     = useState(false)
 
   useEffect(() => {
     const code       = searchParams.get('code')
     const token_hash = searchParams.get('token_hash')
     const type       = searchParams.get('type')
 
-    // ── A: PKCE code — exchange manually with the localStorage client ─
+    // ── PKCE code: must use the SAME client that generated the verifier ──
+    // The verifier was stored in cookies by supabase (createBrowserClient)
+    // when resetPasswordForEmail() was called. Using a different client
+    // (e.g. one with localStorage) would fail with "verifier not found".
     if (code) {
-      supabaseReset.auth.exchangeCodeForSession(code).then(({ data, error }) => {
-        if (error || !data.session) {
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (error) {
+          setInvalidMsg(error.message)
+          setInvalid(true)
+        } else if (!data.session) {
+          setInvalidMsg('session empty after exchange')
           setInvalid(true)
         } else {
           setReady(true)
@@ -41,21 +49,19 @@ function ResetPasswordContent() {
       return
     }
 
-    // ── B: token_hash (older Supabase email format) ───────────────────
     if (token_hash && type) {
-      supabaseReset.auth.verifyOtp({ token_hash, type: type as 'recovery' | 'email' })
+      supabase.auth.verifyOtp({ token_hash, type: type as 'recovery' | 'email' })
         .then(({ error }) => {
-          if (error) setInvalid(true)
+          if (error) { setInvalidMsg(error.message); setInvalid(true) }
           else setReady(true)
         })
       return
     }
 
-    // ── C: no params — check for existing session (navigated back) ────
-    supabaseReset.auth.getSession().then(({ data: { session } }) => {
+    // No params — check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) { setReady(true); return }
-      // listen for auth event in case fired before mount
-      const { data: { subscription } } = supabaseReset.auth.onAuthStateChange((event, s) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
         if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && s) setReady(true)
       })
       const t = setTimeout(() => setInvalid(true), 6000)
@@ -71,20 +77,23 @@ function ResetPasswordContent() {
 
     setIsLoading(true)
     try {
-      const { error: err } = await supabaseReset.auth.updateUser({ password })
+      // Verify session is still present before update
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setError('Auth session missing — please request a new reset link.')
+        return
+      }
+
+      const { error: err } = await supabase.auth.updateUser({ password })
       if (err) {
-        setError(
-          err.message.includes('same') || err.message.includes('different')
-            ? 'הסיסמה החדשה זהה לסיסמה הנוכחית. בחר סיסמה שונה.'
-            : err.message
-        )
+        setError(err.message)   // show raw Supabase error for now
       } else {
-        await supabaseReset.auth.signOut()
+        await supabase.auth.signOut()
         setSuccess(true)
         setTimeout(() => router.push('/login'), 2000)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בעדכון הסיסמה')
+      setError(err instanceof Error ? err.message : String(err))
     } finally {
       setIsLoading(false)
     }
@@ -118,6 +127,7 @@ function ResetPasswordContent() {
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <AlertCircle className="h-10 w-10 text-red-500" />
               <p className="font-semibold text-foreground">הקישור אינו תקין או פג תוקף</p>
+              {invalidMsg && <p className="text-xs text-red-400 font-mono">{invalidMsg}</p>}
               <p className="text-sm text-muted-foreground">בקש קישור חדש מדף ההתחברות</p>
               <Button className="mt-2 w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={() => router.push('/login')}>
@@ -169,7 +179,7 @@ function ResetPasswordContent() {
                 </div>
               </div>
 
-              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+              {error && <p className="text-sm text-red-400 text-center font-mono text-xs">{error}</p>}
 
               <Button type="submit" disabled={isLoading}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
