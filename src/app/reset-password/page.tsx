@@ -77,16 +77,31 @@ function ResetPasswordContent() {
 
     setIsLoading(true)
     try {
-      // Verify session is still present before update
+      // Get access token from the current session
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        setError('Auth session missing — please request a new reset link.')
+      if (!session?.access_token) {
+        setError('פג תוקף הסשן. שלח קישור איפוס חדש.')
         return
       }
 
-      const { error: err } = await supabase.auth.updateUser({ password })
-      if (err) {
-        setError(err.message)   // show raw Supabase error for now
+      // Bypass supabase.auth.updateUser (hangs in @supabase/ssr) — call REST API directly
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          },
+          body: JSON.stringify({ password }),
+        }
+      )
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        setError(json.message || json.error_description || JSON.stringify(json))
       } else {
         await supabase.auth.signOut()
         setSuccess(true)
