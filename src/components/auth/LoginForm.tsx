@@ -94,7 +94,12 @@ export function LoginForm() {
       if (error) throw new Error(error.message)
       setSuccess('נשלח אליך מייל לאיפוס הסיסמה. בדוק את תיבת הדואר שלך.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בשליחת המייל')
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.toLowerCase().includes('rate limit')) {
+        setError('נשלחו יותר מדי מיילים לאחרונה. נסה שוב בעוד מספר דקות.')
+      } else {
+        setError(msg || 'שגיאה בשליחת המייל')
+      }
     } finally {
       setIsLoading(false)
     }
