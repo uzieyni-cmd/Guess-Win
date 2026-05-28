@@ -142,6 +142,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       countByUser[bet.userId] = (countByUser[bet.userId] ?? 0) + 1
     }
     const newStandings: ParticipantStanding[] = participants
+      .filter(user => user.role !== 'admin')
       .map(user => ({
         user,
         totalPoints: pointsByUser[user.id] ?? 0,
@@ -330,16 +331,14 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
           .select('*')
           .in('id', tournament.participantIds)
 
-        const profileUsers = (profiles ?? [])
-          .filter((p: { role: string }) => p.role !== 'admin')
-          .map((p: { id: string; email: string; display_name: string; role: string; avatar_url?: string }) => ({
-            id: p.id,
-            email: p.email,
-            displayName: p.display_name,
-            avatarUrl: p.avatar_url ?? undefined,
-            role: p.role as User['role'],
-            competitionIds: [],
-          }))
+        const profileUsers = (profiles ?? []).map((p: { id: string; email: string; display_name: string; role: string; avatar_url?: string }) => ({
+          id: p.id,
+          email: p.email,
+          displayName: p.display_name,
+          avatarUrl: p.avatar_url ?? undefined,
+          role: p.role as User['role'],
+          competitionIds: [],
+        }))
         setParticipants(profileUsers)
 
         // Load bonus picks — כל הרשומות (כולל points_awarded=null) כדי שה-Realtime יוכל לעדכן שורות בודדות
