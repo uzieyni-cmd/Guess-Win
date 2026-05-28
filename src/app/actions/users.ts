@@ -91,19 +91,33 @@ export async function updateUserTournaments(
       tournamentIds = tournamentIds.filter(id => allowedTournamentIds!.includes(id))
     }
 
-    // Remove existing participation (for admin: all; for tournament_admin: only their tournaments)
-    if (callerRole === 'admin') {
-      await supabaseAdmin.from('tournament_participants').delete().eq('user_id', userId)
-    } else if (allowedTournamentIds && allowedTournamentIds.length > 0) {
+    // Compute diff — only delete what was removed, only add what's new
+    // (Never delete-all-then-re-add: that would cascade-delete bets)
+    const scopeFilter = callerRole === 'admin'
+      ? supabaseAdmin.from('tournament_participants').select('tournament_id').eq('user_id', userId)
+      : supabaseAdmin.from('tournament_participants').select('tournament_id').eq('user_id', userId)
+        .in('tournament_id', allowedTournamentIds ?? [])
+
+    const { data: currentRows } = await scopeFilter
+    const currentIds = (currentRows ?? []).map((r: { tournament_id: string }) => r.tournament_id)
+
+    const scopedNew = callerRole === 'admin'
+      ? tournamentIds
+      : tournamentIds.filter(id => (allowedTournamentIds ?? []).includes(id))
+
+    const toRemove = currentIds.filter((id: string) => !scopedNew.includes(id))
+    const toAdd    = scopedNew.filter((id: string) => !currentIds.includes(id))
+
+    if (toRemove.length > 0) {
       await supabaseAdmin
         .from('tournament_participants')
         .delete()
         .eq('user_id', userId)
-        .in('tournament_id', allowedTournamentIds)
+        .in('tournament_id', toRemove)
     }
 
-    if (tournamentIds.length > 0) {
-      const rows = tournamentIds.map(tid => ({ user_id: userId, tournament_id: tid }))
+    if (toAdd.length > 0) {
+      const rows = toAdd.map((tid: string) => ({ user_id: userId, tournament_id: tid }))
       await supabaseAdmin.from('tournament_participants').upsert(rows, { onConflict: 'user_id,tournament_id' })
     }
 

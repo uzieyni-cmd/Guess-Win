@@ -98,6 +98,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [activeTournamentId, setActiveTournamentIdState] = useState<string | null>(null)
   const [bets, setBets] = useState<Bet[]>([])
   const [participants, setParticipants] = useState<User[]>([])
+  const [participantsVersion, setParticipantsVersion] = useState(0)
   // Raw bonus picks (bonus_questions) — Realtime מעדכן שורות בודדות; הסכום נגזר ב-useMemo
   type BonusPickRaw = { id: string; userId: string; pointsAwarded: number | null }
   const [bonusPicksRaw, setBonusPicksRaw] = useState<BonusPickRaw[]>([])
@@ -433,7 +434,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [activeTournamentId, tournaments])
+  }, [activeTournamentId, tournaments, participantsVersion])
 
   // ── Realtime: round_bonus_picks — 2 נק' לניצחון נבחרת מדורגת ───
   useEffect(() => {
@@ -494,6 +495,29 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
           return prev
         })
       })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [activeTournamentId])
+
+  // ── Realtime: tournament_participants — כשמנהל מוסיף/מסיר משתתף, טען מחדש ──
+  useEffect(() => {
+    if (!activeTournamentId) return
+
+    const channel = supabase
+      .channel(`participants-${activeTournamentId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'tournament_participants',
+        filter: `tournament_id=eq.${activeTournamentId}`,
+      }, () => { setParticipantsVersion(v => v + 1) })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'tournament_participants',
+        filter: `tournament_id=eq.${activeTournamentId}`,
+      }, () => { setParticipantsVersion(v => v + 1) })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
