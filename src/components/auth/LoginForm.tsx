@@ -103,11 +103,11 @@ export function LoginForm() {
       if (error) throw new Error(error.message)
       setSuccess('נשלח אליך מייל לאיפוס הסיסמה. אם לא מופיע בתיבת הדואר — בדוק בתיקיית הספאם.')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : ''
-      if (msg.toLowerCase().includes('rate limit')) {
-        setError('נשלחו יותר מדי מיילים לאחרונה. נסה שוב בעוד מספר דקות.')
+      const msg = (err instanceof Error ? err.message : '').toLowerCase()
+      if (msg.includes('rate limit') || msg.includes('sending recovery email') || msg.includes('email')) {
+        setError('לא הצלחנו לשלוח את המייל כרגע. נסה שוב בעוד מספר דקות, או פנה למנהל.')
       } else {
-        setError(msg || 'שגיאה בשליחת המייל')
+        setError('שגיאה בשליחת המייל. נסה שוב מאוחר יותר.')
       }
     } finally {
       setIsLoading(false)
