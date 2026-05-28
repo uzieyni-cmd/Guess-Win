@@ -900,7 +900,7 @@ export default function AdminTournamentDetailPage() {
               הימורי בונוס
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={handleSyncLockTimes} disabled={syncingLocks} title="חשב מחדש זמן נעילה לכל הבונוסים (10 דק' לפני המשחק הראשון)">
+              <Button size="sm" variant="outline" onClick={handleSyncLockTimes} disabled={syncingLocks} title="חשב מחדש זמן נעילה לכל הבונוסים (60 דק' לפני המשחק הראשון)">
                 {syncingLocks ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Clock className="h-4 w-4 ml-1" />}
                 סנכרן נעילות
               </Button>
