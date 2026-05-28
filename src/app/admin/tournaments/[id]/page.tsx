@@ -5,6 +5,7 @@ import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, T
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
+import { rescoreTournamentBets } from '@/app/actions/bets'
 import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonusQuestion, setBonusResult, syncAllBonusLockTimes } from '@/app/actions/bonus'
 import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
 import { awardAdvancementBonus, syncExistingTeamPicks, getTeamPickTeams } from '@/app/actions/roundBonus'
@@ -373,6 +374,7 @@ export default function AdminTournamentDetailPage() {
   const [saved, setSaved] = useState<string[]>([])
   const [syncing, setSyncing] = useState(false)
   const [syncingOdds, setSyncingOdds] = useState(false)
+  const [rescoring, setRescoring] = useState(false)
   const [syncMsg, setSyncMsg] = useState('')
   const [hideFinished, setHideFinished] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -593,6 +595,19 @@ export default function AdminTournamentDetailPage() {
     }
   }
 
+  // ── Rescore all finished matches ──────────────────────────────
+  const handleRescore = async () => {
+    setRescoring(true)
+    setSyncMsg('')
+    const result = await rescoreTournamentBets(id)
+    setRescoring(false)
+    if (result.ok) {
+      setSyncMsg(`✓ חושב ניקוד ל-${result.scored} משחקים`)
+    } else {
+      setSyncMsg(`שגיאה: ${result.error}`)
+    }
+  }
+
   // ── Sync Odds ─────────────────────────────────────────────────
   const handleSyncOdds = async () => {
     setSyncingOdds(true)
@@ -677,6 +692,12 @@ export default function AdminTournamentDetailPage() {
                 : <><EyeOff className="h-4 w-4 ml-1" />הסתר שהסתיימו ({finishedCount})</>}
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={handleRescore} disabled={rescoring} title="חשב מחדש נקודות לכל המשחקים שנגמרו בטורניר">
+            {rescoring
+              ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
+              : <RotateCcw className="h-4 w-4 ml-1" />}
+            חשב נקודות
+          </Button>
           <Button variant="outline" size="sm" onClick={handleSyncOdds} disabled={syncingOdds}>
             {syncingOdds
               ? <Loader2 className="h-4 w-4 ml-1 animate-spin" />
