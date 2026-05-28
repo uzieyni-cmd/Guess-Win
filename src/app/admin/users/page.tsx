@@ -4,6 +4,7 @@ import { Users, Save, CheckCircle2, Phone, Search, Trash2, Download, Settings } 
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { setUserRole, getMyAdminTournamentIds } from '@/app/actions/roles'
+import { deleteUser, updateUserTournaments } from '@/app/actions/users'
 import { supabase } from '@/lib/supabase'
 import { User, UserRole } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -28,7 +29,7 @@ const ROLE_COLOR: Record<UserRole, string> = {
 }
 
 export default function AdminUsersPage() {
-  const { tournaments, updateUserPermissions } = useTournament()
+  const { tournaments } = useTournament()
   const { currentUser, isProfileReady } = useAuth()
   const [users, setUsers]             = useState<FullUser[]>([])
   const [permissions, setPermissions] = useState<Record<string, string[]>>({})
@@ -41,7 +42,6 @@ export default function AdminUsersPage() {
   // Wait for full profile so role is authoritative (not the 'user' default)
   const callerRole = (isProfileReady ? currentUser?.role : undefined) as UserRole | undefined
   const isFullAdmin = callerRole === 'admin'
-  const isTournamentAdmin = callerRole === 'tournament_admin'
 
   const load = async () => {
     const { data: profiles } = await supabase
@@ -91,16 +91,24 @@ export default function AdminUsersPage() {
   }
 
   const save = async (userId: string) => {
-    await updateUserPermissions(userId, permissions[userId] ?? [])
-    setSaved((prev) => [...prev, userId])
-    setTimeout(() => setSaved((prev) => prev.filter((x) => x !== userId)), 2000)
+    const res = await updateUserTournaments(userId, permissions[userId] ?? [])
+    if (res.ok) {
+      setSaved((prev) => [...prev, userId])
+      setTimeout(() => setSaved((prev) => prev.filter((x) => x !== userId)), 2000)
+    } else {
+      setRoleMsg(res.error ?? 'שגיאת שמירה')
+      setTimeout(() => setRoleMsg(''), 3000)
+    }
   }
 
   const handleDelete = async (userId: string) => {
-    await supabase.from('bets').delete().eq('user_id', userId)
-    await supabase.from('tournament_participants').delete().eq('user_id', userId)
-    await supabase.from('profiles').delete().eq('id', userId)
-    setUsers((prev) => prev.filter((u) => u.id !== userId))
+    const res = await deleteUser(userId)
+    if (res.ok) {
+      setUsers((prev) => prev.filter((u) => u.id !== userId))
+    } else {
+      setRoleMsg(res.error ?? 'שגיאת מחיקה')
+      setTimeout(() => setRoleMsg(''), 3000)
+    }
     setDeleteConfirm(null)
   }
 
@@ -146,11 +154,6 @@ const handleSetRole = async (userId: string, newRole: UserRole) => {
     : tournaments.filter(t => (myTournamentIds as string[]).includes(t.id))
 
   const filtered = users.filter((u) => {
-    // tournament_admin only sees users in their tournaments
-    if (isTournamentAdmin && myTournamentIds !== 'all') {
-      const ids = myTournamentIds as string[]
-      if (!u.competitionIds.some(id => ids.includes(id))) return false
-    }
     if (!search) return true
     const q = search.toLowerCase()
     return (

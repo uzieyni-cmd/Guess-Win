@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { useRouter } from 'next/navigation'
-import { Lock, Check, Save, AlertCircle, Users, X } from 'lucide-react'
+import { Lock, Check, Save, AlertCircle, Users, X, ChevronLeft } from 'lucide-react'
 import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
@@ -237,9 +237,10 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             </div>
           )}
 
-          {/* ימין: תאריך */}
-          <div className={cn('flex justify-end', roundStr ? 'flex-1' : 'flex-none')}>
+          {/* ימין: תאריך + חץ ניווט */}
+          <div className={cn('flex items-center justify-end gap-1.5', roundStr ? 'flex-1' : 'flex-none')}>
             <span className="whitespace-nowrap text-xs leading-tight">{dateStr} · {timeStr}</span>
+            <ChevronLeft className="h-3.5 w-3.5 opacity-50 shrink-0" />
           </div>
         </div>
 
@@ -413,6 +414,20 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             </button>
           </div>
         )}
+
+        {/* ── כפתור מעבר לפרטי המשחק ──────────────────────────── */}
+        <div className="border-t border-border/60">
+          <button
+            className="w-full px-4 py-3 text-xs text-muted-foreground flex items-center justify-between hover:bg-muted/50 hover:text-foreground transition-colors min-h-[44px] group"
+            onClick={() => router.push(`/tournament/${match.tournamentId}/match/${match.id}`)}
+          >
+            <span className="flex items-center gap-1.5 font-medium group-hover:text-primary transition-colors">
+              <ChevronLeft className="h-3.5 w-3.5" />
+              פרטי המשחק
+            </span>
+            <span className="text-[10px] opacity-50">ניחושים, טבלה ועוד</span>
+          </button>
+        </div>
 
       </Card>
 
