@@ -19,7 +19,7 @@ function CompetitionsContent() {
   const myTournaments = useMemo(() => {
     if (!currentUser) return null
     // admin/owner/tournament_admin רואים את כל התחרויות (כולל מוסתרות)
-    if (['admin', 'owner', 'tournament_admin'].includes(currentUser.role)) return tournaments
+    if (['admin', 'tournament_admin'].includes(currentUser.role)) return tournaments
     // משתמש רגיל: רק תחרויות גלויות שהוא משתתף בהן
     return tournaments.filter((t) => !t.isHidden && currentUser.competitionIds.includes(t.id))
   }, [tournaments, currentUser])
@@ -36,7 +36,7 @@ function CompetitionsContent() {
         }
         right={
           <div className="flex items-center gap-2">
-            {currentUser?.role === 'admin' && (
+            {(currentUser?.role === 'admin' || currentUser?.role === 'tournament_admin') && (
               <button onClick={() => router.push('/admin')}
                 className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm px-2 py-1.5 rounded-lg hover:bg-foreground/8 min-h-[36px]">
                 <Settings className="h-4 w-4" />
