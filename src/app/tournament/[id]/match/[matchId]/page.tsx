@@ -171,6 +171,72 @@ function EventsTimeline({ events, homeTeamId, htScore }: {
   )
 }
 
+// ── סכימת חלוקת ניחושים ─────────────────────────────────────────
+
+function ScoreDistribution({ matchBets, match, isLocked }: {
+  matchBets: Bet[]
+  match: Match
+  isLocked: boolean
+}) {
+  if (!isLocked || matchBets.length === 0) return null
+
+  // קיבוץ לפי תוצאה
+  const scoreMap = new Map<string, number>()
+  for (const bet of matchBets) {
+    const key = `${bet.predictedScore.home}–${bet.predictedScore.away}`
+    scoreMap.set(key, (scoreMap.get(key) ?? 0) + 1)
+  }
+
+  const sorted = Array.from(scoreMap.entries()).sort((a, b) => b[1] - a[1])
+  const maxCount = sorted[0]?.[1] ?? 1
+  const actualKey = match.actualScore
+    ? `${match.actualScore.home}–${match.actualScore.away}`
+    : null
+
+  return (
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <div className="px-4 py-3 border-b border-border">
+        <h3 className="text-sm font-bold text-foreground">חלוקת ניחושים</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">{matchBets.length} ניחושים</p>
+      </div>
+      <div className="p-3 space-y-1.5">
+        {sorted.map(([score, count]) => {
+          const isActual = score === actualKey
+          const pct = Math.round((count / matchBets.length) * 100)
+          return (
+            <div key={score} className={cn(
+              'flex items-center gap-3 px-2 py-1.5 rounded-lg transition-colors',
+              isActual ? 'bg-emerald-50 border border-emerald-300/50' : 'hover:bg-muted/40'
+            )}>
+              <span className={cn(
+                'font-mono font-bold text-sm w-10 text-center shrink-0 tabular-nums',
+                isActual ? 'text-emerald-700' : 'text-foreground'
+              )}>
+                {score}
+              </span>
+              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all duration-500',
+                    isActual ? 'bg-emerald-500' : 'bg-primary/50'
+                  )}
+                  style={{ width: `${(count / maxCount) * 100}%` }}
+                />
+              </div>
+              <span className={cn(
+                'text-xs shrink-0 w-24 text-left tabular-nums',
+                isActual ? 'text-emerald-700 font-medium' : 'text-muted-foreground'
+              )}>
+                {count} משתתפ{count === 1 ? '' : 'ים'} · {pct}%
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── פאנל משתתפים ─────────────────────────────────────────────────
 
 function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLocked }: {
@@ -421,8 +487,8 @@ export default function MatchDetailPage() {
             />
           </div>
 
-          {/* RIGHT — אירועים */}
-          <div className="flex-1 order-1 md:order-2">
+          {/* RIGHT — אירועים + סכימת ניחושים */}
+          <div className="flex-1 order-1 md:order-2 flex flex-col gap-5">
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <div className="px-4 py-3 border-b border-border">
                 <h3 className="text-sm font-bold text-foreground">אירועי משחק</h3>
@@ -453,6 +519,9 @@ export default function MatchDetailPage() {
                 )}
               </div>
             </div>
+
+            {/* סכימת חלוקת ניחושים — בין אירועים למשתתפים */}
+            <ScoreDistribution matchBets={matchBets} match={match} isLocked={isLocked} />
           </div>
 
         </div>
