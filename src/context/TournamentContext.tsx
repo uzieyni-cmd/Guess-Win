@@ -318,7 +318,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         submittedAt: b.submitted_at,
         updatedAt: b.updated_at,
         isLocked: b.matches
-          ? Date.now() >= new Date(b.matches.match_start_time).getTime() - 10 * 60 * 1000
+          ? Date.now() >= new Date(b.matches.match_start_time).getTime() - 60 * 60 * 1000
           : false,
         points: b.points ?? null,
         betResult: b.result ?? null,
@@ -407,7 +407,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         // גלה isLocked מה-ref העדכני — ללא DB round-trip
         const matchStart = matchTimesRef.current.get(raw.match_id)
         const isLocked = matchStart
-          ? Date.now() >= new Date(matchStart).getTime() - 10 * 60 * 1000
+          ? Date.now() >= new Date(matchStart).getTime() - 60 * 60 * 1000
           : false
         const newBet: Bet = {
           id: raw.id,

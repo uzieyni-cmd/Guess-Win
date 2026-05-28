@@ -120,7 +120,7 @@ export async function placeBetAction(
 
   if (!match) return { ok: false, error: 'משחק לא נמצא' }
   if (match.status === 'live' || match.status === 'finished') return { ok: false, error: 'המשחק כבר התחיל' }
-  const lockTime = new Date(match.match_start_time).getTime() - 10 * 60 * 1000
+  const lockTime = new Date(match.match_start_time).getTime() - 60 * 60 * 1000
   if (Date.now() >= lockTime) return { ok: false, error: 'הגשת הניחוש נסגרה' }
 
   // בדוק תפקיד המשתמש

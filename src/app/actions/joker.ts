@@ -33,7 +33,7 @@ export async function toggleJokerPick(
     return { ok: false, error: "ג'וקר זמין רק בשלב הבתים" }
   }
 
-  const lockTime = new Date(m.match_start_time).getTime() - 10 * 60 * 1000
+  const lockTime = new Date(m.match_start_time).getTime() - 60 * 60 * 1000
   if (Date.now() >= lockTime) {
     return { ok: false, error: 'המשחק נעול' }
   }

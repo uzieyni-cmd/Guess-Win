@@ -80,7 +80,7 @@ export async function createBonusQuestion(input: {
 }): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin()
 
-  // lock_time = first match start − 10 min
+  // lock_time = first match start − 60 min
   const { data: firstMatch } = await supabaseAdmin
     .from('matches')
     .select('match_start_time')
@@ -91,7 +91,7 @@ export async function createBonusQuestion(input: {
 
   if (!firstMatch) return { ok: false, error: 'אין משחקים בטורניר — לא ניתן לחשב זמן נעילה' }
 
-  const lockTime = new Date(new Date(firstMatch.match_start_time).getTime() - 10 * 60 * 1000).toISOString()
+  const lockTime = new Date(new Date(firstMatch.match_start_time).getTime() - 60 * 60 * 1000).toISOString()
 
   const { error } = await supabaseAdmin
     .from('bonus_questions')
@@ -138,7 +138,7 @@ export async function updateBonusQuestion(
       .single()
     if (firstMatch) {
       lockTime = new Date(
-        new Date((firstMatch as { match_start_time: string }).match_start_time).getTime() - 10 * 60 * 1000
+        new Date((firstMatch as { match_start_time: string }).match_start_time).getTime() - 60 * 60 * 1000
       ).toISOString()
     }
   }
@@ -178,7 +178,7 @@ export async function syncAllBonusLockTimes(
   if (!firstMatch) return { ok: false, error: 'אין משחקים בטורניר' }
 
   const fm = firstMatch as { match_start_time: string; home_team_name: string; away_team_name: string }
-  const lockTime = new Date(new Date(fm.match_start_time).getTime() - 10 * 60 * 1000).toISOString()
+  const lockTime = new Date(new Date(fm.match_start_time).getTime() - 60 * 60 * 1000).toISOString()
 
   console.log('[syncAllBonusLockTimes] firstMatch:', fm.home_team_name, 'vs', fm.away_team_name,
     '| match_start_time:', fm.match_start_time, '| lock_time:', lockTime)
