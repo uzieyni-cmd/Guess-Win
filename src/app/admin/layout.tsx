@@ -9,10 +9,10 @@ import { SiteHeader } from '@/components/shared/SiteHeader'
 import { cn } from '@/lib/utils'
 
 // Roles that can access the admin area
-const ALLOWED_ROLES = ['admin', 'owner', 'tournament_admin']
+const ALLOWED_ROLES = ['admin', 'tournament_admin']
 
 function AdminShell({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useAuth()
+  const { currentUser, isProfileReady } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -20,13 +20,16 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const isFullAdmin = role === 'admin'
   const isTournamentAdmin = role === 'tournament_admin'
 
+  // Wait for the real role before redirecting — initial role defaults to 'user'
   useEffect(() => {
-    if (currentUser && !ALLOWED_ROLES.includes(currentUser.role)) {
+    if (isProfileReady && currentUser && !ALLOWED_ROLES.includes(currentUser.role)) {
       router.replace('/competitions')
     }
-  }, [currentUser, router])
+  }, [isProfileReady, currentUser, router])
 
-  if (!currentUser || !ALLOWED_ROLES.includes(role)) return null
+  // Show nothing until profile is loaded — prevents flash redirect
+  if (!isProfileReady || !currentUser) return null
+  if (!ALLOWED_ROLES.includes(role)) return null
 
   // tournament_admin: only show access to tournaments section
   const navItems = [
