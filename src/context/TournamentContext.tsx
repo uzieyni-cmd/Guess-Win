@@ -180,23 +180,18 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
     const tournamentIds = rows.map((t: DbTournament) => t.id)
 
-    // PERF-03: ספירת משחקים עם HEAD requests (ללא שליפת שורות) + שליפת משתתפים במקביל
-    const [matchCountResults, participantRowsRes] = await Promise.all([
-      Promise.all(
-        tournamentIds.map(async (tid: string) => {
-          const { count } = await supabase
-            .from('matches')
-            .select('*', { count: 'exact', head: true })
-            .eq('tournament_id', tid)
-          return [tid, count ?? 0] as const
-        })
-      ),
+    // H2: query אחד עם GROUP BY במקום N HEAD requests
+    const [matchCountRes, participantRowsRes] = await Promise.all([
+      supabase.rpc('get_match_counts', { tournament_ids: tournamentIds }),
       supabase.from('tournament_participants')
         .select('tournament_id, user_id')
         .in('tournament_id', tournamentIds),
     ])
 
-    const matchCountMap = Object.fromEntries(matchCountResults)
+    const matchCountMap = Object.fromEntries(
+      ((matchCountRes.data ?? []) as { tournament_id: string; match_count: number }[])
+        .map(r => [r.tournament_id, r.match_count])
+    )
 
     const result: Tournament[] = rows.map((t: DbTournament) => ({
       id: t.id,
