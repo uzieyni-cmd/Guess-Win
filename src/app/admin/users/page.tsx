@@ -33,12 +33,12 @@ type PaymentFilter = 'all' | 'paid' | 'unpaid'
 export default function AdminUsersPage() {
   const { tournaments } = useTournament()
   const { currentUser, isProfileReady } = useAuth()
-  const [users, setUsers]                       = useState<FullUser[]>([])
-  const [permissions, setPermissions]           = useState<Record<string, string[]>>({})
-  const [originalPermissions, setOriginalPerms] = useState<Record<string, string[]>>({})
+  const [users, setUsers]             = useState<FullUser[]>([])
+  const [permissions, setPermissions] = useState<Record<string, string[]>>({})
   // payments: { [userId:tournamentId]: boolean }
   const [payments, setPayments]       = useState<Record<string, boolean>>({})
   const [saved, setSaved]             = useState<string[]>([])
+  const [dirtySet, setDirtySet]       = useState<Set<string>>(new Set())
   const [savingAll, setSavingAll]     = useState(false)
   const [savedAll, setSavedAll]       = useState(false)
   const [search, setSearch]           = useState('')
@@ -103,7 +103,7 @@ export default function AdminUsersPage() {
     const perms = Object.fromEntries(mappedUsers.map((u) => [u.id, [...u.competitionIds]]))
     setUsers(mappedUsers)
     setPermissions(perms)
-    setOriginalPerms(perms)
+    setDirtySet(new Set()) // reset on reload
 
     // build payments map
     const payMap: Record<string, boolean> = {}
@@ -126,23 +126,15 @@ export default function AdminUsersPage() {
         : [...current, tournamentId]
       return { ...prev, [userId]: next }
     })
+    setDirtySet(prev => new Set([...prev, userId]))
   }
 
-  // Users whose permissions changed since last load/save
-  const dirtyUserIds = users
-    .filter(u => u.role === 'user')
-    .filter(u => {
-      const orig = (originalPermissions[u.id] ?? []).slice().sort().join(',')
-      const curr = (permissions[u.id] ?? []).slice().sort().join(',')
-      return orig !== curr
-    })
-    .map(u => u.id)
+  const dirtyUserIds = [...dirtySet]
 
   const save = async (userId: string) => {
     const res = await updateUserTournaments(userId, permissions[userId] ?? [])
     if (res.ok) {
-      // Update snapshot so this user is no longer dirty
-      setOriginalPerms(prev => ({ ...prev, [userId]: [...(permissions[userId] ?? [])] }))
+      setDirtySet(prev => { const next = new Set(prev); next.delete(userId); return next })
       setSaved((prev) => [...prev, userId])
       setTimeout(() => setSaved((prev) => prev.filter((x) => x !== userId)), 2000)
     } else {
@@ -159,12 +151,7 @@ export default function AdminUsersPage() {
     ))
     const errors = results.filter(r => !r.res.ok)
     if (errors.length === 0) {
-      // Update snapshot for all saved users
-      setOriginalPerms(prev => {
-        const next = { ...prev }
-        dirtyUserIds.forEach(uid => { next[uid] = [...(permissions[uid] ?? [])] })
-        return next
-      })
+      setDirtySet(new Set())
       setSavedAll(true)
       setTimeout(() => setSavedAll(false), 2500)
     } else {
