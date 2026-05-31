@@ -245,6 +245,56 @@ export async function setBonusResult(
   return { ok: true, awarded }
 }
 
+// ── Public: picks distribution per question (after lock) ────────
+export type PickDistributionUser = { id: string; displayName: string; avatarUrl?: string }
+export type PickDistributionSlice = { option: string; count: number; users: PickDistributionUser[] }
+export type PickDistribution = { questionId: string; slices: PickDistributionSlice[] }
+
+export async function getPicksDistribution(tournamentId: string): Promise<PickDistribution[]> {
+  // Only fetch for locked questions
+  const { data: questions } = await supabaseAdmin
+    .from('bonus_questions')
+    .select('id, options, lock_time')
+    .eq('tournament_id', tournamentId)
+
+  const lockedIds = (questions ?? [])
+    .filter((q: { lock_time: string }) => new Date() >= new Date(q.lock_time))
+    .map((q: { id: string }) => q.id)
+
+  if (!lockedIds.length) return []
+
+  const { data: picks } = await supabaseAdmin
+    .from('bonus_picks')
+    .select('bonus_question_id, pick, user_id, profiles(id, display_name, avatar_url)')
+    .in('bonus_question_id', lockedIds)
+
+  const result: PickDistribution[] = lockedIds.map((qid: string) => {
+    const q = (questions ?? []).find((x: { id: string }) => x.id === qid) as { id: string; options: string[] }
+    const qPicks = (picks ?? []).filter((p: { bonus_question_id: string }) => p.bonus_question_id === qid)
+
+    const slices: PickDistributionSlice[] = q.options.map((opt: string) => {
+      const optPicks = qPicks.filter((p: { pick: string }) => p.pick === opt)
+      return {
+        option: opt,
+        count: optPicks.length,
+        users: optPicks.map((p: { user_id: string; profiles: unknown }) => {
+          const profile = Array.isArray(p.profiles) ? p.profiles[0] : p.profiles
+          const pr = profile as { id: string; display_name: string; avatar_url?: string } | null
+          return {
+            id: p.user_id,
+            displayName: pr?.display_name ?? '???',
+            avatarUrl: pr?.avatar_url ?? undefined,
+          }
+        }),
+      }
+    }).filter((s: PickDistributionSlice) => s.count > 0)
+
+    return { questionId: qid, slices }
+  })
+
+  return result
+}
+
 // ── User: submit/update pick ─────────────────────────────────────
 export async function submitBonusPick(
   questionId: string,
