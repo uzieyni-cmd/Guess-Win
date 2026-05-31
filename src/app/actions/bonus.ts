@@ -40,12 +40,26 @@ function mapQuestion(r: DbBonusQuestion): BonusQuestion {
 
 // ── Fetch all bonus questions for a tournament (public) ──────────
 export async function getBonusQuestions(tournamentId: string): Promise<BonusQuestion[]> {
+  // דרוש אימות — מונע חשיפת תשובות נכונות לגורמים לא מורשים
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
   const { data } = await supabaseAdmin
     .from('bonus_questions')
     .select('*')
     .eq('tournament_id', tournamentId)
     .order('created_at', { ascending: true })
-  return (data ?? []).map(r => mapQuestion(r as DbBonusQuestion))
+
+  const now = new Date()
+  return (data ?? []).map(r => {
+    const q = mapQuestion(r as DbBonusQuestion)
+    // הסתר תשובות נכונות לפני הנעילה — מונע חשיפה מוקדמת
+    if (now < new Date(q.lockTime)) {
+      return { ...q, correctOptions: null }
+    }
+    return q
+  })
 }
 
 // ── Fetch user's picks for a tournament ──────────────────────────
@@ -251,6 +265,11 @@ export type PickDistributionSlice = { option: string; count: number; users: Pick
 export type PickDistribution = { questionId: string; slices: PickDistributionSlice[] }
 
 export async function getPicksDistribution(tournamentId: string): Promise<PickDistribution[]> {
+  // דרוש אימות — מונע חשיפת שמות משתמשים ובחירותיהם לגורמים לא מורשים
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
   // Only fetch for locked questions
   const { data: questions } = await supabaseAdmin
     .from('bonus_questions')

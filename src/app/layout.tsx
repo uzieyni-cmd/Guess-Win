@@ -24,7 +24,7 @@ export const viewport: Viewport = {
   themeColor: '#070b14',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // maximumScale הוסר — מאפשר zoom לנגישות (WCAG 2.1)
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
