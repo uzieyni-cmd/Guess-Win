@@ -33,11 +33,14 @@ type PaymentFilter = 'all' | 'paid' | 'unpaid'
 export default function AdminUsersPage() {
   const { tournaments } = useTournament()
   const { currentUser, isProfileReady } = useAuth()
-  const [users, setUsers]             = useState<FullUser[]>([])
-  const [permissions, setPermissions] = useState<Record<string, string[]>>({})
+  const [users, setUsers]                       = useState<FullUser[]>([])
+  const [permissions, setPermissions]           = useState<Record<string, string[]>>({})
+  const [originalPermissions, setOriginalPerms] = useState<Record<string, string[]>>({})
   // payments: { [userId:tournamentId]: boolean }
   const [payments, setPayments]       = useState<Record<string, boolean>>({})
   const [saved, setSaved]             = useState<string[]>([])
+  const [savingAll, setSavingAll]     = useState(false)
+  const [savedAll, setSavedAll]       = useState(false)
   const [search, setSearch]           = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [roleMsg, setRoleMsg]         = useState('')
@@ -97,8 +100,10 @@ export default function AdminUsersPage() {
         .map((x: { tournament_id: string }) => x.tournament_id) ?? [],
     }))
 
+    const perms = Object.fromEntries(mappedUsers.map((u) => [u.id, [...u.competitionIds]]))
     setUsers(mappedUsers)
-    setPermissions(Object.fromEntries(mappedUsers.map((u) => [u.id, [...u.competitionIds]])))
+    setPermissions(perms)
+    setOriginalPerms(perms)
 
     // build payments map
     const payMap: Record<string, boolean> = {}
@@ -123,15 +128,50 @@ export default function AdminUsersPage() {
     })
   }
 
+  // Users whose permissions changed since last load/save
+  const dirtyUserIds = users
+    .filter(u => u.role === 'user')
+    .filter(u => {
+      const orig = (originalPermissions[u.id] ?? []).slice().sort().join(',')
+      const curr = (permissions[u.id] ?? []).slice().sort().join(',')
+      return orig !== curr
+    })
+    .map(u => u.id)
+
   const save = async (userId: string) => {
     const res = await updateUserTournaments(userId, permissions[userId] ?? [])
     if (res.ok) {
+      // Update snapshot so this user is no longer dirty
+      setOriginalPerms(prev => ({ ...prev, [userId]: [...(permissions[userId] ?? [])] }))
       setSaved((prev) => [...prev, userId])
       setTimeout(() => setSaved((prev) => prev.filter((x) => x !== userId)), 2000)
     } else {
       setRoleMsg(res.error ?? 'שגיאת שמירה')
       setTimeout(() => setRoleMsg(''), 3000)
     }
+  }
+
+  const saveAll = async () => {
+    if (!dirtyUserIds.length || savingAll) return
+    setSavingAll(true)
+    const results = await Promise.all(dirtyUserIds.map(uid =>
+      updateUserTournaments(uid, permissions[uid] ?? []).then(res => ({ uid, res }))
+    ))
+    const errors = results.filter(r => !r.res.ok)
+    if (errors.length === 0) {
+      // Update snapshot for all saved users
+      setOriginalPerms(prev => {
+        const next = { ...prev }
+        dirtyUserIds.forEach(uid => { next[uid] = [...(permissions[uid] ?? [])] })
+        return next
+      })
+      setSavedAll(true)
+      setTimeout(() => setSavedAll(false), 2500)
+    } else {
+      setRoleMsg(`שגיאה בשמירת ${errors.length} משתמשים`)
+      setTimeout(() => setRoleMsg(''), 3000)
+    }
+    setSavingAll(false)
   }
 
   const togglePaid = async (userId: string, tournamentId: string) => {
@@ -254,10 +294,33 @@ export default function AdminUsersPage() {
           <h1 className="font-suez text-2xl text-foreground">הרשאות משתמשים</h1>
           <span className="text-xs text-muted-foreground mr-1">({users.length})</span>
         </div>
-        <Button variant="outline" size="sm" onClick={exportExcel} className="flex items-center gap-1.5">
-          <Download className="h-4 w-4" />
-          ייצוא Excel
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Save All button — only shown when there are unsaved changes */}
+          {dirtyUserIds.length > 0 && (
+            <Button
+              size="sm"
+              onClick={saveAll}
+              disabled={savingAll}
+              className="flex items-center gap-1.5"
+            >
+              {savingAll ? (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-primary-foreground/40 border-t-primary-foreground animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              {savingAll ? 'שומר...' : `שמור הכל (${dirtyUserIds.length})`}
+            </Button>
+          )}
+          {savedAll && (
+            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+              <CheckCircle2 className="h-3.5 w-3.5" />נשמר
+            </span>
+          )}
+          <Button variant="outline" size="sm" onClick={exportExcel} className="flex items-center gap-1.5">
+            <Download className="h-4 w-4" />
+            ייצוא Excel
+          </Button>
+        </div>
       </div>
 
       {roleMsg && (
