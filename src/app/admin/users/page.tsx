@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Users, Save, CheckCircle2, Phone, Search, Trash2, Download, Settings } from 'lucide-react'
+import { Users, Save, CheckCircle2, Phone, Search, Trash2, Download, Settings, Trophy, CreditCard } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { setUserRole, getMyAdminTournamentIds } from '@/app/actions/roles'
-import { deleteUser, updateUserTournaments } from '@/app/actions/users'
+import { deleteUser, updateUserTournaments, setPaymentStatus } from '@/app/actions/users'
 import { supabase } from '@/lib/supabase'
 import { User, UserRole } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -28,31 +28,33 @@ const ROLE_COLOR: Record<UserRole, string> = {
   user:             'text-muted-foreground bg-muted border-border',
 }
 
+type PaymentFilter = 'all' | 'paid' | 'unpaid'
+
 export default function AdminUsersPage() {
   const { tournaments } = useTournament()
   const { currentUser, isProfileReady } = useAuth()
   const [users, setUsers]             = useState<FullUser[]>([])
   const [permissions, setPermissions] = useState<Record<string, string[]>>({})
+  // payments: { [userId:tournamentId]: boolean }
+  const [payments, setPayments]       = useState<Record<string, boolean>>({})
   const [saved, setSaved]             = useState<string[]>([])
   const [search, setSearch]           = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [roleMsg, setRoleMsg]         = useState('')
   const [myTournamentIds, setMyTournamentIds] = useState<string[] | 'all'>('all')
+  const [tournamentFilter, setTournamentFilter] = useState<string>('all')
+  const [paymentFilter, setPaymentFilter]       = useState<PaymentFilter>('all')
 
-  // Wait for full profile so role is authoritative (not the 'user' default)
   const callerRole = (isProfileReady ? currentUser?.role : undefined) as UserRole | undefined
   const isFullAdmin = callerRole === 'admin'
 
   const load = async () => {
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('*')
-
+    const { data: profiles } = await supabase.from('profiles').select('*')
     if (!profiles) return
 
     const { data: participations } = await supabase
       .from('tournament_participants')
-      .select('user_id, tournament_id')
+      .select('user_id, tournament_id, paid')
       .in('user_id', profiles.map((p: { id: string }) => p.id))
 
     const mappedUsers: FullUser[] = profiles.map((p: {
@@ -73,6 +75,13 @@ export default function AdminUsersPage() {
 
     setUsers(mappedUsers)
     setPermissions(Object.fromEntries(mappedUsers.map((u) => [u.id, [...u.competitionIds]])))
+
+    // build payments map
+    const payMap: Record<string, boolean> = {}
+    for (const row of (participations ?? []) as { user_id: string; tournament_id: string; paid: boolean }[]) {
+      payMap[`${row.user_id}:${row.tournament_id}`] = row.paid ?? false
+    }
+    setPayments(payMap)
   }
 
   useEffect(() => {
@@ -101,6 +110,21 @@ export default function AdminUsersPage() {
     }
   }
 
+  const togglePaid = async (userId: string, tournamentId: string) => {
+    const key = `${userId}:${tournamentId}`
+    const current = payments[key] ?? false
+    const next = !current
+    // Optimistic update
+    setPayments(prev => ({ ...prev, [key]: next }))
+    const res = await setPaymentStatus(userId, tournamentId, next)
+    if (!res.ok) {
+      // Revert
+      setPayments(prev => ({ ...prev, [key]: current }))
+      setRoleMsg(res.error ?? 'שגיאת עדכון תשלום')
+      setTimeout(() => setRoleMsg(''), 3000)
+    }
+  }
+
   const handleDelete = async (userId: string) => {
     const res = await deleteUser(userId)
     if (res.ok) {
@@ -112,7 +136,7 @@ export default function AdminUsersPage() {
     setDeleteConfirm(null)
   }
 
-const handleSetRole = async (userId: string, newRole: UserRole) => {
+  const handleSetRole = async (userId: string, newRole: UserRole) => {
     try {
       const res = await setUserRole(userId, newRole)
       if (res.ok) {
@@ -138,7 +162,11 @@ const handleSetRole = async (userId: string, newRole: UserRole) => {
         'תפקיד':    ROLE_LABEL[u.role] ?? u.role,
       }
       for (const t of tournaments) {
-        base[t.name] = u.competitionIds.includes(t.id) ? '✓' : ''
+        const inTournament = u.competitionIds.includes(t.id)
+        base[t.name] = inTournament ? '✓' : ''
+        if (inTournament) {
+          base[`${t.name} - שולם`] = payments[`${u.id}:${t.id}`] ? '✓' : ''
+        }
       }
       return base
     })
@@ -148,24 +176,47 @@ const handleSetRole = async (userId: string, newRole: UserRole) => {
     writeFile(wb, 'users.xlsx')
   }
 
-  // Tournaments visible to the caller (all for admin/owner, assigned only for tournament_admin)
   const visibleTournaments = myTournamentIds === 'all'
     ? tournaments
     : tournaments.filter(t => (myTournamentIds as string[]).includes(t.id))
 
   const filtered = users.filter((u) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      u.displayName.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
-      (u.firstName ?? '').toLowerCase().includes(q) ||
-      (u.lastName  ?? '').toLowerCase().includes(q)
-    )
+    // search filter
+    if (search) {
+      const q = search.toLowerCase()
+      const matchesSearch =
+        u.displayName.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.firstName ?? '').toLowerCase().includes(q) ||
+        (u.lastName  ?? '').toLowerCase().includes(q)
+      if (!matchesSearch) return false
+    }
+
+    // tournament filter — show only users who are participants
+    if (tournamentFilter !== 'all') {
+      if (!u.competitionIds.includes(tournamentFilter)) return false
+    }
+
+    // payment filter — only relevant when a tournament is selected
+    if (tournamentFilter !== 'all' && paymentFilter !== 'all') {
+      const isPaid = payments[`${u.id}:${tournamentFilter}`] ?? false
+      if (paymentFilter === 'paid'   && !isPaid) return false
+      if (paymentFilter === 'unpaid' &&  isPaid) return false
+    }
+
+    return true
   })
+
+  // stats for selected tournament
+  const tournamentStats = tournamentFilter !== 'all' ? (() => {
+    const members = users.filter(u => u.competitionIds.includes(tournamentFilter))
+    const paidCount = members.filter(u => payments[`${u.id}:${tournamentFilter}`]).length
+    return { total: members.length, paid: paidCount, unpaid: members.length - paidCount }
+  })() : null
 
   return (
     <div className="p-6 max-w-2xl">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-primary" />
@@ -184,31 +235,98 @@ const handleSetRole = async (userId: string, newRole: UserRole) => {
         </div>
       )}
 
-      <div className="relative mb-5">
-        <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="חיפוש לפי שם, שם משפחה או מייל..."
-          className="pr-9 bg-background border-border text-foreground placeholder:text-muted-foreground"
-        />
+      {/* Filters */}
+      <div className="flex flex-col gap-3 mb-5">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="חיפוש לפי שם, שם משפחה או מייל..."
+            className="pr-9 bg-background border-border text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+
+        {/* Tournament filter */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Trophy className="h-4 w-4 text-muted-foreground shrink-0" />
+          <button
+            onClick={() => { setTournamentFilter('all'); setPaymentFilter('all') }}
+            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+              tournamentFilter === 'all'
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-background text-muted-foreground border-border hover:border-primary/50'
+            }`}
+          >
+            כל הטורנירים
+          </button>
+          {visibleTournaments.map(t => (
+            <button
+              key={t.id}
+              onClick={() => { setTournamentFilter(t.id); setPaymentFilter('all') }}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                tournamentFilter === t.id
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-muted-foreground border-border hover:border-primary/50'
+              }`}
+            >
+              {t.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Payment filter + stats — only when a tournament is selected */}
+        {tournamentFilter !== 'all' && (
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
+              {(['all', 'paid', 'unpaid'] as PaymentFilter[]).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setPaymentFilter(f)}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    paymentFilter === f
+                      ? f === 'paid'   ? 'bg-emerald-600 text-white border-emerald-600'
+                      : f === 'unpaid' ? 'bg-red-500 text-white border-red-500'
+                      :                  'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-muted-foreground border-border hover:border-primary/50'
+                  }`}
+                >
+                  {f === 'all' ? 'הכל' : f === 'paid' ? 'שולם' : 'לא שולם'}
+                </button>
+              ))}
+            </div>
+
+            {tournamentStats && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="text-emerald-600 font-medium">✓ {tournamentStats.paid} שילמו</span>
+                <span className="text-red-500 font-medium">✗ {tournamentStats.unpaid} לא שילמו</span>
+                <span>סה״כ {tournamentStats.total}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 && (
         <p className="text-center py-12 text-muted-foreground">
-          {search ? 'לא נמצאו משתמשים' : 'אין משתמשים רשומים עדיין.'}
+          {search || tournamentFilter !== 'all' ? 'לא נמצאו משתמשים' : 'אין משתמשים רשומים עדיין.'}
         </p>
       )}
 
       <div className="space-y-3">
         {filtered.map((user) => {
           const isMe = user.id === currentUser?.id
-          // admin can promote/demote to tournament_admin
           const canSetTournamentAdmin = !isMe && callerRole === 'admin' && user.role !== 'admin'
-          // admin + tournament_admin can delete any non-admin user
           const canDelete = !isMe &&
             (callerRole === 'admin' || callerRole === 'tournament_admin') &&
             user.role !== 'admin'
+
+          // paid status for the currently filtered tournament (if any)
+          const isPaid = tournamentFilter !== 'all'
+            ? (payments[`${user.id}:${tournamentFilter}`] ?? false)
+            : false
 
           return (
             <div key={user.id} className="rounded-xl bg-card border border-border overflow-hidden">
@@ -236,7 +354,21 @@ const handleSetRole = async (userId: string, newRole: UserRole) => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* Tournament-admin toggle — owner or admin */}
+                  {/* Paid checkbox — visible only when a tournament is filtered */}
+                  {tournamentFilter !== 'all' && user.role === 'user' && (
+                    <button
+                      onClick={() => togglePaid(user.id, tournamentFilter)}
+                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors min-w-[72px] justify-center ${
+                        isPaid
+                          ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                          : 'bg-background text-muted-foreground border-border hover:border-emerald-500 hover:text-emerald-600'
+                      }`}
+                      title={isPaid ? 'שולם — לחץ לביטול' : 'לא שולם — לחץ לסימון'}
+                    >
+                      {isPaid ? <><CheckCircle2 className="h-3.5 w-3.5" />שולם</> : <>שולם?</>}
+                    </button>
+                  )}
+
                   {canSetTournamentAdmin && (
                     user.role === 'tournament_admin' ? (
                       <button
@@ -288,11 +420,10 @@ const handleSetRole = async (userId: string, newRole: UserRole) => {
                       </button>
                     )
                   )}
-
                 </div>
               </div>
 
-              {/* Tournament permissions — hide for admin/tournament_admin (they have role-based access) */}
+              {/* Tournament permissions */}
               {user.role !== 'admin' && user.role !== 'tournament_admin' && (
                 <div className="px-4 py-3">
                   <p className="text-xs text-muted-foreground mb-2.5">גישה לתחרויות:</p>

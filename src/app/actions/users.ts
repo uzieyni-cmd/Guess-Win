@@ -55,6 +55,40 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean; error?:
 }
 
 /**
+ * Toggle paid status for a user in a specific tournament.
+ */
+export async function setPaymentStatus(
+  userId: string,
+  tournamentId: string,
+  paid: boolean
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const supabase = await createSupabaseServerClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return { ok: false, error: 'Unauthorized' }
+
+    const { data: callerProfile } = await supabaseAdmin
+      .from('profiles').select('role').eq('id', user.id).single()
+
+    const callerRole = callerProfile?.role as string
+    if (callerRole !== 'admin' && callerRole !== 'tournament_admin') {
+      return { ok: false, error: 'אין הרשאה' }
+    }
+
+    const { error } = await supabaseAdmin
+      .from('tournament_participants')
+      .update({ paid })
+      .eq('user_id', userId)
+      .eq('tournament_id', tournamentId)
+
+    if (error) return { ok: false, error: error.message }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'שגיאה לא צפויה' }
+  }
+}
+
+/**
  * Update a user's tournament participation list.
  * Allowed for both 'admin' and 'tournament_admin'.
  * Tournament_admin can only assign/remove tournaments they manage.
