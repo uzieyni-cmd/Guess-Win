@@ -162,6 +162,10 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   // Ref למצב חיבור Realtime — מונע race condition עם polling fallback
   const realtimeConnectedRef = useRef(false)
 
+  // Ref ל-tournaments — מאפשר גישה בתוך effects ללא dependency (מניעת re-run על כל עדכון משחק)
+  const tournamentsRef = useRef<typeof tournaments>([])
+  useEffect(() => { tournamentsRef.current = tournaments }, [tournaments])
+
   // ── Load tournaments (metadata only — no matches) ─────────────
   const loadTournaments = useCallback(async () => {
     const { data: rows } = await supabase
@@ -330,7 +334,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       }))
       setBets(mappedBets)
 
-      const tournament = tournaments.find((t) => t.id === activeTournamentId)
+      const tournament = tournamentsRef.current.find((t) => t.id === activeTournamentId)
       if (tournament?.participantIds.length) {
         const { data: profiles } = await supabase
           .from('profiles')
@@ -439,7 +443,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [activeTournamentId, tournaments, participantsVersion])
+  }, [activeTournamentId, participantsVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Realtime: round_bonus_picks — 2 נק' לניצחון נבחרת מדורגת ───
   useEffect(() => {
