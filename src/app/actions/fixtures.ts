@@ -43,7 +43,7 @@ export async function syncFixtures(
       const batch = rows.slice(i, i + BATCH)
       const { error } = await supabaseAdmin
         .from('matches')
-        .upsert(batch, { onConflict: 'api_fixture_id', ignoreDuplicates: false })
+        .upsert(batch, { onConflict: 'api_fixture_id,tournament_id', ignoreDuplicates: false })
       if (error) throw error
     }
 
@@ -102,12 +102,13 @@ export async function refreshMatchResult(
       .update({ status, actual_home_score: homeScore, actual_away_score: awayScore })
       .eq('api_fixture_id', fixtureId)
       .select('id')
-      .single()
 
     if (error) throw error
 
-    if (status === 'finished' && homeScore !== null && awayScore !== null && updated?.id) {
-      await computeAndSaveBetPoints(updated.id, { home: homeScore, away: awayScore })
+    if (status === 'finished' && homeScore !== null && awayScore !== null && updated?.length) {
+      for (const row of updated) {
+        await computeAndSaveBetPoints(row.id, { home: homeScore, away: awayScore })
+      }
     }
 
     return { ok: true }
