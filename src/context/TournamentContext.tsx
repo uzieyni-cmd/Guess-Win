@@ -443,7 +443,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [activeTournamentId, participantsVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTournamentId, participantsVersion, tournamentsLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Realtime: round_bonus_picks — 2 נק' לניצחון נבחרת מדורגת ───
   useEffect(() => {
