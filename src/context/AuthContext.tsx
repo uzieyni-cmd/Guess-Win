@@ -51,8 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null)
   const hasInitialized = useRef(false)
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const userIdRef = useRef<string | null>(null) // always current — avoids stale closure in onAuthStateChange
 
   // ── Idle logout — 10 דקות ללא פעילות ───────────────────────────
+  // הטיימר מופסק כשהדף מוסתר (tab אחר) ומאופס כשחוזרים
   useEffect(() => {
     const IDLE_MS = 10 * 60 * 1000
     const EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
@@ -64,18 +66,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }, IDLE_MS)
     }
 
+    const pauseTimer = () => {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current)
+        idleTimerRef.current = null
+      }
+    }
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        // עוזבים את הטאב — עצור את הטיימר (זמן על טאב אחר לא נחשב idle)
+        pauseTimer()
+      } else {
+        // חוזרים לטאב — אפס את הטיימר
+        resetTimer()
+      }
+    }
+
     // התחל timer רק אם יש משתמש מחובר
     if (!currentUser) {
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      pauseTimer()
       return
     }
 
-    resetTimer()
+    // אל תתחיל טיימר אם הדף כרגע מוסתר
+    if (!document.hidden) resetTimer()
     EVENTS.forEach(e => window.addEventListener(e, resetTimer, { passive: true }))
+    document.addEventListener('visibilitychange', onVisibilityChange)
 
     return () => {
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+      pauseTimer()
       EVENTS.forEach(e => window.removeEventListener(e, resetTimer))
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [currentUser])
 
@@ -112,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // can render instantly while the full profile loads in the background.
         const { user } = session
         setUserId(user.id)
+        userIdRef.current = user.id
         setCurrentUser({
           id: user.id,
           email: user.email ?? '',
@@ -136,17 +159,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         // ── Subsequent events (SIGNED_IN after login, SIGNED_OUT, etc.) ───
         if (session?.user) {
+          // Use ref (not state) to avoid stale closure — state userId is always null here
+          const isSameUser = session.user.id === userIdRef.current
+          userIdRef.current = session.user.id
           setUserId(session.user.id)
-          setIsProfileReady(false)
+          // Same user coming back (tab refocus) — refresh profile silently, don't blank the page
+          if (!isSameUser) setIsProfileReady(false)
           try {
             const user = await loadProfile(session.user.id)
-            if (mounted) setCurrentUser(user)
+            if (mounted) {
+              if (user) {
+                setCurrentUser(user)
+              } else if (!isSameUser) {
+                // Only clear if it's genuinely a different user with a missing profile
+                setCurrentUser(null)
+              }
+              // isSameUser + null profile → keep existing currentUser (network hiccup)
+            }
           } catch {
-            if (mounted) setCurrentUser(null)
+            if (mounted && !isSameUser) setCurrentUser(null)
           } finally {
             if (mounted) setIsProfileReady(true)
           }
         } else {
+          userIdRef.current = null
           setUserId(null)
           setCurrentUser(null)
           setIsProfileReady(true)
