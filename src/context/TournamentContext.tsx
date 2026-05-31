@@ -304,6 +304,11 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     if (!activeTournamentId) return
 
     const loadBetsAndParticipants = async () => {
+      setParticipants([])
+      setBonusPicksRaw([])
+      setRoundPicksRaw([])
+      setJokerPicksRaw([])
+
       const { data: betRows } = await supabase
         .from('bets')
         .select('*, matches(match_start_time)')
