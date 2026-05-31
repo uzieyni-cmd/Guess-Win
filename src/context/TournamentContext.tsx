@@ -130,15 +130,19 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     return s
   }, [jokerPicksRaw])
 
+  // H3: פילטור בטים לטורניר הפעיל — useMemo נפרד כך ש-baseStandings לא מחשב מחדש על כל bet
+  const activeBets = useMemo(
+    () => bets.filter(b => b.tournamentId === activeTournamentId),
+    [bets, activeTournamentId]
+  )
+
   // baseStandings — נגזר מ-bets state (מתעדכן ב-Realtime) + bonus picks
-  // זה מתקן באג שבו הניקוד התאפס בסיום משחק: כי baseStandings היה state קבוע
-  // שלא התעדכן כשה-bets קיבלו points דרך Realtime
   const baseStandings = useMemo<ParticipantStanding[]>(() => {
     if (!participants.length) return []
     const pointsByUser: Record<string, number> = { ...bonusPointsByUser }
     const countByUser: Record<string, number> = {}
-    for (const bet of bets) {
-      if (bet.tournamentId !== activeTournamentId || bet.points === null) continue
+    for (const bet of activeBets) {
+      if (bet.points === null) continue
       pointsByUser[bet.userId] = (pointsByUser[bet.userId] ?? 0) + bet.points
       countByUser[bet.userId] = (countByUser[bet.userId] ?? 0) + 1
     }
@@ -154,7 +158,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       .sort((a, b) => b.totalPoints - a.totalPoints)
     newStandings.forEach((s, i) => { s.rank = i + 1 })
     return newStandings
-  }, [bets, bonusPointsByUser, participants, activeTournamentId])
+  }, [activeBets, bonusPointsByUser, participants])
 
   // Ref לשמירת זמני התחלת משחקים — לשימוש ב-Realtime callback ללא closure stale
   const matchTimesRef = useRef<Map<string, string>>(new Map())
@@ -269,7 +273,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     const liveMatchMap = new Map(liveMatches.map(m => [m.id, m]))
 
     // בטים על משחקים חיים בלבד (שעדיין לא קיבלו points ב-DB)
-    const liveBets = bets.filter(b => liveMatchIds.has(b.matchId) && b.tournamentId === activeTournamentId)
+    const liveBets = activeBets.filter(b => liveMatchIds.has(b.matchId))
 
     // חשב ניקוד זמני לכל משתמש (כולל מכפיל ג'וקר)
     const livePointsByUser: Record<string, number> = {}
@@ -335,13 +339,20 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       setBets(mappedBets)
 
       const tournament = tournamentsRef.current.find((t) => t.id === activeTournamentId)
-      if (tournament?.participantIds.length) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('id', tournament.participantIds)
 
-        const profileUsers = (profiles ?? []).map((p: { id: string; email: string; display_name: string; role: string; avatar_url?: string }) => ({
+      // H1: כל 4 הבקשות רצות במקביל
+      const tid = activeTournamentId
+      const [profilesRes, bonusPicksRes, roundPicksRes, jokerPicksRes] = await Promise.all([
+        tournament?.participantIds.length
+          ? supabase.from('profiles').select('*').in('id', tournament.participantIds)
+          : Promise.resolve({ data: [] as unknown[] }),
+        supabase.from('bonus_picks').select('id, user_id, points_awarded').eq('tournament_id', tid),
+        supabase.from('round_bonus_picks').select('id, user_id, points_awarded').eq('tournament_id', tid),
+        supabase.from('joker_picks').select('id, match_id, user_id').eq('tournament_id', tid),
+      ])
+
+      if (profilesRes.data?.length) {
+        const profileUsers = (profilesRes.data as { id: string; email: string; display_name: string; role: string; avatar_url?: string }[]).map(p => ({
           id: p.id,
           email: p.email,
           displayName: p.display_name,
@@ -350,50 +361,23 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
           competitionIds: [],
         }))
         setParticipants(profileUsers)
-
-        // Load bonus picks — כל הרשומות (כולל points_awarded=null) כדי שה-Realtime יוכל לעדכן שורות בודדות
-        const { data: bonusPicks } = await supabase
-          .from('bonus_picks')
-          .select('id, user_id, points_awarded')
-          .eq('tournament_id', activeTournamentId)
-
-        setBonusPicksRaw(
-          (bonusPicks ?? []).map((p: { id: string; user_id: string; points_awarded: number | null }) => ({
-            id: p.id,
-            userId: p.user_id,
-            pointsAwarded: p.points_awarded,
-          }))
-        )
-
-        // Load round bonus picks
-        const { data: roundPicks } = await supabase
-          .from('round_bonus_picks')
-          .select('id, user_id, points_awarded')
-          .eq('tournament_id', activeTournamentId)
-
-        setRoundPicksRaw(
-          (roundPicks ?? []).map((p: { id: string; user_id: string; points_awarded: number }) => ({
-            id: p.id,
-            userId: p.user_id,
-            pointsAwarded: p.points_awarded ?? 0,
-          }))
-        )
-
-        // Load joker picks (all users)
-        const { data: jokerPicks } = await supabase
-          .from('joker_picks')
-          .select('id, match_id, user_id')
-          .eq('tournament_id', activeTournamentId)
-
-        setJokerPicksRaw(
-          (jokerPicks ?? []).map((j: { id: string; match_id: string; user_id: string }) => ({
-            id: j.id,
-            matchId: j.match_id,
-            tournamentId: activeTournamentId,
-            userId: j.user_id,
-          }))
-        )
       }
+
+      setBonusPicksRaw(
+        ((bonusPicksRes.data ?? []) as { id: string; user_id: string; points_awarded: number | null }[]).map(p => ({
+          id: p.id, userId: p.user_id, pointsAwarded: p.points_awarded,
+        }))
+      )
+      setRoundPicksRaw(
+        ((roundPicksRes.data ?? []) as { id: string; user_id: string; points_awarded: number }[]).map(p => ({
+          id: p.id, userId: p.user_id, pointsAwarded: p.points_awarded ?? 0,
+        }))
+      )
+      setJokerPicksRaw(
+        ((jokerPicksRes.data ?? []) as { id: string; match_id: string; user_id: string }[]).map(j => ({
+          id: j.id, matchId: j.match_id, tournamentId: tid, userId: j.user_id,
+        }))
+      )
     }
 
     loadBetsAndParticipants()
@@ -613,10 +597,10 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   }, [activeTournamentId])
 
   // ── Set actual score (Admin) — updates match + scores all bets ──
-  const setActualScore = useCallback(async (tournamentId: string, matchId: string, score: Score) => {
+  // H4: הסרת loadTournaments() — Realtime מעדכן matches + bets אוטומטית
+  const setActualScore = useCallback(async (_tournamentId: string, matchId: string, score: Score) => {
     await setActualScoreAction(matchId, score.home, score.away)
-    await loadTournaments()
-  }, [loadTournaments])
+  }, [])
 
   // ── Create tournament (Admin) ──────────────────────────────────
   const createTournament = useCallback(async (data: CreateTournamentInput) => {

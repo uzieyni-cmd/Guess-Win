@@ -27,6 +27,17 @@ export async function rescoreTournamentBets(
   if (mErr) return { ok: false, scored: 0, error: mErr.message }
   if (!matches?.length) return { ok: true, scored: 0 }
 
+  // C3: שלוף את כל הג'וקרים לטורניר פעם אחת לפני הלולאה
+  const { data: allJokers } = await supabaseAdmin
+    .from('joker_picks')
+    .select('user_id, match_id')
+    .eq('tournament_id', tournamentId)
+  const jokerMap = new Map<string, Set<string>>()
+  for (const j of (allJokers ?? []) as { user_id: string; match_id: string }[]) {
+    if (!jokerMap.has(j.match_id)) jokerMap.set(j.match_id, new Set())
+    jokerMap.get(j.match_id)!.add(j.user_id)
+  }
+
   let scored = 0
   for (const match of matches as MatchRow[]) {
     const home = match.actual_home_score
@@ -57,27 +68,22 @@ export async function rescoreTournamentBets(
     const exactOnes = scoredBets.filter(b => b.result === 'exact')
     if (exactOnes.length === 1) exactOnes[0].points = 15
 
-    // ── Step C: מכפיל ג'וקר (×2) ─────────────────────────────────
-    const { data: jokerPicksRaw } = await supabaseAdmin
-      .from('joker_picks')
-      .select('user_id')
-      .eq('match_id', match.id)
-
-    if (jokerPicksRaw?.length) {
-      const jokerUserIds = new Set(
-        (jokerPicksRaw as { user_id: string }[]).map(j => j.user_id)
-      )
+    // ── Step C: מכפיל ג'וקר (×2) — מהמפה שנשלפה מראש ─────────────
+    const jokerUserIds = jokerMap.get(match.id)
+    if (jokerUserIds?.size) {
       for (const b of scoredBets) {
         if (jokerUserIds.has(b.userId) && b.points > 0) b.points *= 2
       }
     }
 
-    // ── Step D: שמור ניקוד ────────────────────────────────────────
-    for (const b of scoredBets) {
+    // ── Step D: שמור ניקוד — batch upsert במקום N updates ─────────
+    if (scoredBets.length > 0) {
       await supabaseAdmin
         .from('bets')
-        .update({ points: b.points, result: b.result })
-        .eq('id', b.id)
+        .upsert(
+          scoredBets.map(b => ({ id: b.id, points: b.points, result: b.result })),
+          { onConflict: 'id' }
+        )
     }
 
     // ── Step E: בונוס נבחרת מדורגת (+2 לניצחון) ──────────────────
@@ -222,13 +228,13 @@ export async function setActualScoreAction(
     }
   }
 
-  // ── Step D: כתוב ניקוד סופי ───────────────────────────────────
-  for (const b of scored) {
-    await supabaseAdmin
-      .from('bets')
-      .update({ points: b.points, result: b.result })
-      .eq('id', b.id)
-  }
+  // ── Step D: כתוב ניקוד סופי — batch upsert במקום N updates ──────
+  await supabaseAdmin
+    .from('bets')
+    .upsert(
+      scored.map(b => ({ id: b.id, points: b.points, result: b.result })),
+      { onConflict: 'id' }
+    )
 
   // ── Step E: בונוס נבחרת מדורגת (+2 לניצחון) ──────────────────
   await awardRoundBonusForMatch(matchId)

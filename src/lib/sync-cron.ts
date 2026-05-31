@@ -5,6 +5,12 @@ import { createClient } from '@supabase/supabase-js'
 
 let started = false
 
+// C4: client נוצר פעם אחת — מונע דליפת connections כל 30 שניות
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+)
+
 export function startSyncCron() {
   if (started) return
   started = true
@@ -13,10 +19,6 @@ export function startSyncCron() {
 
   const run = async () => {
     try {
-      const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      )
 
       // מצא משחקים שמתרחשים כעת או התרחשו ב-3 השעות האחרונות
       const now = new Date()
