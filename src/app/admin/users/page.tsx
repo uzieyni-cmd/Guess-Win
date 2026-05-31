@@ -41,12 +41,36 @@ export default function AdminUsersPage() {
   const [search, setSearch]           = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [roleMsg, setRoleMsg]         = useState('')
-  const [myTournamentIds, setMyTournamentIds] = useState<string[] | 'all'>('all')
-  const [tournamentFilter, setTournamentFilter] = useState<string>('all')
+  const [myTournamentIds, setMyTournamentIds]   = useState<string[] | 'all'>('all')
+  // activeFilters: Set of active filter keys ('none' = ללא טורניר, or a tournament id)
+  const [activeFilters, setActiveFilters]       = useState<Set<string>>(new Set())
+  const [filtersInitialized, setFiltersInitialized] = useState(false)
   const [paymentFilter, setPaymentFilter]       = useState<PaymentFilter>('all')
 
   const callerRole = (isProfileReady ? currentUser?.role : undefined) as UserRole | undefined
   const isFullAdmin = callerRole === 'admin'
+
+  const visibleTournaments = myTournamentIds === 'all'
+    ? tournaments
+    : tournaments.filter(t => (myTournamentIds as string[]).includes(t.id))
+
+  // Initialize all filters as active once tournaments are loaded
+  useEffect(() => {
+    if (!filtersInitialized && visibleTournaments.length > 0) {
+      setActiveFilters(new Set(['none', ...visibleTournaments.map(t => t.id)]))
+      setFiltersInitialized(true)
+    }
+  }, [visibleTournaments, filtersInitialized])
+
+  const toggleFilter = (key: string) => {
+    setActiveFilters(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+    setPaymentFilter('all')
+  }
 
   const load = async () => {
     const { data: profiles } = await supabase.from('profiles').select('*')
@@ -176,9 +200,13 @@ export default function AdminUsersPage() {
     writeFile(wb, 'users.xlsx')
   }
 
-  const visibleTournaments = myTournamentIds === 'all'
-    ? tournaments
-    : tournaments.filter(t => (myTournamentIds as string[]).includes(t.id))
+  // Which tournament (if exactly one non-'none') is active — for payment filter & paid toggle
+  const allFilterKeys = ['none', ...visibleTournaments.map(t => t.id)]
+  const allActive = allFilterKeys.length > 0 && allFilterKeys.every(k => activeFilters.has(k))
+  const activeTournamentOnly = !activeFilters.has('none') &&
+    visibleTournaments.filter(t => activeFilters.has(t.id)).length === 1
+      ? visibleTournaments.find(t => activeFilters.has(t.id))!.id
+      : null
 
   const filtered = users.filter((u) => {
     // search filter
@@ -192,14 +220,17 @@ export default function AdminUsersPage() {
       if (!matchesSearch) return false
     }
 
-    // tournament filter — show only users who are participants
-    if (tournamentFilter !== 'all') {
-      if (!u.competitionIds.includes(tournamentFilter)) return false
+    // tournament multi-filter — skip when all active
+    if (!allActive && activeFilters.size > 0) {
+      const hasNoTournament = u.competitionIds.length === 0
+      const matchesNone       = activeFilters.has('none') && hasNoTournament
+      const matchesTournament = u.competitionIds.some(id => activeFilters.has(id))
+      if (!matchesNone && !matchesTournament) return false
     }
 
-    // payment filter — only relevant when a tournament is selected
-    if (tournamentFilter !== 'all' && paymentFilter !== 'all') {
-      const isPaid = payments[`${u.id}:${tournamentFilter}`] ?? false
+    // payment filter — only when exactly one tournament selected
+    if (activeTournamentOnly && paymentFilter !== 'all') {
+      const isPaid = payments[`${u.id}:${activeTournamentOnly}`] ?? false
       if (paymentFilter === 'paid'   && !isPaid) return false
       if (paymentFilter === 'unpaid' &&  isPaid) return false
     }
@@ -207,10 +238,10 @@ export default function AdminUsersPage() {
     return true
   })
 
-  // stats for selected tournament
-  const tournamentStats = tournamentFilter !== 'all' ? (() => {
-    const members = users.filter(u => u.competitionIds.includes(tournamentFilter))
-    const paidCount = members.filter(u => payments[`${u.id}:${tournamentFilter}`]).length
+  // stats — only for single tournament
+  const tournamentStats = activeTournamentOnly ? (() => {
+    const members = users.filter(u => u.competitionIds.includes(activeTournamentOnly))
+    const paidCount = members.filter(u => payments[`${u.id}:${activeTournamentOnly}`]).length
     return { total: members.length, paid: paidCount, unpaid: members.length - paidCount }
   })() : null
 
@@ -248,25 +279,26 @@ export default function AdminUsersPage() {
           />
         </div>
 
-        {/* Tournament filter */}
+        {/* Tournament multi-select filter */}
         <div className="flex items-center gap-2 flex-wrap">
           <Trophy className="h-4 w-4 text-muted-foreground shrink-0" />
+          {/* ללא טורניר */}
           <button
-            onClick={() => { setTournamentFilter('all'); setPaymentFilter('all') }}
+            onClick={() => toggleFilter('none')}
             className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-              tournamentFilter === 'all'
+              activeFilters.has('none')
                 ? 'bg-primary text-primary-foreground border-primary'
                 : 'bg-background text-muted-foreground border-border hover:border-primary/50'
             }`}
           >
-            כל הטורנירים
+            ללא טורניר
           </button>
           {visibleTournaments.map(t => (
             <button
               key={t.id}
-              onClick={() => { setTournamentFilter(t.id); setPaymentFilter('all') }}
+              onClick={() => toggleFilter(t.id)}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                tournamentFilter === t.id
+                activeFilters.has(t.id)
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-background text-muted-foreground border-border hover:border-primary/50'
               }`}
@@ -276,8 +308,8 @@ export default function AdminUsersPage() {
           ))}
         </div>
 
-        {/* Payment filter + stats — only when a tournament is selected */}
-        {tournamentFilter !== 'all' && (
+        {/* Payment filter + stats — only when exactly one tournament is selected */}
+        {activeTournamentOnly && (
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -311,7 +343,7 @@ export default function AdminUsersPage() {
 
       {filtered.length === 0 && (
         <p className="text-center py-12 text-muted-foreground">
-          {search || tournamentFilter !== 'all' ? 'לא נמצאו משתמשים' : 'אין משתמשים רשומים עדיין.'}
+          {search || !allActive ? 'לא נמצאו משתמשים' : 'אין משתמשים רשומים עדיין.'}
         </p>
       )}
 
@@ -323,9 +355,9 @@ export default function AdminUsersPage() {
             (callerRole === 'admin' || callerRole === 'tournament_admin') &&
             user.role !== 'admin'
 
-          // paid status for the currently filtered tournament (if any)
-          const isPaid = tournamentFilter !== 'all'
-            ? (payments[`${user.id}:${tournamentFilter}`] ?? false)
+          // paid status for the single active tournament (if any)
+          const isPaid = activeTournamentOnly
+            ? (payments[`${user.id}:${activeTournamentOnly}`] ?? false)
             : false
 
           return (
@@ -354,10 +386,10 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* Paid checkbox — visible only when a tournament is filtered */}
-                  {tournamentFilter !== 'all' && user.role === 'user' && (
+                  {/* Paid toggle — visible only when exactly one tournament is selected */}
+                  {activeTournamentOnly && user.role === 'user' && (
                     <button
-                      onClick={() => togglePaid(user.id, tournamentFilter)}
+                      onClick={() => togglePaid(user.id, activeTournamentOnly)}
                       className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors min-w-[72px] justify-center ${
                         isPaid
                           ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
