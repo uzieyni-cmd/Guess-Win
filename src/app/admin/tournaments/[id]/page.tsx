@@ -45,12 +45,16 @@ function ParticipantsPaymentSection({ tournamentId }: { tournamentId: string }) 
 
     if (!data) { setLoading(false); return }
     setRows(
-      data.map((r: { user_id: string; paid: boolean; profiles: { display_name: string; email: string } | null }) => ({
-        userId: r.user_id,
-        displayName: r.profiles?.display_name ?? r.user_id,
-        email: r.profiles?.email ?? '',
-        paid: r.paid ?? false,
-      }))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data.map((r: any) => {
+        const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
+        return {
+          userId: r.user_id as string,
+          displayName: (profile?.display_name ?? r.user_id) as string,
+          email: (profile?.email ?? '') as string,
+          paid: (r.paid ?? false) as boolean,
+        }
+      })
     )
     setLoading(false)
   }, [tournamentId])
