@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Plus, Trophy, Pencil, CheckCircle2, Trash2, Eye, EyeOff, Loader2, Upload, Link2, Search, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useTournament } from '@/context/TournamentContext'
+import { useAuth } from '@/context/AuthContext'
 import { fetchLeagueSeasons, fetchAllLeagues, type LeagueItem } from '@/app/actions/leagues'
 import { adminUpdateTournament, fetchLogoForTournament, uploadLogo } from '@/app/actions/tournaments'
 import { syncFixtures } from '@/app/actions/fixtures'
@@ -45,6 +46,8 @@ interface SeasonOption { year: number; label: string; current: boolean }
 
 export default function AdminTournamentsPage() {
   const { tournaments, createTournament, deleteTournament, toggleHideTournament, reload } = useTournament()
+  const { currentUser } = useAuth()
+  const isFullAdmin = currentUser?.role === 'admin'
   const [confirmDelete, setConfirmDelete] = useState<Tournament | null>(null)
   const router = useRouter()
   const [creating, setCreating] = useState(false)
@@ -188,7 +191,7 @@ export default function AdminTournamentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-suez text-2xl">תחרויות</h1>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        {isFullAdmin && <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 ml-1" />תחרות חדשה</Button>
           </DialogTrigger>
@@ -378,7 +381,7 @@ export default function AdminTournamentsPage() {
               </Button>
             </form>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       {/* Tournament list */}
@@ -425,9 +428,11 @@ export default function AdminTournamentsPage() {
                   <Button variant="ghost" size="icon" onClick={() => openEdit(t)} aria-label="עריכת תחרות" className="min-h-[44px] min-w-[44px]">
                     <Pencil className="h-4 w-4 text-muted-foreground" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t)} aria-label="מחיקת תחרות" className="min-h-[44px] min-w-[44px]">
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
+                  {isFullAdmin && (
+                    <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(t)} aria-label="מחיקת תחרות" className="min-h-[44px] min-w-[44px]">
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  )}
                   <Link href={`/admin/tournaments/${t.id}`}>
                     <Button variant="outline" size="sm">ניהול</Button>
                   </Link>

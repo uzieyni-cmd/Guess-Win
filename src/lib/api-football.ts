@@ -141,6 +141,41 @@ export async function fetchOdds(fixtureId: number): Promise<ApiOddsResult | null
   }
 }
 
+// ── National Team Helpers ─────────────────────────────────────────
+
+export interface TeamRecentMatch {
+  date: string
+  homeTeam: string
+  awayTeam: string
+  homeScore: number | null
+  awayScore: number | null
+  competition: string
+  status: string
+}
+
+export async function fetchTeamRecentMatches(teamName: string, last = 5): Promise<TeamRecentMatch[]> {
+  try {
+    // Find team ID by name search
+    const teamsData = await apiFetchRaw<{ team: { id: number; name: string } }>(`/teams?search=${encodeURIComponent(teamName)}`)
+    const team = teamsData.response[0]?.team
+    if (!team) return []
+
+    // Fetch last N matches
+    const data = await apiFetchRaw<ApiFixture>(`/fixtures?team=${team.id}&last=${last}`, true)
+    return data.response.map(f => ({
+      date: f.fixture.date,
+      homeTeam: f.teams.home.name,
+      awayTeam: f.teams.away.name,
+      homeScore: f.goals.home,
+      awayScore: f.goals.away,
+      competition: f.league.name,
+      status: f.fixture.status.short,
+    }))
+  } catch {
+    return []
+  }
+}
+
 // ── Status Mapper ────────────────────────────────────────────────
 
 export function mapFixtureStatus(short: string): string {

@@ -51,3 +51,4 @@ next-env.d.ts
 C:Temp*
 *.tmp
 *.temp
+.env*.local

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, usePathname } from 'next/navigation'
-import { ArrowRight, Trophy, TrendingUp, Target, LogOut, Settings, TableProperties, Gift } from 'lucide-react'
+import { ArrowRight, Trophy, TrendingUp, Target, LogOut, Settings, TableProperties, Gift, ScrollText } from 'lucide-react'
 import Link from 'next/link'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useTournament } from '@/context/TournamentContext'
@@ -16,6 +16,7 @@ const NAV_TABS = [
   { label: 'טבלה', href: 'standings', icon: TableProperties },
   { label: 'דירוג', href: 'leaderboard', icon: Trophy },
   { label: 'סטטיסטיקה', href: 'stats', icon: TrendingUp },
+  { label: 'תקנון', href: 'rules', icon: ScrollText },
 ]
 
 function TournamentShell({ children }: { children: React.ReactNode }) {

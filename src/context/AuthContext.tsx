@@ -200,7 +200,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const { error, data } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error('דוא"ל או סיסמה שגויים')
-    // Guard: if auth succeeded but profile row is missing, sign out and surface a clear error
     if (data.user) {
       const { data: profile } = await supabase
         .from('profiles').select('id').eq('id', data.user.id).single()

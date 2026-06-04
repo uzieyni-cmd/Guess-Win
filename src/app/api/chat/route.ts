@@ -3,6 +3,7 @@ import { generateText } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
+import { fetchTeamRecentMatches } from '@/lib/api-football'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -252,8 +253,9 @@ ${userBets.length ? `ניחושים של ${currentUserName || 'המשתמש'} ($
     }
 
     const systemPrompt = `אתה עוזר של אתר Guess & Win — אתר ניחושי כדורגל.
-ענה רק על שאלות על האתר: דירוגים, ניחושים, תוצאות משחקים, כללי ניקוד.
-אם שואלים על נושא אחר — סרב בנימוס.
+אתה מומחה כדורגל. ענה על שאלות על האתר (דירוגים, ניחושים, תוצאות, כללי ניקוד) וגם על שאלות כדורגל כלליות (שחקנים, קבוצות, ליגות, טורנירים עולמיים וכו').
+אתה בקיא בנבחרות לקראת מונדיאל 2026: ענה על שאלות על המשחקים האחרונים של נבחרות, תארים ששיגרו, ביצועים בהכשרה, שחקני מפתח, וסיכויים — על סמך הידע שלך עד אוגוסט 2025.
+אם שואלים על נושא שאינו קשור לכדורגל — סרב בנימוס.
 ענה בעברית, קצר וברור.
 ${currentUserName ? `\nאתה מדבר עם ${currentUserName}.` : ''}${tournamentName ? `\nהטורניר הנוכחי: ${tournamentName}.` : ''}
 
@@ -283,9 +285,62 @@ ${contextBlock}`
       !(i === 0 && m.role === 'assistant')
     )
 
+    // ── שליפת תוצאות נבחרת מ-API אם יש שאלה רלוונטית ───────────────
+    const lastUserMsg = [...filteredMessages].reverse().find(m => m.role === 'user')?.content ?? ''
+    const lastUserText = typeof lastUserMsg === 'string' ? lastUserMsg : ''
+
+    // Map Hebrew/common team names → English for API search (World Cup 2026 — 48 teams)
+    const TEAM_MAP: Record<string, string> = {
+      // אירופה (UEFA)
+      'גרמניה': 'Germany', 'צרפת': 'France', 'ספרד': 'Spain', 'אנגליה': 'England',
+      'פורטוגל': 'Portugal', 'הולנד': 'Netherlands', 'בלגיה': 'Belgium',
+      'קרואטיה': 'Croatia', 'שוויץ': 'Switzerland', 'אוסטריה': 'Austria',
+      'פולין': 'Poland', 'דנמרק': 'Denmark', 'סרביה': 'Serbia',
+      'טורקיה': 'Turkey', 'הונגריה': 'Hungary', 'סקוטלנד': 'Scotland',
+      'אוקראינה': 'Ukraine', 'רומניה': 'Romania', 'סלובקיה': 'Slovakia',
+      'סלובניה': 'Slovenia', 'אלבניה': 'Albania', 'צ\'כיה': 'Czech Republic',
+      'יוון': 'Greece', 'גיאורגיה': 'Georgia', 'אירלנד': 'Republic of Ireland',
+      'נורווגיה': 'Norway', 'פינלנד': 'Finland', 'איסלנד': 'Iceland',
+      // דרום אמריקה (CONMEBOL)
+      'ארגנטינה': 'Argentina', 'ברזיל': 'Brazil', 'קולומביה': 'Colombia',
+      'אורוגוואי': 'Uruguay', 'אקוודור': 'Ecuador', 'ונצואלה': 'Venezuela',
+      'פרגוואי': 'Paraguay', 'בוליביה': 'Bolivia', 'צ\'ילה': 'Chile',
+      'פרו': 'Peru',
+      // צפון ומרכז אמריקה (CONCACAF)
+      'ארה"ב': 'USA', 'מקסיקו': 'Mexico', 'קנדה': 'Canada',
+      'פנמה': 'Panama', 'קוסטה ריקה': 'Costa Rica', 'ג\'מייקה': 'Jamaica',
+      'הונדורס': 'Honduras',
+      // אסיה (AFC)
+      'יפן': 'Japan', 'קוריאה': 'South Korea', 'אוסטרליה': 'Australia',
+      'איראן': 'Iran', 'ערב הסעודית': 'Saudi Arabia', 'עיראק': 'Iraq',
+      'ירדן': 'Jordan', 'אינדונזיה': 'Indonesia',
+      // אפריקה (CAF)
+      'מרוקו': 'Morocco', 'סנגל': 'Senegal', 'מצרים': 'Egypt',
+      'ניגריה': 'Nigeria', 'חוף השנהב': 'Ivory Coast', 'קמרון': 'Cameroon',
+      'דרום אפריקה': 'South Africa', 'תוניסיה': 'Tunisia', 'אלג\'יריה': 'Algeria',
+      // אוקיאניה (OFC)
+      'ניו זילנד': 'New Zealand',
+    }
+
+    let teamDataBlock = ''
+    for (const [he, en] of Object.entries(TEAM_MAP)) {
+      if (lastUserText.includes(he) || lastUserText.toLowerCase().includes(en.toLowerCase())) {
+        const matches = await fetchTeamRecentMatches(en, 5)
+        if (matches.length) {
+          const lines = matches.map(m => {
+            const score = m.homeScore !== null ? `${m.homeScore}:${m.awayScore}` : 'טרם שוחק'
+            const date = new Date(m.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            return `${date} | ${m.homeTeam} ${score} ${m.awayTeam} | ${m.competition}`
+          }).join('\n')
+          teamDataBlock += `\n=== תוצאות אחרונות של ${he} (${en}) מה-API ===\n${lines}\n`
+        }
+        break
+      }
+    }
+
     const { text } = await generateText({
-      model: gateway('google/gemini-2.0-flash-lite'),
-      system: systemPrompt,
+      model: gateway('google/gemini-2.5-flash-lite'),
+      system: systemPrompt + teamDataBlock,
       messages: filteredMessages,
     })
 

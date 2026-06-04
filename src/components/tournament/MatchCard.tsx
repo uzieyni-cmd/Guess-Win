@@ -340,8 +340,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             </div>
           </div>
 
-          {/* יחסי הימורים — מוצגים כל עוד יש נתון */}
-          {match.odds && <OddsBar odds={match.odds} />}
+          {/* יחסי הימורים — מוסתרים */}
 
           {/* פס חלוקת ניחושים — גלוי אחרי נעילה */}
           {(isLocked || isLive || isFinished) && matchBetsAll.length > 0 && (

@@ -27,8 +27,13 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     }
   }, [isProfileReady, currentUser, router])
 
-  // Show nothing until profile is loaded — prevents flash redirect
-  if (!isProfileReady || !currentUser) return null
+  // While profile is loading, show spinner — never a blank page
+  if (!currentUser) return null
+  if (!isProfileReady) return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  )
   if (!ALLOWED_ROLES.includes(role)) return null
 
   // tournament_admin: only show access to tournaments section

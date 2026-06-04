@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil, Clock, ArrowUp } from 'lucide-react'
+import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil, Clock, ArrowUp, BarChart2, Users, CreditCard } from 'lucide-react'
+import Link from 'next/link'
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
 import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
@@ -9,6 +10,7 @@ import { rescoreTournamentBets } from '@/app/actions/bets'
 import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonusQuestion, setBonusResult, syncAllBonusLockTimes } from '@/app/actions/bonus'
 import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
 import { awardAdvancementBonus, syncExistingTeamPicks, getTeamPickTeams } from '@/app/actions/roundBonus'
+import { setPaymentStatus } from '@/app/actions/users'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +23,97 @@ import { Match, BonusQuestion, UserRole } from '@/types'
 import { ApiFixture } from '@/lib/api-football'
 import { cn } from '@/lib/utils'
 import { translateTeam } from '@/lib/teams-he'
+
+// ── ParticipantsPaymentSection ────────────────────────────────────
+
+interface ParticipantRow {
+  userId: string
+  displayName: string
+  email: string
+  paid: boolean
+}
+
+function ParticipantsPaymentSection({ tournamentId }: { tournamentId: string }) {
+  const [rows, setRows] = useState<ParticipantRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from('tournament_participants')
+      .select('user_id, paid, profiles(display_name, email)')
+      .eq('tournament_id', tournamentId)
+
+    if (!data) { setLoading(false); return }
+    setRows(
+      data.map((r: { user_id: string; paid: boolean; profiles: { display_name: string; email: string } | null }) => ({
+        userId: r.user_id,
+        displayName: r.profiles?.display_name ?? r.user_id,
+        email: r.profiles?.email ?? '',
+        paid: r.paid ?? false,
+      }))
+    )
+    setLoading(false)
+  }, [tournamentId])
+
+  useEffect(() => { load() }, [load])
+
+  const toggle = async (userId: string, current: boolean) => {
+    setRows(prev => prev.map(r => r.userId === userId ? { ...r, paid: !current } : r))
+    await setPaymentStatus(userId, tournamentId, !current)
+  }
+
+  const paidCount = rows.filter(r => r.paid).length
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4 text-emerald-500" />
+            תשלומי משתתפים
+          </CardTitle>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="text-emerald-600 font-medium">{paidCount} שילמו</span>
+            <span>·</span>
+            <span className="text-red-500 font-medium">{rows.length - paidCount} לא שילמו</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground py-4">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">טוען...</span>
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">אין משתתפים רשומים</p>
+        ) : (
+          <div className="space-y-2">
+            {rows.map(r => (
+              <div key={r.userId} className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/40 border border-border">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{r.displayName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                </div>
+                <button
+                  onClick={() => toggle(r.userId, r.paid)}
+                  className={cn(
+                    'flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors min-w-[72px] justify-center shrink-0',
+                    r.paid
+                      ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                      : 'bg-background text-muted-foreground border-border hover:border-emerald-500 hover:text-emerald-600'
+                  )}
+                >
+                  {r.paid ? <><CheckCircle2 className="h-3.5 w-3.5" />שולם</> : 'שולם?'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 // ── BracketConfigSection ─────────────────────────────────────────
 
@@ -678,6 +771,12 @@ export default function AdminTournamentDetailPage() {
           <h1 className="font-suez text-2xl">{tournament.name}</h1>
           <p className="text-muted-foreground text-sm">{tournament.description}</p>
         </div>
+        <Link href={`/admin/tournaments/${id}/summary`}>
+          <Button variant="outline" size="sm" className="flex items-center gap-1.5">
+            <BarChart2 className="h-4 w-4" />
+            סיכום
+          </Button>
+        </Link>
         <div className="flex items-center gap-2">
           {/* כפתור הסתרת משחקים שהסתיימו */}
           {finishedCount > 0 && (
@@ -1035,6 +1134,9 @@ export default function AdminTournamentDetailPage() {
           ))}
         </CardContent>
       </Card>
+
+      {/* ── תשלומי משתתפים ───────────────────────────────────────── */}
+      <ParticipantsPaymentSection tournamentId={id} />
 
       {/* ── דיאלוג עריכת בונוס ────────────────────────────────────── */}
       <Dialog open={editBonusOpen} onOpenChange={setEditBonusOpen}>

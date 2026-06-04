@@ -206,6 +206,7 @@ export default function AdminUsersPage() {
     const { utils, writeFile } = await import('xlsx')
     const rows = users.map((u) => {
       const base: Record<string, string> = {
+        'שם תצוגה':  u.displayName,
         'שם פרטי':   u.firstName ?? '',
         'שם משפחה': u.lastName  ?? '',
         'מס טלפון': u.phone     ?? '',
