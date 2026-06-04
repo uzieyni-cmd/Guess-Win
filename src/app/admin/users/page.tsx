@@ -438,7 +438,7 @@ export default function AdminUsersPage() {
 
                 <div className="flex items-center gap-2">
                   {/* Paid toggle — visible only when exactly one tournament is selected */}
-                  {activeTournamentOnly && user.role === 'user' && (
+                  {activeTournamentOnly && user.role !== 'admin' && (
                     <button
                       onClick={() => togglePaid(user.id, activeTournamentOnly)}
                       className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors min-w-[72px] justify-center ${
