@@ -124,7 +124,7 @@ ${oddsStr}
     const { text } = await generateText({
       model: gateway('google/gemini-2.5-flash'),
       prompt,
-      maxTokens: 10,
+      maxOutputTokens: 10,
     })
 
     const match = text.trim().match(/^(\d+):(\d+)$/)
@@ -151,7 +151,7 @@ async function predictBonus(question: string, options: string[]): Promise<string
 אפשרויות: ${options.join(' | ')}
 
 תשובה:`,
-      maxTokens: 50,
+      maxOutputTokens: 50,
     })
 
     const picked = text.trim()
