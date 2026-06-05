@@ -11,6 +11,7 @@ import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonu
 import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
 import { awardAdvancementBonus, syncExistingTeamPicks, getTeamPickTeams } from '@/app/actions/roundBonus'
 import { setPaymentStatus } from '@/app/actions/users'
+import { setupMonkey, joinMonkeyToTournament, runMonkeyBets, runMonkeyBonusPicks } from '@/app/actions/ai-monkey'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,71 @@ import { Match, BonusQuestion, UserRole } from '@/types'
 import { ApiFixture } from '@/lib/api-football'
 import { cn } from '@/lib/utils'
 import { translateTeam } from '@/lib/teams-he'
+
+// ── MonkeySection ─────────────────────────────────────────────────
+
+function MonkeySection({ tournamentId }: { tournamentId: string }) {
+  const [msg, setMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const run = async (action: () => Promise<{ ok: boolean; placed?: number; skipped?: number; error?: string }>, label: string) => {
+    setLoading(true)
+    setMsg('')
+    const res = await action()
+    setLoading(false)
+    if (res.ok) {
+      setMsg(`✓ ${label}: ${res.placed ?? 0} הונחו, ${res.skipped ?? 0} דולגו`)
+    } else {
+      setMsg(`שגיאה: ${res.error}`)
+    }
+    setTimeout(() => setMsg(''), 5000)
+  }
+
+  const handleSetup = async () => {
+    setLoading(true)
+    setMsg('')
+    const s = await setupMonkey()
+    if (!s.ok) { setMsg(`שגיאה: ${s.error}`); setLoading(false); return }
+    const j = await joinMonkeyToTournament(tournamentId)
+    setLoading(false)
+    setMsg(j.ok ? '✓ הקוף הוגדר ונרשם לטורניר' : `שגיאה: ${j.error}`)
+    setTimeout(() => setMsg(''), 4000)
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          🐒 קוף — מתחרה AI
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          מתחרה AI שמנחש משחקים ובונוסים אוטומטית לפני נעילה. הCRON רץ כל שעה.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {msg && (
+          <p className={`text-sm px-3 py-2 rounded-lg ${msg.startsWith('✓') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700'}`}>
+            {msg}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={handleSetup} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : '🐒'}
+            הגדר קוף לטורניר
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => run(() => runMonkeyBets(tournamentId), 'ניחושי משחקים')} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : '⚽'}
+            הרץ ניחושי משחקים עכשיו
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => run(() => runMonkeyBonusPicks(tournamentId), 'ניחושי בונוס')} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : '🎁'}
+            הרץ ניחושי בונוס עכשיו
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 // ── ParticipantsPaymentSection ────────────────────────────────────
 
@@ -1138,6 +1204,9 @@ export default function AdminTournamentDetailPage() {
           ))}
         </CardContent>
       </Card>
+
+      {/* ── קוף 🐒 — מתחרה AI ────────────────────────────────────── */}
+      <MonkeySection tournamentId={id} />
 
       {/* ── תשלומי משתתפים ───────────────────────────────────────── */}
       <ParticipantsPaymentSection tournamentId={id} />
