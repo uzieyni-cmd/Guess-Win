@@ -181,7 +181,7 @@ export async function runMonkeyBets(tournamentId: string): Promise<{
     await joinMonkeyToTournament(tournamentId)
 
     const now = new Date()
-    const cutoff = new Date(now.getTime() + 5 * 60 * 1000) // לפחות 5 דקות מעכשיו
+    const cutoff = new Date(now.getTime() + 24 * 60 * 60 * 1000) // לפחות 24 שעות מעכשיו
 
     // שלוף משחקים עתידיים שעדיין לא ננעלו
     const { data: matches } = await supabaseAdmin
