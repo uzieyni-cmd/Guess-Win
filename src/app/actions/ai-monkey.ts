@@ -13,7 +13,7 @@ import { translateTeam } from '@/lib/teams-he'
 
 const MONKEY_EMAIL = 'ai-monkey@guessandwin.internal'
 const MONKEY_NAME  = 'קוף 🐒'
-const MONKEY_AVATAR = 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f412.svg'
+const MONKEY_AVATAR = '/monkey.png'
 
 const gateway = createOpenAI({
   baseURL: 'https://ai-gateway.vercel.sh/v1',
