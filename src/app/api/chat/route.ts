@@ -377,7 +377,7 @@ ${contextBlock}`
     }
 
     const { text } = await generateText({
-      model: gateway('google/gemini-2.5-flash'),
+      model: gateway('perplexity/sonar'),
       system: systemPrompt + teamDataBlock,
       messages: filteredMessages,
     })
