@@ -1,6 +1,6 @@
 'use client'
-import { useRef } from 'react'
-import { Trophy, Flame } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Trophy, Flame, Search } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -15,13 +15,18 @@ const rankStyles = [
 export default function LeaderboardPage() {
   const { standings, activeTournament } = useTournament()
   const prevRanks = useRef<Record<string, number>>({})
+  const [search, setSearch] = useState('')
 
   const hasLive = (activeTournament?.matches ?? []).some(m => m.status === 'live')
   const isLiveMode = hasLive && standings.some(s => (s.liveBonus ?? 0) > 0)
 
+  const filtered = search.trim()
+    ? standings.filter(s => s.user.displayName.toLowerCase().includes(search.toLowerCase()))
+    : standings
+
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-3">
         <Trophy className="h-5 w-5 text-primary" />
         <h2 className="font-suez text-xl text-foreground">טבלת דירוג</h2>
         {isLiveMode && (
@@ -35,11 +40,28 @@ export default function LeaderboardPage() {
         )}
       </div>
 
+      {/* חיפוש */}
+      {standings.length > 0 && (
+        <div className="relative mb-3">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="חיפוש לפי שם..."
+            className="w-full pr-9 pl-3 py-2 text-sm rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+      )}
+
       {standings.length === 0 ? (
         <EmptyState icon={Trophy} title="אין תוצאות עדיין" subtitle="הדירוג יופיע לאחר סיום משחקים" />
+      ) : filtered.length === 0 ? (
+        <p className="text-center text-muted-foreground text-sm py-8">לא נמצא משתתף בשם זה</p>
       ) : (
         <div className="space-y-2 stagger">
-          {standings.map((s, i) => {
+          {filtered.map((s) => {
+            const rankIdx = s.rank - 1 // 0-based index לצבעים
             const prevRank = prevRanks.current[s.user.id]
             const moved = prevRank !== undefined && prevRank !== s.rank
             const movedUp = prevRank !== undefined && prevRank > s.rank
@@ -51,7 +73,7 @@ export default function LeaderboardPage() {
                 key={s.user.id}
                 className={cn(
                   'flex items-center gap-3 p-3 rounded-xl bg-card border border-border transition-all duration-500',
-                  i < 3 && rankStyles[i].card,
+                  rankIdx < 3 && rankStyles[rankIdx].card,
                   moved && movedUp && 'ring-1 ring-emerald-500/40',
                   moved && !movedUp && 'ring-1 ring-red-500/20',
                 )}
@@ -59,7 +81,7 @@ export default function LeaderboardPage() {
                 {/* מספר דירוג */}
                 <div className={cn(
                   'w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0',
-                  i < 3 ? rankStyles[i].badge : 'text-muted-foreground'
+                  rankIdx < 3 ? rankStyles[rankIdx].badge : 'text-muted-foreground'
                 )}>
                   {s.rank}
                 </div>
@@ -77,7 +99,7 @@ export default function LeaderboardPage() {
 
                 {/* ניקוד */}
                 <div className="text-left shrink-0 flex flex-col items-center">
-                  <p className={cn('font-condensed text-2xl font-bold tabular-nums', i < 3 ? rankStyles[i].points : 'text-primary')}>
+                  <p className={cn('font-condensed text-2xl font-bold tabular-nums', rankIdx < 3 ? rankStyles[rankIdx].points : 'text-primary')}>
                     {s.totalPoints}
                   </p>
                   {liveBonus > 0 ? (
