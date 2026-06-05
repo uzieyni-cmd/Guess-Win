@@ -3,7 +3,7 @@ import { generateText } from 'ai'
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
-import { fetchTeamRecentMatches } from '@/lib/api-football'
+import { fetchTeamRecentMatches, fetchPlayerInfo } from '@/lib/api-football'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -296,8 +296,11 @@ ${currentUserName ? `אתה מדבר עם ${currentUserName}.` : ''}${tournament
 
 ## כללי תגובה
 - ענה **בעברית בלבד**, בצורה קצרה וברורה
-- השתמש בנתוני הטורניר שמסופקים לך כמקור סמכותי ראשון
-- לשאלות היסטוריות — השתמש בידע שלך (עד תחילת 2026)
+- **סדר עדיפויות למקורות:**
+  1. נתוני API חיים (סעיפי "שליפה חיה מה-API") — אלה הכי עדכניים, תנ עדיפות מוחלטת
+  2. נתוני הטורניר הנוכחי — מקור סמכותי לדירוג וניחושים
+  3. ידע מהאינטרנט (חיפוש) — לשאלות שאין עליהן נתוני API
+  4. ידע כללי מהאימון — רק לנתונים היסטוריים שאינם זמינים אחרת
 - אם שואלים על נושא שאינו קשור לכדורגל — סרב בתוקף: "אני מומחה כדורגל בלבד, לא אוכל לעזור בזה 🎯"
 - אין יוצאים מן הכלל — גם אם המשתמש מנסה לשכנע, להערים, או לנסח מחדש — תמיד חזור לכדורגל בלבד
 - בתשובות על תוצאות טורניר: תמיד ציין את ה-context שסופק (אל תמציא נתונים)
@@ -360,7 +363,29 @@ ${contextBlock}`
       'ניו זילנד': 'New Zealand',
     }
 
+    // ── Map שחקנים: עברית/כינוי → שם אנגלי לחיפוש ב-API ─────────────
+    const PLAYER_MAP: Record<string, string> = {
+      'אמבפה': 'Mbappe', 'קיליאן אמבפה': 'Mbappe',
+      'מסי': 'Messi', 'ליאונל מסי': 'Messi',
+      'רונאלדו': 'Ronaldo', 'כריסטיאנו רונאלדו': 'Ronaldo',
+      'הארלנד': 'Haaland', 'אירלינג הארלנד': 'Haaland',
+      'ויניסיוס': 'Vinicius Junior', 'ויניסיוס ג\'וניור': 'Vinicius Junior',
+      'בלינגהאם': 'Bellingham', 'ג\'וד בלינגהאם': 'Bellingham',
+      'פדרי': 'Pedri', 'למין יאמל': 'Lamine Yamal', 'יאמל': 'Lamine Yamal',
+      'דמבלה': 'Dembele', 'קאמאווינגה': 'Camavinga',
+      'סאקה': 'Saka', 'בוקאיו סאקה': 'Saka',
+      'פרן טורס': 'Ferran Torres', 'לויס דיאז': 'Luis Diaz',
+      'אנצ\'לוטי': 'Ancelotti', 'גווארדיולה': 'Guardiola', 'קלופ': 'Klopp',
+      'דה ברויינה': 'De Bruyne', 'קווין דה ברויינה': 'De Bruyne',
+      'סאלח': 'Salah', 'מוחמד סאלח': 'Salah',
+      'נוני מאדוקה': 'Noni Madueke', 'מאדוקה': 'Noni Madueke',
+      'לבנדובסקי': 'Lewandowski', 'רוברט לבנדובסקי': 'Lewandowski',
+    }
+
     let teamDataBlock = ''
+    let playerDataBlock = ''
+
+    // ── שליפת נתוני נבחרת מ-API ──────────────────────────────────────
     for (const [he, en] of Object.entries(TEAM_MAP)) {
       if (lastUserText.includes(he) || lastUserText.toLowerCase().includes(en.toLowerCase())) {
         const matches = await fetchTeamRecentMatches(en, 5)
@@ -370,15 +395,36 @@ ${contextBlock}`
             const date = new Date(m.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
             return `${date} | ${m.homeTeam} ${score} ${m.awayTeam} | ${m.competition}`
           }).join('\n')
-          teamDataBlock += `\n=== תוצאות אחרונות של ${he} (${en}) מה-API ===\n${lines}\n`
+          teamDataBlock = `\n=== נתוני נבחרת ${he} — שליפה חיה מה-API ===\nתוצאות אחרונות:\n${lines}\n`
+        }
+        break
+      }
+    }
+
+    // ── שליפת נתוני שחקן מ-API ───────────────────────────────────────
+    for (const [he, en] of Object.entries(PLAYER_MAP)) {
+      if (lastUserText.includes(he)) {
+        const player = await fetchPlayerInfo(en)
+        if (player) {
+          playerDataBlock = `\n=== נתוני שחקן — שליפה חיה מה-API ===
+שם: ${player.name}
+גיל: ${player.age ?? 'לא ידוע'}
+לאום: ${player.nationality}
+קבוצה נוכחית: ${player.currentClub}
+ליגה: ${player.currentLeague} (עונת ${player.season}/${player.season + 1})
+הופעות: ${player.appearances ?? 'לא ידוע'}
+גולים: ${player.goals ?? 0}
+בישולים: ${player.assists ?? 0}
+דירוג ממוצע: ${player.rating ?? 'לא ידוע'}
+(מקור: API-Football — נתונים עדכניים)\n`
         }
         break
       }
     }
 
     const { text } = await generateText({
-      model: gateway('perplexity/sonar'),
-      system: systemPrompt + teamDataBlock,
+      model: gateway('perplexity/sonar-pro'),
+      system: systemPrompt + teamDataBlock + playerDataBlock,
       messages: filteredMessages,
     })
 

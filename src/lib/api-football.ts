@@ -176,6 +176,55 @@ export async function fetchTeamRecentMatches(teamName: string, last = 5): Promis
   }
 }
 
+// ── Player Info ───────────────────────────────────────────────────
+
+export interface PlayerInfo {
+  name: string
+  age: number | null
+  nationality: string
+  currentClub: string
+  currentLeague: string
+  season: number
+  appearances: number | null
+  goals: number | null
+  assists: number | null
+  rating: string | null
+}
+
+export async function fetchPlayerInfo(playerName: string): Promise<PlayerInfo | null> {
+  try {
+    const season = new Date().getFullYear() - (new Date().getMonth() < 6 ? 1 : 0) // עונה נוכחית
+    const data = await apiFetchRaw<{
+      player: { id: number; name: string; age: number; nationality: string }
+      statistics: {
+        team: { name: string }
+        league: { name: string; season: number }
+        games: { appearences: number | null; rating: string | null }
+        goals: { total: number | null; assists: number | null }
+      }[]
+    }>(`/players?search=${encodeURIComponent(playerName)}&season=${season}`, true)
+
+    const entry = data.response[0]
+    if (!entry) return null
+
+    const stat = entry.statistics[0]
+    return {
+      name: entry.player.name,
+      age: entry.player.age ?? null,
+      nationality: entry.player.nationality,
+      currentClub: stat?.team.name ?? 'לא ידוע',
+      currentLeague: stat?.league.name ?? 'לא ידוע',
+      season: stat?.league.season ?? season,
+      appearances: stat?.games.appearences ?? null,
+      goals: stat?.goals.total ?? null,
+      assists: stat?.goals.assists ?? null,
+      rating: stat?.games.rating ?? null,
+    }
+  } catch {
+    return null
+  }
+}
+
 // ── Status Mapper ────────────────────────────────────────────────
 
 export function mapFixtureStatus(short: string): string {
