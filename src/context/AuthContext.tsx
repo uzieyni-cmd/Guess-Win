@@ -225,9 +225,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut({ scope: 'global' })
+    // נקה state מיד — הUI מגיב מהר גם אם הרשת איטית
     setCurrentUser(null)
     setUserId(null)
+    try {
+      await supabase.auth.signOut({ scope: 'local' })
+    } catch {
+      // signOut נכשל (offline וכד') — state כבר נוקה, המשתמש יצא
+    }
   }, [])
 
   const refreshUser = useCallback(async () => {
