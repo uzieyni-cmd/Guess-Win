@@ -25,6 +25,133 @@ import { ApiFixture } from '@/lib/api-football'
 import { cn } from '@/lib/utils'
 import { translateTeam } from '@/lib/teams-he'
 
+// ── MonkeyBetsSection ────────────────────────────────────────────
+
+const MONKEY_EMAIL = 'ai-monkey@guessandwin.internal'
+
+interface MonkeyBetRow {
+  matchId: string
+  homeTeam: string
+  awayTeam: string
+  predictedHome: number
+  predictedAway: number
+  matchTime: string
+  status: string
+  actualHome: number | null
+  actualAway: number | null
+  points: number | null
+}
+
+function MonkeyBetsSection({ tournamentId }: { tournamentId: string }) {
+  const [bets, setBets] = useState<MonkeyBetRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      // שלוף את ה-userId של הקוף
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', MONKEY_EMAIL)
+        .single()
+
+      if (!profile) { setLoading(false); return }
+
+      const { data: rawBets } = await supabase
+        .from('bets')
+        .select('match_id, predicted_home, predicted_away, points')
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', profile.id)
+
+      if (!rawBets?.length) { setLoading(false); return }
+
+      const matchIds = rawBets.map((b: { match_id: string }) => b.match_id)
+      const { data: matches } = await supabase
+        .from('matches')
+        .select('id, home_team_name, away_team_name, match_start_time, status, actual_home_score, actual_away_score')
+        .in('id', matchIds)
+        .order('match_start_time', { ascending: true })
+
+      const matchMap: Record<string, { home_team_name: string; away_team_name: string; match_start_time: string; status: string; actual_home_score: number | null; actual_away_score: number | null }> = {}
+      for (const m of (matches ?? []) as { id: string; home_team_name: string; away_team_name: string; match_start_time: string; status: string; actual_home_score: number | null; actual_away_score: number | null }[]) {
+        matchMap[m.id] = m
+      }
+
+      setBets(rawBets.map((b: { match_id: string; predicted_home: number; predicted_away: number; points: number | null }) => {
+        const m = matchMap[b.match_id]
+        return {
+          matchId: b.match_id,
+          homeTeam: m?.home_team_name ?? '',
+          awayTeam: m?.away_team_name ?? '',
+          predictedHome: b.predicted_home,
+          predictedAway: b.predicted_away,
+          matchTime: m?.match_start_time ?? '',
+          status: m?.status ?? '',
+          actualHome: m?.actual_home_score ?? null,
+          actualAway: m?.actual_away_score ?? null,
+          points: b.points,
+        }
+      }))
+      setLoading(false)
+    }
+    load()
+  }, [tournamentId])
+
+  const totalPoints = bets.reduce((s, b) => s + (b.points ?? 0), 0)
+
+  return (
+    <Card className="mt-4">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            🐒 ניחושי הקוף
+          </CardTitle>
+          {bets.length > 0 && (
+            <span className="text-sm font-medium text-emerald-600">{totalPoints} נקודות</span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground py-2">
+            <Loader2 className="h-4 w-4 animate-spin" /><span className="text-sm">טוען...</span>
+          </div>
+        ) : bets.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">הקוף לא ניחש עדיין</p>
+        ) : (
+          <div className="space-y-1.5">
+            {bets.map(b => {
+              const isFinished = b.status === 'finished'
+              const correct = isFinished && b.actualHome !== null
+              return (
+                <div key={b.matchId} className="flex items-center justify-between text-sm px-3 py-2 rounded-lg bg-muted/40 border border-border gap-2">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium truncate">{b.homeTeam} נ&apos; {b.awayTeam}</span>
+                    <span className="text-xs text-muted-foreground mr-2">
+                      {new Date(b.matchTime).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-bold tabular-nums">{b.predictedHome}:{b.predictedAway}</span>
+                    {correct && (
+                      <span className="text-xs text-muted-foreground">({b.actualHome}:{b.actualAway})</span>
+                    )}
+                    {b.points !== null && (
+                      <Badge variant="outline" className={b.points > 0 ? 'text-emerald-600 border-emerald-300' : 'text-muted-foreground'}>
+                        {b.points} נק&apos;
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 // ── MonkeySection ─────────────────────────────────────────────────
 
 function MonkeySection({ tournamentId }: { tournamentId: string }) {
@@ -85,6 +212,7 @@ function MonkeySection({ tournamentId }: { tournamentId: string }) {
             הרץ ניחושי בונוס עכשיו
           </Button>
         </div>
+        <MonkeyBetsSection tournamentId={tournamentId} />
       </CardContent>
     </Card>
   )
