@@ -339,7 +339,7 @@ ${contextBlock}`
     }
 
     const { text } = await generateText({
-      model: gateway('google/gemini-2.5-flash-lite'),
+      model: gateway('google/gemini-2.5-flash'),
       system: systemPrompt + teamDataBlock,
       messages: filteredMessages,
     })
