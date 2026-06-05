@@ -262,13 +262,15 @@ export async function runMonkeyBonusPicks(tournamentId: string): Promise<{
 
     const now = new Date()
 
-    // שאלות בונוס פתוחות (לא ננעלו עדיין ואין תוצאה)
+    const cutoffBonus = new Date(now.getTime() + 24 * 60 * 60 * 1000) // לפחות 24 שעות לפני נעילה
+
+    // שאלות בונוס פתוחות שנועלות בעוד יותר מ-24 שעות
     const { data: questions } = await supabaseAdmin
       .from('bonus_questions')
       .select('id, question, options, lock_time, correct_options')
       .eq('tournament_id', tournamentId)
       .is('correct_options', null)
-      .gt('lock_time', now.toISOString())
+      .gt('lock_time', cutoffBonus.toISOString())
 
     if (!questions?.length) return { ok: true, placed: 0, skipped: 0 }
 
