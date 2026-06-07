@@ -2,13 +2,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { useTournament } from '@/context/TournamentContext'
+import { useAuth } from '@/context/AuthContext'
 import { BettingZone } from '@/components/tournament/BettingZone'
 import { BettingZoneSkeleton } from '@/components/tournament/MatchCardSkeleton'
 import { Target, ChevronDown, Loader2, EyeOff, Eye, Trophy } from 'lucide-react'
 
 export default function MatchesPage() {
   const { id } = useParams() as { id: string }
-  const { activeTournament, reloadMatches } = useTournament()
+  const { activeTournament, reloadMatches, bets, standings } = useTournament()
+  const { currentUser } = useAuth()
 
   // ── state ───────────────────────────────────────────────────────
   const [loadingAll, setLoadingAll]       = useState(false)
@@ -75,6 +77,13 @@ export default function MatchesPage() {
     ? realMatches.filter(m => m.status !== 'finished')
     : realMatches
 
+  // ── סיכום אישי — ניקוד / מיקום / פגיעות / ניחושים שמולאו ───────
+  const myStanding = standings.find(s => s.user.id === currentUser?.id)
+  const myBets = bets.filter(b => b.userId === currentUser?.id)
+  const correctOutcomeCount = myBets.filter(b => b.betResult === 'outcome').length
+  const placedCount = myBets.length
+  const progressPct = realMatches.length > 0 ? Math.round((placedCount / realMatches.length) * 100) : 0
+
   return (
     <div>
       {/* שם הטורניר + לוגו */}
@@ -88,6 +97,32 @@ export default function MatchesPage() {
         )}
         <h1 className="font-suez text-2xl text-foreground leading-tight">{activeTournament.name}</h1>
       </div>
+
+      {/* כרטיס סיכום אישי */}
+      {currentUser && (
+        <div className="rounded-2xl border border-border bg-card p-4 mb-6">
+          <div className="grid grid-cols-4 gap-2 text-center mb-4">
+            {[
+              { label: 'נקודות', value: myStanding?.totalPoints ?? 0 },
+              { label: 'מיקום', value: myStanding ? `#${myStanding.rank}` : '#' },
+              { label: 'פגיעות בול', value: myStanding?.exactCount ?? 0 },
+              { label: 'כיוון נכון', value: correctOutcomeCount },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p className="font-condensed text-xl font-bold text-foreground tabular-nums">{value}</p>
+                <p className="text-[11px] text-muted-foreground">{label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+            <span>{progressPct}%</span>
+            <span>ניחושים: {placedCount} / {realMatches.length}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
