@@ -61,22 +61,27 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
           </div>
         }
         below={
-          <div className="flex gap-0.5 border-t border-border/30 overflow-x-auto scrollbar-none">
-            {NAV_TABS.map((tab) => {
-              const isActive = pathname.endsWith(`/${tab.href}`)
-              return (
-                <Link key={tab.href} href={`/tournament/${id}/${tab.href}`}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap',
-                    isActive
-                      ? 'text-primary border-primary'
-                      : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
-                  )}>
-                  <tab.icon className="h-3.5 w-3.5 shrink-0" />
-                  {tab.label}
-                </Link>
-              )
-            })}
+          <div className="relative border-t border-border/30">
+            <div className="flex gap-0.5 overflow-x-auto scrollbar-none">
+              {NAV_TABS.map((tab) => {
+                const isActive = pathname.endsWith(`/${tab.href}`)
+                return (
+                  <Link key={tab.href} href={`/tournament/${id}/${tab.href}`}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors border-b-2 whitespace-nowrap',
+                      isActive
+                        ? 'text-primary border-primary'
+                        : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
+                    )}>
+                    <tab.icon className="h-3.5 w-3.5 shrink-0" />
+                    {tab.label}
+                  </Link>
+                )
+              })}
+            </div>
+            {/* רמז גלילה — מעיד שיש עוד טאבים מעבר לקצה הנראה */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-base to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-base to-transparent" />
           </div>
         }
       />

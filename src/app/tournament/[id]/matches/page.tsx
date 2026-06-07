@@ -110,13 +110,13 @@ export default function MatchesPage() {
             ].map(({ label, value }) => (
               <div key={label}>
                 <p className="font-condensed text-xl font-bold text-foreground tabular-nums">{value}</p>
-                <p className="text-[11px] text-muted-foreground">{label}</p>
+                <p className="text-xs text-muted-foreground">{label}</p>
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-            <span>{progressPct}%</span>
-            <span>ניחושים: {placedCount} / {realMatches.length}</span>
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-bold text-foreground tabular-nums">{progressPct}%</span>
+            <span className="font-semibold text-foreground/80">ניחושים: {placedCount} / {realMatches.length}</span>
           </div>
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
             <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />

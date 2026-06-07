@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { useRouter } from 'next/navigation'
-import { Lock, Check, Save, AlertCircle, Users, X, ChevronLeft } from 'lucide-react'
+import { Lock, Check, Save, AlertCircle, Users, X, ChevronLeft, Zap } from 'lucide-react'
 import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
@@ -324,8 +324,9 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                     </span>
                   )}
                   {isUrgent && (
-                    <span className="text-xs text-orange-500 font-medium animate-pulse">
-                      ⚡ פחות מ-2 שעות לקיקאוף
+                    <span className="flex items-center gap-1 text-xs text-orange-500 font-medium animate-pulse">
+                      <Zap className="h-3 w-3" />
+                      פחות מ-2 שעות לקיקאוף
                     </span>
                   )}
                 </>
@@ -483,7 +484,7 @@ function BetDistributionBar({ bets, totalParticipants }: { bets: Bet[]; totalPar
     <div className="mt-3 space-y-1.5">
       <div className="flex justify-between items-center text-xs font-medium px-0.5">
         <span className="text-emerald-600">{homePct}% בית</span>
-        <span className="text-muted-foreground/60 text-[9px]">{total}/{totalParticipants} ניחשו</span>
+        <span className="text-muted-foreground/60 text-xs">{total}/{totalParticipants} ניחשו</span>
         <span className="text-blue-600">{awayPct}% חוץ</span>
       </div>
       <div className="h-1.5 rounded-full overflow-hidden flex bg-muted/40">
@@ -498,7 +499,7 @@ function BetDistributionBar({ bets, totalParticipants }: { bets: Bet[]; totalPar
         )}
       </div>
       {drawPct > 0 && (
-        <div className="flex justify-center text-[9px] text-muted-foreground/50">
+        <div className="flex justify-center text-xs text-muted-foreground/50">
           {drawPct}% תיקו
         </div>
       )}

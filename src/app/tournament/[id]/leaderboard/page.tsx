@@ -64,13 +64,13 @@ export default function LeaderboardPage() {
 
           <div className="shrink-0 flex flex-col items-center min-w-[36px]">
             <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{myStanding.exactCount}</p>
-            <p className="text-[10px] text-muted-foreground">בול</p>
+            <p className="text-xs text-muted-foreground">בול</p>
           </div>
 
           <div className="text-left shrink-0 flex flex-col items-center min-w-[48px]">
             <p className="font-condensed text-2xl font-bold tabular-nums text-primary">{myStanding.totalPoints}</p>
             {(myStanding.liveBonus ?? 0) > 0 ? (
-              <span className="flex items-center gap-0.5 text-[10px] font-bold text-orange-400 animate-pulse">
+              <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
                 <Flame className="h-2.5 w-2.5" />+{myStanding.liveBonus}
               </span>
             ) : (
@@ -140,7 +140,7 @@ export default function LeaderboardPage() {
                 {/* בול */}
                 <div className="shrink-0 flex flex-col items-center min-w-[36px]">
                   <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{s.exactCount}</p>
-                  <p className="text-[10px] text-muted-foreground">בול</p>
+                  <p className="text-xs text-muted-foreground">בול</p>
                 </div>
 
                 {/* ניקוד */}
@@ -149,7 +149,7 @@ export default function LeaderboardPage() {
                     {s.totalPoints}
                   </p>
                   {liveBonus > 0 ? (
-                    <span className="flex items-center gap-0.5 text-[10px] font-bold text-orange-400 animate-pulse">
+                    <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
                       <Flame className="h-2.5 w-2.5" />+{liveBonus}
                     </span>
                   ) : (
@@ -163,7 +163,7 @@ export default function LeaderboardPage() {
       )}
 
       {isLiveMode && (
-        <p className="text-center text-[10px] text-muted-foreground/60 mt-3">
+        <p className="text-center text-xs text-muted-foreground/60 mt-3">
           ניקוד חי זמני — יתעדכן בסיום המשחק
         </p>
       )}
