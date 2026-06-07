@@ -113,5 +113,6 @@ export interface ParticipantStanding {
   rank: number
   betResults: BetResult[]
   scoredBetsCount: number
+  exactCount: number  // פגיעות בול — tiebreaker
   liveBonus?: number  // ניקוד זמני ממשחקים חיים (לא נשמר ב-DB)
 }

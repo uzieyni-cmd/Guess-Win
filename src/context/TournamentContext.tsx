@@ -141,10 +141,14 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     if (!participants.length) return []
     const pointsByUser: Record<string, number> = { ...bonusPointsByUser }
     const countByUser: Record<string, number> = {}
+    const exactByUser: Record<string, number> = {}
     for (const bet of activeBets) {
       if (bet.points === null) continue
       pointsByUser[bet.userId] = (pointsByUser[bet.userId] ?? 0) + bet.points
       countByUser[bet.userId] = (countByUser[bet.userId] ?? 0) + 1
+      if (bet.betResult === 'exact') {
+        exactByUser[bet.userId] = (exactByUser[bet.userId] ?? 0) + 1
+      }
     }
     const newStandings: ParticipantStanding[] = participants
       .filter(user => user.role !== 'admin')
@@ -154,8 +158,9 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         rank: 0,
         betResults: [],
         scoredBetsCount: countByUser[user.id] ?? 0,
+        exactCount: exactByUser[user.id] ?? 0,
       }))
-      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)
     newStandings.forEach((s, i) => { s.rank = i + 1 })
     return newStandings
   }, [activeBets, bonusPointsByUser, participants])

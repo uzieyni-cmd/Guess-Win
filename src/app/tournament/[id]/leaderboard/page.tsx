@@ -97,8 +97,14 @@ export default function LeaderboardPage() {
                 {/* שם */}
                 <p className="flex-1 font-semibold text-sm truncate text-foreground">{s.user.displayName}</p>
 
+                {/* בול */}
+                <div className="shrink-0 flex flex-col items-center min-w-[36px]">
+                  <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{s.exactCount}</p>
+                  <p className="text-[10px] text-muted-foreground">בול</p>
+                </div>
+
                 {/* ניקוד */}
-                <div className="text-left shrink-0 flex flex-col items-center">
+                <div className="text-left shrink-0 flex flex-col items-center min-w-[48px]">
                   <p className={cn('font-condensed text-2xl font-bold tabular-nums', rankIdx < 3 ? rankStyles[rankIdx].points : 'text-primary')}>
                     {s.totalPoints}
                   </p>
