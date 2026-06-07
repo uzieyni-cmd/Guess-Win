@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { useRouter } from 'next/navigation'
 import { Lock, Check, Save, AlertCircle, Users, X, ChevronLeft } from 'lucide-react'
@@ -7,7 +7,7 @@ import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
-import { MAX_JOKERS, GROUP_STAGE_PREFIXES } from '@/lib/constants'
+import { getJokerStageGroup } from '@/lib/constants'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { CountdownTimer } from './CountdownTimer'
 import { ScoreInput } from './ScoreInput'
@@ -90,15 +90,9 @@ function JokerCardIcon({ className, active }: { className?: string; active?: boo
   )
 }
 
-// ── Group Stage round detection ─────────────────────────────────────
-function isGroupStageRound(round?: string) {
-  if (!round) return false
-  return GROUP_STAGE_PREFIXES.some(p => round.startsWith(p))
-}
-
 export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const { isLocked } = useCountdown(match.matchStartTime)
-  const { placeBet, jokerPicks, toggleJoker } = useTournament()
+  const { placeBet, jokerPicks, toggleJoker, activeTournament } = useTournament()
   const { currentUser } = useAuth()
   const router = useRouter()
   const [homeScore, setHomeScore] = useState<number | null>(userBet?.predictedScore.home ?? null)
@@ -111,12 +105,19 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const [jokerError, setJokerError] = useState<string | false>(false)
   const [jokerSaving, setJokerSaving] = useState(false)
 
-  // ── Joker derived state ─────────────────────────────────────────
-  const isGroupStage = isGroupStageRound(match.round)
+  // ── Joker derived state — quotas are independent per stage group ──
+  const stageGroup = getJokerStageGroup(match.round)
+  const roundByMatchId = useMemo(() => {
+    const map = new Map<string, string | null>()
+    activeTournament?.matches.forEach(m => map.set(m.id, m.round ?? null))
+    return map
+  }, [activeTournament])
   const myJokerPicks = jokerPicks.filter(j => j.userId === currentUser?.id)
   const isMyJoker    = myJokerPicks.some(j => j.matchId === match.id)
-  const myJokerCount = myJokerPicks.length
-  const canAddJoker  = isMyJoker || myJokerCount < MAX_JOKERS
+  const myGroupJokerCount = stageGroup
+    ? myJokerPicks.filter(j => getJokerStageGroup(roundByMatchId.get(j.matchId)) === stageGroup).length
+    : 0
+  const canAddJoker  = !!stageGroup && (isMyJoker || myGroupJokerCount < stageGroup.max)
 
   const isFinished = match.status === 'finished'
   // isLive = DB עדכן ל-live, OR: המשחק התחיל בשעתיים האחרונות ועדיין לא גמור
@@ -355,8 +356,8 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
             </div>
           )}
 
-          {/* ── ג'וקר — שלב הבתים בלבד ─────────────────────────────── */}
-          {isGroupStage && (
+          {/* ── ג'וקר — לפי קבוצת השלב (מכסה עצמאית לכל שלב) ──────── */}
+          {stageGroup && (
             <div className="mt-3 flex flex-col items-center gap-1">
               {(isLocked || isLive || isFinished) ? (
                 /* לאחר נעילה: תצוגת קריאה בלבד */

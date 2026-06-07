@@ -6,7 +6,7 @@ import { MatchCard } from './MatchCard'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Target } from 'lucide-react'
 import { Match } from '@/types'
-import { MAX_JOKERS, GROUP_STAGE_PREFIXES } from '@/lib/constants'
+import { JOKER_STAGE_GROUPS, getJokerStageGroup, type JokerStageGroup } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
 // ── Joker card icon (duplicated here to avoid re-import cycle) ────
@@ -23,12 +23,53 @@ function JokerCardIcon({ className, active }: { className?: string; active?: boo
   )
 }
 
+// ── Per-stage joker banner ─────────────────────────────────────────
+function JokerStageBanner({ group, myCount }: { group: JokerStageGroup; myCount: number }) {
+  const jokersLeft = group.max - myCount
+  return (
+    <div className={cn(
+      'flex items-center justify-between rounded-xl px-4 py-3 border transition-colors',
+      jokersLeft === 0
+        ? 'bg-red-600/10 border-red-500/30'
+        : 'bg-red-50 border-red-200',
+    )}>
+      <div className="flex items-center gap-2.5">
+        <JokerCardIcon className="h-5 w-5 text-red-600" active />
+        <div>
+          <p className="text-sm font-bold text-red-800">ג&apos;וקר — כפילת ניקוד · {group.label}</p>
+          <p className="text-xs text-red-600 leading-tight">
+            סמן עד {group.max} משח{group.max > 1 ? 'קים' : 'ק'} ב{group.label} לקבל ×2 על הניחוש
+          </p>
+        </div>
+      </div>
+      {/* Dots indicator */}
+      <div className="flex items-center gap-1.5 shrink-0 mr-1" aria-label={`${myCount} מתוך ${group.max} ג'וקרים ב${group.label}`}>
+        {Array.from({ length: group.max }).map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all',
+              i < myCount
+                ? 'bg-red-600 border-red-600 text-white'
+                : 'border-red-300 bg-transparent'
+            )}
+          >
+            {i < myCount && (
+              <JokerCardIcon className="h-3.5 w-3.5" active />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 interface Props {
   matches: Match[]
 }
 
 export function BettingZone({ matches }: Props) {
-  const { bets, participants, jokerPicks } = useTournament()
+  const { bets, participants, jokerPicks, activeTournament } = useTournament()
   const { currentUser } = useAuth()
 
   const sorted = useMemo(() => {
@@ -47,12 +88,27 @@ export function BettingZone({ matches }: Props) {
     return groups
   }, [sorted])
 
-  // ── Joker counter ─────────────────────────────────────────────
-  const hasGroupStageMatches = sorted.some(m =>
-    m.round ? GROUP_STAGE_PREFIXES.some(p => m.round!.startsWith(p)) : false
+  // ── Joker counters — independent quota per stage group ───────────
+  const roundByMatchId = useMemo(() => {
+    const map = new Map<string, string | null>()
+    activeTournament?.matches.forEach(m => map.set(m.id, m.round ?? null))
+    sorted.forEach(m => map.set(m.id, m.round ?? null))
+    return map
+  }, [activeTournament, sorted])
+
+  const myJokerPicks = useMemo(
+    () => jokerPicks.filter(j => j.userId === currentUser?.id),
+    [jokerPicks, currentUser]
   )
-  const myJokerCount = jokerPicks.filter(j => j.userId === currentUser?.id).length
-  const jokersLeft = MAX_JOKERS - myJokerCount
+
+  const stageGroupBanners = useMemo(() => {
+    return JOKER_STAGE_GROUPS
+      .filter(group => sorted.some(m => getJokerStageGroup(m.round) === group))
+      .map(group => ({
+        group,
+        myCount: myJokerPicks.filter(j => getJokerStageGroup(roundByMatchId.get(j.matchId)) === group).length,
+      }))
+  }, [sorted, myJokerPicks, roundByMatchId])
 
   if (matches.length === 0) {
     return <EmptyState icon={Target} title="לא נקבעו משחקים עדיין" />
@@ -60,43 +116,10 @@ export function BettingZone({ matches }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* ── Joker banner — שלב הבתים בלבד ─────────────────────── */}
-      {hasGroupStageMatches && (
-        <div className={cn(
-          'flex items-center justify-between rounded-xl px-4 py-3 border transition-colors',
-          jokersLeft === 0
-            ? 'bg-red-600/10 border-red-500/30'
-            : 'bg-red-50 border-red-200',
-        )}>
-          <div className="flex items-center gap-2.5">
-            <JokerCardIcon className="h-5 w-5 text-red-600" active />
-            <div>
-              <p className="text-sm font-bold text-red-800">ג&apos;וקר — כפילת ניקוד</p>
-              <p className="text-xs text-red-600 leading-tight">
-                סמן עד {MAX_JOKERS} משחקים בשלב הבתים לקבל ×2 על הניחוש
-              </p>
-            </div>
-          </div>
-          {/* Dots indicator */}
-          <div className="flex items-center gap-1.5 shrink-0 mr-1" aria-label={`${myJokerCount} מתוך ${MAX_JOKERS} ג'וקרים`}>
-            {Array.from({ length: MAX_JOKERS }).map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all',
-                  i < myJokerCount
-                    ? 'bg-red-600 border-red-600 text-white'
-                    : 'border-red-300 bg-transparent'
-                )}
-              >
-                {i < myJokerCount && (
-                  <JokerCardIcon className="h-3.5 w-3.5" active />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* ── Joker banners — באנר נפרד לכל שלב, מכסה עצמאית ──────── */}
+      {stageGroupBanners.map(({ group, myCount }) => (
+        <JokerStageBanner key={group.id} group={group} myCount={myCount} />
+      ))}
 
       {Object.entries(grouped).map(([date, dayMatches]) => (
         <div key={date}>

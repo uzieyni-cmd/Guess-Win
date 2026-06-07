@@ -2,13 +2,14 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { MAX_JOKERS, GROUP_STAGE_PREFIXES } from '@/lib/constants'
+import { getJokerStageGroup } from '@/lib/constants'
 
 // ── Toggle a joker pick on/off ────────────────────────────────────
 // Rules:
-//   • Only Group Stage matches (round starts with "Group Stage")
+//   • Only matches in a configured joker stage group (group stage / R32 / R16)
 //   • Not locked (match_start_time − 10 min)
-//   • At most MAX_JOKERS per user per tournament
+//   • Each stage group has its own independent quota — unused jokers
+//     from one stage do not carry over to the next
 export async function toggleJokerPick(
   matchId: string,
   tournamentId: string,
@@ -28,9 +29,9 @@ export async function toggleJokerPick(
 
   const m = match as { match_start_time: string; round: string | null }
 
-  const isGroupStage = m.round ? GROUP_STAGE_PREFIXES.some(p => m.round!.startsWith(p)) : false
-  if (!isGroupStage) {
-    return { ok: false, error: "ג'וקר זמין רק בשלב הבתים" }
+  const stageGroup = getJokerStageGroup(m.round)
+  if (!stageGroup) {
+    return { ok: false, error: "ג'וקר אינו זמין בשלב זה" }
   }
 
   const lockTime = new Date(m.match_start_time).getTime() - 60 * 60 * 1000
@@ -38,14 +39,15 @@ export async function toggleJokerPick(
     return { ok: false, error: 'המשחק נעול' }
   }
 
-  // Fetch existing joker picks for this user in this tournament
+  // Fetch existing joker picks for this user in this tournament, with each match's round
   const { data: existing } = await supabaseAdmin
     .from('joker_picks')
-    .select('id, match_id')
+    .select('id, match_id, matches(round)')
     .eq('tournament_id', tournamentId)
     .eq('user_id', user.id)
 
-  const existingRows = (existing ?? []) as { id: string; match_id: string }[]
+  const existingRows = (existing ?? []) as unknown as { id: string; match_id: string; matches: { round: string | null }[] | { round: string | null } | null }[]
+  const roundOf = (r: (typeof existingRows)[number]) => Array.isArray(r.matches) ? r.matches[0]?.round ?? null : r.matches?.round ?? null
   const isCurrentJoker = existingRows.some(r => r.match_id === matchId)
 
   if (isCurrentJoker) {
@@ -61,8 +63,9 @@ export async function toggleJokerPick(
   }
 
   // ── Add ─────────────────────────────────────────────────────
-  if (existingRows.length >= MAX_JOKERS) {
-    return { ok: false, error: `ניתן לסמן עד ${MAX_JOKERS} ג'וקרים בלבד` }
+  const sameGroupCount = existingRows.filter(r => getJokerStageGroup(roundOf(r)) === stageGroup).length
+  if (sameGroupCount >= stageGroup.max) {
+    return { ok: false, error: `ניתן לסמן עד ${stageGroup.max} ג'וקר${stageGroup.max > 1 ? `ים (${stageGroup.label})` : ` ב${stageGroup.label}`}` }
   }
 
   const { error } = await supabaseAdmin

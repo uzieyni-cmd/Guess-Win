@@ -13,7 +13,7 @@ import {
 } from '@/app/actions/tournaments'
 import { placeBetAction, setActualScoreAction } from '@/app/actions/bets'
 import { toggleJokerPick } from '@/app/actions/joker'
-import { MAX_JOKERS } from '@/lib/constants'
+import { getJokerStageGroup } from '@/lib/constants'
 
 // ── Adapters: DB row → App type ──────────────────────────────────
 
@@ -151,7 +151,6 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       }
     }
     const newStandings: ParticipantStanding[] = participants
-      .filter(user => user.role !== 'admin')
       .map(user => ({
         user,
         totalPoints: pointsByUser[user.id] ?? 0,
@@ -559,11 +558,19 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     const userJokers = jokerPicksRaw.filter(j => j.userId === userId)
     const isCurrentJoker = userJokers.some(j => j.matchId === matchId)
 
+    const roundByMatchId = new Map<string, string | null>()
+    activeTournament?.matches.forEach(m => roundByMatchId.set(m.id, m.round ?? null))
+    const stageGroup = getJokerStageGroup(roundByMatchId.get(matchId))
+
     // Optimistic update
     if (isCurrentJoker) {
       setJokerPicksRaw(prev => prev.filter(j => !(j.matchId === matchId && j.userId === userId)))
     } else {
-      if (userJokers.length >= MAX_JOKERS) return `ניתן לסמן עד ${MAX_JOKERS} ג'וקרים בלבד`
+      if (!stageGroup) return "ג'וקר אינו זמין בשלב זה"
+      const sameGroupCount = userJokers.filter(j => getJokerStageGroup(roundByMatchId.get(j.matchId)) === stageGroup).length
+      if (sameGroupCount >= stageGroup.max) {
+        return `ניתן לסמן עד ${stageGroup.max} ג'וקר${stageGroup.max > 1 ? `ים (${stageGroup.label})` : ` ב${stageGroup.label}`}`
+      }
       // placeholder id — Realtime יחליף עם id אמיתי
       setJokerPicksRaw(prev => [...prev, { id: `opt-${Date.now()}`, matchId, tournamentId: activeTournamentId, userId }])
     }
@@ -579,7 +586,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       return result.error ?? 'שגיאה לא ידועה'
     }
     return null
-  }, [activeTournamentId, jokerPicksRaw])
+  }, [activeTournamentId, jokerPicksRaw, activeTournament])
 
   const setActiveTournamentId = useCallback((id: string) => {
     setActiveTournamentIdState(id)

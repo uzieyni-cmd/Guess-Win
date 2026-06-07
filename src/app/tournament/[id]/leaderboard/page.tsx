@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react'
 import { Trophy, Flame, Search } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
+import { useAuth } from '@/context/AuthContext'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { cn } from '@/lib/utils'
@@ -14,15 +15,20 @@ const rankStyles = [
 
 export default function LeaderboardPage() {
   const { standings, activeTournament } = useTournament()
+  const { currentUser } = useAuth()
   const prevRanks = useRef<Record<string, number>>({})
   const [search, setSearch] = useState('')
 
   const hasLive = (activeTournament?.matches ?? []).some(m => m.status === 'live')
   const isLiveMode = hasLive && standings.some(s => (s.liveBonus ?? 0) > 0)
+  const myStanding = standings.find(s => s.user.id === currentUser?.id)
+
+  // הרשימה הציבורית אינה כוללת מנהלי-על — אך "המיקום שלי" ממשיך לשקף את הדירוג האמיתי
+  const publicStandings = standings.filter(s => s.user.role !== 'admin')
 
   const filtered = search.trim()
-    ? standings.filter(s => s.user.displayName.toLowerCase().includes(search.toLowerCase()))
-    : standings
+    ? publicStandings.filter(s => s.user.displayName.toLowerCase().includes(search.toLowerCase()))
+    : publicStandings
 
   return (
     <div>
@@ -40,8 +46,42 @@ export default function LeaderboardPage() {
         )}
       </div>
 
+      {/* המיקום שלי */}
+      {myStanding && (
+        <div className="flex items-center gap-3 p-3 mb-3 rounded-xl bg-primary/10 border border-primary/30">
+          <div className="w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0 bg-primary/15 text-primary">
+            {myStanding.rank}
+          </div>
+
+          <Avatar className="h-10 w-10 shrink-0">
+            <AvatarImage src={myStanding.user.avatarUrl} className="object-cover" />
+            <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-sm font-bold">
+              {myStanding.user.displayName.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+
+          <p className="flex-1 font-semibold text-sm truncate text-foreground">המיקום שלי</p>
+
+          <div className="shrink-0 flex flex-col items-center min-w-[36px]">
+            <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{myStanding.exactCount}</p>
+            <p className="text-[10px] text-muted-foreground">בול</p>
+          </div>
+
+          <div className="text-left shrink-0 flex flex-col items-center min-w-[48px]">
+            <p className="font-condensed text-2xl font-bold tabular-nums text-primary">{myStanding.totalPoints}</p>
+            {(myStanding.liveBonus ?? 0) > 0 ? (
+              <span className="flex items-center gap-0.5 text-[10px] font-bold text-orange-400 animate-pulse">
+                <Flame className="h-2.5 w-2.5" />+{myStanding.liveBonus}
+              </span>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center">נק׳</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* חיפוש */}
-      {standings.length > 0 && (
+      {publicStandings.length > 0 && (
         <div className="relative mb-3">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
@@ -54,7 +94,7 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {standings.length === 0 ? (
+      {publicStandings.length === 0 ? (
         <EmptyState icon={Trophy} title="אין תוצאות עדיין" subtitle="הדירוג יופיע לאחר סיום משחקים" />
       ) : filtered.length === 0 ? (
         <p className="text-center text-muted-foreground text-sm py-8">לא נמצא משתתף בשם זה</p>
