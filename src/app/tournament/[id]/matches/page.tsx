@@ -118,8 +118,11 @@ export default function MatchesPage() {
             <span className="font-bold text-foreground tabular-nums">{progressPct}%</span>
             <span className="font-semibold text-foreground/80">ניחושים: {placedCount} / {realMatches.length}</span>
           </div>
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+          <div className="h-2.5 rounded-full bg-muted border border-border/60 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-l from-red-500 to-red-600 shadow-[0_0_6px_rgba(239,68,68,0.5)] transition-all duration-500"
+              style={{ width: progressPct > 0 ? `max(${progressPct}%, 10px)` : '0px' }}
+            />
           </div>
         </div>
       )}
