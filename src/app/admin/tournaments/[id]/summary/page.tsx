@@ -352,7 +352,7 @@ export default function SummaryPage() {
           <div className="space-y-4">
             {matchModal.detail.actualHome !== null && (
               <p className="text-sm text-center font-semibold">
-                תוצאה: <span dir="ltr" className="font-mono tabular-nums">{matchModal.detail.actualHome}:{matchModal.detail.actualAway}</span>
+                תוצאה: <span dir="ltr" className="font-mono tabular-nums">{matchModal.detail.actualAway}:{matchModal.detail.actualHome}</span>
               </p>
             )}
 
@@ -369,7 +369,7 @@ export default function SummaryPage() {
                     <div key={r.userId} className="flex items-center justify-between text-sm py-1.5 border-b border-border/40 last:border-0">
                       <span>{r.name}</span>
                       <div className="flex items-center gap-3 text-xs">
-                        <span dir="ltr" className="bg-muted px-2 py-0.5 rounded font-mono tabular-nums">{r.predictedHome}:{r.predictedAway}</span>
+                        <span dir="ltr" className="bg-muted px-2 py-0.5 rounded font-mono tabular-nums">{r.predictedAway}:{r.predictedHome}</span>
                         {r.result && (
                           <span className={
                             r.result === 'exact' ? 'text-emerald-600 font-medium' :
