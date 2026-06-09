@@ -2,7 +2,7 @@
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Trophy, Users, LayoutDashboard, ArrowRight } from 'lucide-react'
+import { Trophy, Users, LayoutDashboard, ArrowRight, MessageSquare } from 'lucide-react'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useAuth } from '@/context/AuthContext'
 import { SiteHeader } from '@/components/shared/SiteHeader'
@@ -41,6 +41,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     ...(isFullAdmin ? [{ label: 'סקירה', href: '/admin', icon: LayoutDashboard }] : []),
     { label: 'תחרויות', href: '/admin/tournaments', icon: Trophy },
     { label: 'משתמשים', href: '/admin/users', icon: Users },
+    ...(isFullAdmin ? [{ label: 'צ׳אט', href: '/admin/chat-stats', icon: MessageSquare }] : []),
   ]
 
   return (

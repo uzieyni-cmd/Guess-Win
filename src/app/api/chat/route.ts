@@ -1,6 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateText } from 'ai'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
 import { fetchTeamRecentMatches, fetchPlayerInfo } from '@/lib/api-football'
@@ -432,10 +432,27 @@ ${contextBlock}`
       }
     }
 
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model: gateway('perplexity/sonar-pro'),
       system: systemPrompt + teamDataBlock + playerDataBlock,
       messages: filteredMessages,
+    })
+
+    // ── לוג שימוש אחרי שליחת התגובה (לא חוסם את ה-response) ───────
+    after(async () => {
+      try {
+        const lastUserMsgText = typeof lastUserMsg === 'string' ? lastUserMsg : ''
+        await supabaseAdmin.from('chat_logs').insert({
+          user_id:      userId   ?? null,
+          tournament_id: tournamentId ?? null,
+          user_message: lastUserMsgText.slice(0, 500),
+          tokens_input:  usage?.inputTokens  ?? null,
+          tokens_output: usage?.outputTokens ?? null,
+          model: 'perplexity/sonar-pro',
+        })
+      } catch (logErr) {
+        console.warn('[chat] failed to write chat_log:', logErr instanceof Error ? logErr.message : logErr)
+      }
     })
 
     return NextResponse.json({ text })
