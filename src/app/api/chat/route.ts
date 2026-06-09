@@ -6,7 +6,7 @@ import { translateTeam } from '@/lib/teams-he'
 import { fetchTeamRecentMatches, fetchPlayerInfo } from '@/lib/api-football'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30
+export const maxDuration = 60
 
 const gateway = createOpenAI({
   baseURL: 'https://ai-gateway.vercel.sh/v1',
@@ -390,14 +390,18 @@ ${contextBlock}`
     // ── שליפת נתוני נבחרת מ-API ──────────────────────────────────────
     for (const [he, en] of Object.entries(TEAM_MAP)) {
       if (lastUserText.includes(he) || lastUserText.toLowerCase().includes(en.toLowerCase())) {
-        const matches = await fetchTeamRecentMatches(en, 5)
-        if (matches.length) {
-          const lines = matches.map(m => {
-            const score = m.homeScore !== null ? `${m.homeScore}:${m.awayScore}` : 'טרם שוחק'
-            const date = new Date(m.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
-            return `${date} | ${m.homeTeam} ${score} ${m.awayTeam} | ${m.competition}`
-          }).join('\n')
-          teamDataBlock = `\n=== נתוני נבחרת ${he} — שליפה חיה מה-API ===\nתוצאות אחרונות:\n${lines}\n`
+        try {
+          const matches = await fetchTeamRecentMatches(en, 5)
+          if (matches.length) {
+            const lines = matches.map(m => {
+              const score = m.homeScore !== null ? `${m.homeScore}:${m.awayScore}` : 'טרם שוחק'
+              const date = new Date(m.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+              return `${date} | ${m.homeTeam} ${score} ${m.awayTeam} | ${m.competition}`
+            }).join('\n')
+            teamDataBlock = `\n=== נתוני נבחרת ${he} — שליפה חיה מה-API ===\nתוצאות אחרונות:\n${lines}\n`
+          }
+        } catch (apiErr) {
+          console.warn('[chat] team API fetch failed, continuing without:', apiErr instanceof Error ? apiErr.message : apiErr)
         }
         break
       }
@@ -406,9 +410,10 @@ ${contextBlock}`
     // ── שליפת נתוני שחקן מ-API ───────────────────────────────────────
     for (const [he, en] of Object.entries(PLAYER_MAP)) {
       if (lastUserText.includes(he)) {
-        const player = await fetchPlayerInfo(en)
-        if (player) {
-          playerDataBlock = `\n=== נתוני שחקן — שליפה חיה מה-API ===
+        try {
+          const player = await fetchPlayerInfo(en)
+          if (player) {
+            playerDataBlock = `\n=== נתוני שחקן — שליפה חיה מה-API ===
 שם: ${player.name}
 גיל: ${player.age ?? 'לא ידוע'}
 לאום: ${player.nationality}
@@ -419,6 +424,9 @@ ${contextBlock}`
 בישולים: ${player.assists ?? 0}
 דירוג ממוצע: ${player.rating ?? 'לא ידוע'}
 (מקור: API-Football — נתונים עדכניים)\n`
+          }
+        } catch (apiErr) {
+          console.warn('[chat] player API fetch failed, continuing without:', apiErr instanceof Error ? apiErr.message : apiErr)
         }
         break
       }
