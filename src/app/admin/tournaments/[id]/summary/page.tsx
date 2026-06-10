@@ -1,14 +1,14 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Users, Gift, BarChart2, Calendar, Download, ChevronRight, X, Loader2 } from 'lucide-react'
+import { Users, Gift, BarChart2, Calendar, Download, ChevronRight, X, Loader2, Check, Minus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  getTournamentSummary, getBonusQuestionStats, getBonusPickDetail,
+  getTournamentSummary, getBonusQuestionStats, getBonusPickDetail, getBonusUserMatrix,
   getMatchStats, getMatchBettingDetail,
-  TournamentSummary, BonusQuestionStat, BonusPickDetail,
+  TournamentSummary, BonusQuestionStat, BonusPickDetail, BonusMatrix,
   MatchStat, MatchBettingDetail,
 } from '@/app/actions/summary'
 import { translateTeam } from '@/lib/teams-he'
@@ -44,6 +44,27 @@ async function exportBonusDetail(question: string, detail: BonusPickDetail) {
   const wb = utils.book_new()
   utils.book_append_sheet(wb, ws, 'בונוס')
   writeFile(wb, `bonus_${question.slice(0, 20)}.xlsx`)
+}
+
+async function exportBonusMatrix(matrix: BonusMatrix) {
+  const { utils, writeFile } = await import('xlsx')
+  const rows = matrix.rows.map(r => {
+    const row: Record<string, string | number> = {
+      'שם': r.name,
+      'טלפון': r.phone ?? '',
+      'אימייל': r.email ?? '',
+    }
+    for (const q of matrix.questions) {
+      const a = r.answers[q.id]
+      row[q.question] = a.filled ? (a.pick ?? 'מילא') : 'לא מילא'
+    }
+    row['סה״כ מולאו'] = `${r.filledCount}/${r.totalQuestions}`
+    return row
+  })
+  const ws = utils.json_to_sheet(rows)
+  const wb = utils.book_new()
+  utils.book_append_sheet(wb, ws, 'בונוסים לפי משתמש')
+  writeFile(wb, `bonus_matrix.xlsx`)
 }
 
 async function exportMatchDetail(homeTeam: string, awayTeam: string, detail: MatchBettingDetail) {
@@ -116,6 +137,7 @@ export default function SummaryPage() {
 
   const [summary, setSummary] = useState<TournamentSummary | null>(null)
   const [bonusStats, setBonusStats] = useState<BonusQuestionStat[]>([])
+  const [bonusMatrix, setBonusMatrix] = useState<BonusMatrix | null>(null)
   const [matchStats, setMatchStats] = useState<MatchStat[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -127,13 +149,15 @@ export default function SummaryPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [s, b, m] = await Promise.all([
+      const [s, b, bm, m] = await Promise.all([
         getTournamentSummary(id),
         getBonusQuestionStats(id),
+        getBonusUserMatrix(id),
         getMatchStats(id),
       ])
       setSummary(s)
       setBonusStats(b)
+      setBonusMatrix(bm)
       setMatchStats(m)
     } catch (e) {
       console.error('[summary] load error:', e)
@@ -240,6 +264,72 @@ export default function SummaryPage() {
                 </div>
               )
             })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── 3.5 פירוט בונוסים לפי משתמש ─────────────────────────── */}
+      {bonusMatrix && bonusMatrix.questions.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4" /> פירוט בונוסים לפי משתמש
+              </CardTitle>
+              <Button size="sm" variant="outline" className="h-7 text-xs shrink-0"
+                onClick={() => exportBonusMatrix(bonusMatrix)}>
+                <Download className="h-3 w-3 ml-1" /> ייצוא Excel
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-right py-2 pr-2 sticky right-0 bg-card font-semibold whitespace-nowrap">שם</th>
+                    {bonusMatrix.questions.map(q => (
+                      <th key={q.id} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[90px]">
+                        <span className="line-clamp-2">{q.question}</span>
+                      </th>
+                    ))}
+                    <th className="text-center py-2 px-2 font-semibold whitespace-nowrap">סה״כ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bonusMatrix.rows.map(r => {
+                    const missedAll = r.filledCount === 0 && r.totalQuestions > 0
+                    const missedSome = r.filledCount > 0 && r.filledCount < r.totalQuestions
+                    return (
+                      <tr key={r.userId} className="border-b border-border/40 last:border-0 hover:bg-muted/40">
+                        <td className="py-2 pr-2 sticky right-0 bg-card font-medium whitespace-nowrap">{r.name}</td>
+                        {bonusMatrix.questions.map(q => {
+                          const a = r.answers[q.id]
+                          return (
+                            <td key={q.id} className="text-center py-2 px-2">
+                              {a.filled ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-500 mx-auto" />
+                              ) : (
+                                <Minus className="h-3.5 w-3.5 text-red-400 mx-auto" />
+                              )}
+                            </td>
+                          )
+                        })}
+                        <td className="text-center py-2 px-2">
+                          <span className={`font-bold tabular-nums px-2 py-0.5 rounded-full ${
+                            missedAll ? 'bg-red-500/10 text-red-500' :
+                            missedSome ? 'bg-amber-500/10 text-amber-600' :
+                            'bg-emerald-500/10 text-emerald-600'
+                          }`}>
+                            {r.filledCount}/{r.totalQuestions}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}

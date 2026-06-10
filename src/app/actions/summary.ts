@@ -135,6 +135,105 @@ export async function getBonusQuestionStats(tournamentId: string): Promise<Bonus
   })
 }
 
+// ── מטריצת בונוסים לפי משתמש ───────────────────────────────────
+export interface BonusMatrixQuestion {
+  id: string
+  question: string
+  points: number
+}
+
+export interface BonusMatrixAnswer {
+  filled: boolean
+  pick: string | null
+  pointsAwarded: number | null
+}
+
+export interface BonusMatrixUserRow {
+  userId: string
+  name: string
+  phone: string | null
+  email: string | null
+  filledCount: number
+  totalQuestions: number
+  answers: Record<string, BonusMatrixAnswer>
+}
+
+export interface BonusMatrix {
+  questions: BonusMatrixQuestion[]
+  rows: BonusMatrixUserRow[]
+}
+
+export async function getBonusUserMatrix(tournamentId: string): Promise<BonusMatrix> {
+  await requireTournamentAdmin(tournamentId)
+
+  const [questionsRes, picksRes, participantsRes] = await Promise.all([
+    supabaseAdmin
+      .from('bonus_questions')
+      .select('id, question, points')
+      .eq('tournament_id', tournamentId)
+      .order('created_at', { ascending: true }),
+
+    supabaseAdmin
+      .from('bonus_picks')
+      .select('bonus_question_id, user_id, pick, points_awarded')
+      .eq('tournament_id', tournamentId),
+
+    supabaseAdmin
+      .from('tournament_participants')
+      .select('user_id')
+      .eq('tournament_id', tournamentId),
+  ])
+
+  const questions = (questionsRes.data ?? []) as BonusMatrixQuestion[]
+  const picks = (picksRes.data ?? []) as { bonus_question_id: string; user_id: string; pick: string; points_awarded: number | null }[]
+  const participantIds = (participantsRes.data ?? []).map((r: { user_id: string }) => r.user_id)
+
+  const profilesRes = participantIds.length
+    ? await supabaseAdmin.from('profiles').select('id, display_name, phone, email').in('id', participantIds)
+    : { data: [] }
+
+  const profileById: Record<string, { display_name: string; phone: string | null; email: string | null }> = {}
+  for (const p of (profilesRes.data ?? []) as { id: string; display_name: string; phone: string | null; email: string | null }[]) {
+    profileById[p.id] = p
+  }
+
+  const picksByUser: Record<string, Record<string, { pick: string; pointsAwarded: number | null }>> = {}
+  for (const p of picks) {
+    if (!picksByUser[p.user_id]) picksByUser[p.user_id] = {}
+    picksByUser[p.user_id][p.bonus_question_id] = { pick: p.pick, pointsAwarded: p.points_awarded }
+  }
+
+  const rows: BonusMatrixUserRow[] = participantIds.map((uid: string) => {
+    const profile = profileById[uid]
+    const answers: Record<string, BonusMatrixAnswer> = {}
+    let filledCount = 0
+    for (const q of questions) {
+      const userPick = picksByUser[uid]?.[q.id]
+      if (userPick) {
+        filledCount++
+        answers[q.id] = { filled: true, pick: userPick.pick, pointsAwarded: userPick.pointsAwarded }
+      } else {
+        answers[q.id] = { filled: false, pick: null, pointsAwarded: null }
+      }
+    }
+    return {
+      userId: uid,
+      name: profile?.display_name ?? uid,
+      phone: profile?.phone ?? null,
+      email: profile?.email ?? null,
+      filledCount,
+      totalQuestions: questions.length,
+      answers,
+    }
+  }).sort((a, b) => {
+    // מי שפספס שאלות עולה קודם, ואז לפי שם
+    if (a.filledCount !== b.filledCount) return a.filledCount - b.filledCount
+    return a.name.localeCompare(b.name, 'he')
+  })
+
+  return { questions, rows }
+}
+
 // ── פירוט בונוס ─────────────────────────────────────────────────
 export async function getBonusPickDetail(questionId: string, tournamentId: string): Promise<BonusPickDetail> {
   await requireTournamentAdmin(tournamentId)
