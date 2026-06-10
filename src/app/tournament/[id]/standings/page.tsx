@@ -69,7 +69,9 @@ function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandi
                 <td className="px-2 py-2.5 text-center text-emerald-600">{row.all.win}</td>
                 <td className="px-2 py-2.5 text-center text-muted-foreground">{row.all.draw}</td>
                 <td className="px-2 py-2.5 text-center text-red-500">{row.all.lose}</td>
-                <td className="px-2 py-2.5 text-center text-muted-foreground">{row.all.goals.for}:{row.all.goals.against}</td>
+                <td className="px-2 py-2.5 text-center text-muted-foreground">
+                  <span dir="ltr" className="tabular-nums">{row.all.goals.for}:{row.all.goals.against}</span>
+                </td>
                 <td className={cn('px-2 py-2.5 text-center font-medium', row.goalsDiff > 0 ? 'text-emerald-600' : row.goalsDiff < 0 ? 'text-red-500' : 'text-muted-foreground')}>
                   {row.goalsDiff > 0 ? `+${row.goalsDiff}` : row.goalsDiff}
                 </td>
@@ -535,7 +537,7 @@ function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchN
   } else if (!isFinished) {
     footer = <div className="text-[9px] text-muted-foreground text-center py-0.5">{new Date(fix.date).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })}</div>
   } else if (status === 'PEN') {
-    footer = <div className="text-[9px] text-muted-foreground text-center py-0.5">פנ׳ {score.penalty.home}-{score.penalty.away}</div>
+    footer = <div className="text-[9px] text-muted-foreground text-center py-0.5">פנ׳ <span dir="ltr" className="tabular-nums">{score.penalty.home}-{score.penalty.away}</span></div>
   }
 
   return (

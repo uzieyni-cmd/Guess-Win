@@ -9,7 +9,7 @@ import { Target, ChevronDown, Loader2, EyeOff, Eye, Trophy } from 'lucide-react'
 
 export default function MatchesPage() {
   const { id } = useParams() as { id: string }
-  const { activeTournament, reloadMatches, bets, standings } = useTournament()
+  const { activeTournament, reloadMatches, bets, betsReady, standings } = useTournament()
   const { currentUser } = useAuth()
 
   // ── state ───────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ export default function MatchesPage() {
     setAllPastLoaded(true)
   }
 
-  if (!activeTournament) {
+  if (!activeTournament || !betsReady) {
     return <BettingZoneSkeleton />
   }
 

@@ -195,7 +195,7 @@ export default function SummaryPage() {
   )
 
   return (
-    <div className="p-6 max-w-3xl space-y-8">
+    <div className="p-6 max-w-3xl xl:max-w-6xl space-y-8">
       <h1 className="font-suez text-2xl">סיכום טורניר</h1>
 
       {/* ── 1. כרטיסי סיכום ────────────────────────────────────── */}
@@ -287,10 +287,10 @@ export default function SummaryPage() {
               <table className="w-full text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-right py-2 pr-2 sticky right-0 bg-card font-semibold whitespace-nowrap">שם</th>
+                    <th className="text-right py-2 pr-2 sticky right-0 bg-card font-semibold whitespace-nowrap min-w-[120px]">שם</th>
                     {bonusMatrix.questions.map(q => (
-                      <th key={q.id} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[90px]">
-                        <span className="line-clamp-2">{q.question}</span>
+                      <th key={q.id} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[90px] xl:min-w-[160px]">
+                        <span className="line-clamp-2 xl:line-clamp-none">{q.question}</span>
                       </th>
                     ))}
                     <th className="text-center py-2 px-2 font-semibold whitespace-nowrap">סה״כ</th>

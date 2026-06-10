@@ -88,6 +88,7 @@ interface TournamentContextType {
   reload: () => void
   reloadMatches: (tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean }) => Promise<{ cursor: string | null; hasPast: boolean } | null>
   patchMatches: (tournamentId: string, updatedMatches: Match[]) => void
+  betsReady: boolean
 }
 
 const TournamentContext = createContext<TournamentContextType | null>(null)
@@ -97,6 +98,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const [tournamentsLoaded, setTournamentsLoaded] = useState(false)
   const [activeTournamentId, setActiveTournamentIdState] = useState<string | null>(null)
   const [bets, setBets] = useState<Bet[]>([])
+  const [betsReady, setBetsReady] = useState(false)
   const [participants, setParticipants] = useState<User[]>([])
   const [participantsVersion, setParticipantsVersion] = useState(0)
   // Raw bonus picks (bonus_questions) — Realtime מעדכן שורות בודדות; הסכום נגזר ב-useMemo
@@ -309,17 +311,36 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   // ── Load bets + participants when active tournament changes ────
   useEffect(() => {
     if (!activeTournamentId) return
+    let cancelled = false
 
     const loadBetsAndParticipants = async () => {
+      setBetsReady(false)
       setParticipants([])
       setBonusPicksRaw([])
       setRoundPicksRaw([])
       setJokerPicksRaw([])
 
-      const { data: betRows } = await supabase
-        .from('bets')
-        .select('*, matches(match_start_time)')
-        .eq('tournament_id', activeTournamentId)
+      // נסה לטעון את הניחושים עד שמצליח — לא נציג את הדף עד שיש תקשורת תקינה עם ה-DB
+      let betRows: (DbBet & { matches: { match_start_time: string } | null })[] | null = null
+      let attempt = 0
+      while (!cancelled) {
+        const { data, error } = await supabase
+          .from('bets')
+          .select('*, matches(match_start_time)')
+          .eq('tournament_id', activeTournamentId)
+
+        if (!error) {
+          betRows = (data ?? []) as (DbBet & { matches: { match_start_time: string } | null })[]
+          break
+        }
+
+        attempt++
+        console.error(`[bets] load failed (attempt ${attempt}):`, error.message)
+        // המתנה הולכת וגדלה בין ניסיונות (1s, 2s, 4s... עד מקסימום 10s)
+        await new Promise(res => setTimeout(res, Math.min(1000 * 2 ** (attempt - 1), 10_000)))
+      }
+
+      if (cancelled) return
 
       const mappedBets: Bet[] = (betRows ?? []).map((b: DbBet & { matches: { match_start_time: string } | null }) => ({
         id: b.id,
@@ -336,6 +357,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         betResult: b.result ?? null,
       }))
       setBets(mappedBets)
+      setBetsReady(true)
 
       const tournament = tournamentsRef.current.find((t) => t.id === activeTournamentId)
 
@@ -425,7 +447,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    return () => { cancelled = true; supabase.removeChannel(channel) }
   }, [activeTournamentId, participantsVersion, tournamentsLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Realtime: round_bonus_picks — 2 נק' לניצחון נבחרת מדורגת ───
@@ -743,7 +765,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <TournamentContext.Provider value={{
-      tournaments, activeTournament, bets, participants, standings,
+      tournaments, activeTournament, bets, betsReady, participants, standings,
       jokerPicks: jokerPicksRaw, toggleJoker,
       setActiveTournamentId, placeBet, setActualScore, createTournament,
       updateTournament, deleteTournament, toggleHideTournament, addMatch, updateUserPermissions, reload, reloadMatches, patchMatches,
