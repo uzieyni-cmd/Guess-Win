@@ -82,7 +82,7 @@ export async function joinMonkeyToTournament(tournamentId: string): Promise<{ ok
 }
 
 // מקסימום משחקים לעבד בכל הרצת cron (כדי לא לעבור את מגבלת הזמן של 60ש')
-const BATCH_SIZE = 6
+const BATCH_SIZE = 3
 
 // קאש לתוצאות אחרונות של נבחרות — משותף בין כל הטורנירים באותה הרצה,
 // כדי לא לשלוף פעמיים את אותה נבחרת (טורנירים שונים חולקים את אותם משחקים)
@@ -140,16 +140,20 @@ ${oddsStr}
     const { text } = await generateText({
       model: gateway('google/gemini-2.5-flash'),
       prompt,
-      maxOutputTokens: 10,
+      maxOutputTokens: 300,
     })
 
-    const match = text.trim().match(/^(\d+):(\d+)$/)
-    if (!match) return null
+    const match = text.trim().match(/(\d+)\s*:\s*(\d+)/)
+    if (!match) {
+      console.warn(`[ai-monkey] predictScore: unmatched text for ${homeTeam} vs ${awayTeam}: ${JSON.stringify(text)}`)
+      return null
+    }
 
     const home = Math.min(parseInt(match[1]), 15)
     const away = Math.min(parseInt(match[2]), 15)
     return { home, away }
-  } catch {
+  } catch (e) {
+    console.warn(`[ai-monkey] predictScore error for ${homeTeam} vs ${awayTeam}:`, e instanceof Error ? e.message : e)
     return null
   }
 }
@@ -167,7 +171,7 @@ async function predictBonus(question: string, options: string[]): Promise<string
 אפשרויות: ${options.join(' | ')}
 
 תשובה:`,
-      maxOutputTokens: 50,
+      maxOutputTokens: 200,
     })
 
     const picked = text.trim()
@@ -282,15 +286,13 @@ export async function runMonkeyBonusPicks(tournamentId: string): Promise<{
 
     const now = new Date()
 
-    const cutoffBonus = new Date(now.getTime() + 24 * 60 * 60 * 1000) // לפחות 24 שעות לפני נעילה
-
-    // שאלות בונוס פתוחות שנועלות בעוד יותר מ-24 שעות
+    // שאלות בונוס פתוחות שעדיין לא ננעלו
     const { data: questions } = await supabaseAdmin
       .from('bonus_questions')
-      .select('id, question, options, lock_time, correct_options')
+      .select('id, question, options, lock_time, correct_option')
       .eq('tournament_id', tournamentId)
-      .is('correct_options', null)
-      .gt('lock_time', cutoffBonus.toISOString())
+      .is('correct_option', null)
+      .gt('lock_time', now.toISOString())
 
     if (!questions?.length) return { ok: true, placed: 0, skipped: 0 }
 
@@ -307,9 +309,12 @@ export async function runMonkeyBonusPicks(tournamentId: string): Promise<{
 
     let placed = 0
     let skipped = 0
+    let processed = 0
 
-    for (const q of questions as { id: string; question: string; options: string[]; lock_time: string; correct_options: string[] | null }[]) {
+    for (const q of questions as { id: string; question: string; options: string[]; lock_time: string; correct_option: string[] | null }[]) {
       if (alreadyPicked.has(q.id)) { skipped++; continue }
+      if (processed >= BATCH_SIZE) break // הגבלת קצב — שאר השאלות ייענו בהרצות הבאות
+      processed++
 
       const pick = await predictBonus(q.question, q.options)
       if (!pick) { skipped++; continue }
