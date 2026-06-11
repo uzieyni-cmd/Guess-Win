@@ -1,6 +1,6 @@
 // SEC-04: מייבא supabaseAdmin מ-lib/supabase-admin במקום ליצור instance חדש בכל קריאה.
 import { supabaseAdmin } from './supabase-admin'
-import { computeAndSaveBetPoints } from './bet-scoring'
+import { scoreFinishedMatch } from './bet-scoring'
 
 // PERF-06: rate limit ב-DB — מונע sync כפול כשיש מספר serverless instances
 const SYNC_INTERVAL_MS = 55_000
@@ -114,7 +114,7 @@ export async function syncLiveMatches(opts: {
       if (dbMatch && isFinished && dbMatch.status !== 'finished') {
         const home = f.score.fulltime.home ?? f.goals.home ?? 0
         const away = f.score.fulltime.away ?? f.goals.away ?? 0
-        await computeAndSaveBetPoints(dbMatch.id, { home, away })
+        await scoreFinishedMatch(dbMatch.id, { home, away })
       }
     }
   }

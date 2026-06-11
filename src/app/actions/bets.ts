@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { requireAdmin } from '@/lib/auth-server'
 import { awardRoundBonusForMatch } from './roundBonus'
+import { scoreFinishedMatch } from '@/lib/bet-scoring'
 
 /**
  * Rescore ALL finished matches in a tournament.
@@ -186,58 +187,8 @@ export async function setActualScoreAction(
 
   if (matchErr) return { ok: false, error: matchErr.message }
 
-  // 2. חשב נקודות לכל הבטים על משחק זה (כולל כאלה שכבר ניקדו — override)
-  const { data: bets } = await supabaseAdmin
-    .from('bets')
-    .select('id, user_id, predicted_home, predicted_away')
-    .eq('match_id', matchId)
-
-  if (!bets?.length) return { ok: true }
-
-  type BetRow = { id: string; user_id: string; predicted_home: number; predicted_away: number }
-  const betRows = bets as BetRow[]
-
-  // ── Step A: ניקוד בסיס ────────────────────────────────────────
-  type ScoredBet = { id: string; userId: string; result: 'exact' | 'outcome' | 'miss'; points: number }
-  const scored: ScoredBet[] = betRows.map(bet => {
-    if (bet.predicted_home === home && bet.predicted_away === away) {
-      return { id: bet.id, userId: bet.user_id, result: 'exact', points: 4 }
-    }
-    const predOut = bet.predicted_home > bet.predicted_away ? 'home' : bet.predicted_home < bet.predicted_away ? 'away' : 'draw'
-    const actOut  = home > away ? 'home' : home < away ? 'away' : 'draw'
-    if (predOut === actOut) return { id: bet.id, userId: bet.user_id, result: 'outcome', points: 1 }
-    return { id: bet.id, userId: bet.user_id, result: 'miss', points: 0 }
-  })
-
-  // ── Step B: מכפיל ג'וקר (×2 למשתמשים שסימנו ג'וקר על משחק זה) ──
-  const { data: jokerPicksRaw } = await supabaseAdmin
-    .from('joker_picks')
-    .select('user_id')
-    .eq('match_id', matchId)
-
-  if (jokerPicksRaw?.length) {
-    const jokerUserIds = new Set(
-      (jokerPicksRaw as { user_id: string }[]).map(j => j.user_id)
-    )
-    for (const b of scored) {
-      if (jokerUserIds.has(b.userId) && b.points > 0) b.points *= 2
-    }
-  }
-
-  // ── Step C: בונוס ניחוש מדויק יחידני (+5, לא מוכפל בג'וקר) ──────
-  const exactOnes = scored.filter(b => b.result === 'exact')
-  if (exactOnes.length === 1) exactOnes[0].points += 5
-
-  // ── Step D: כתוב ניקוד סופי — batch upsert במקום N updates ──────
-  await supabaseAdmin
-    .from('bets')
-    .upsert(
-      scored.map(b => ({ id: b.id, points: b.points, result: b.result })),
-      { onConflict: 'id' }
-    )
-
-  // ── Step E: בונוס נבחרת מדורגת (+2 לניצחון) ──────────────────
-  await awardRoundBonusForMatch(matchId)
+  // 2. חשב ושמור ניקוד מלא (ניקוד בסיס, ג'וקר, בונוס יחיד, בונוס דרגים)
+  await scoreFinishedMatch(matchId, { home, away })
 
   return { ok: true }
 }
