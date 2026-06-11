@@ -7,7 +7,7 @@ import { getJokerStageGroup } from '@/lib/constants'
 // ── Toggle a joker pick on/off ────────────────────────────────────
 // Rules:
 //   • Only matches in a configured joker stage group (group stage / R32 / R16)
-//   • Not locked (match_start_time − 10 min)
+//   • Not locked (match_start_time − 60 min)
 //   • Each stage group has its own independent quota — unused jokers
 //     from one stage do not carry over to the next
 export async function toggleJokerPick(
