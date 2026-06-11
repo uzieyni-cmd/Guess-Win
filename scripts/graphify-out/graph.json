@@ -1,0 +1,39 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "generate-pwa-icons.mjs",
+      "file_type": "code",
+      "source_file": "generate-pwa-icons.mjs",
+      "source_location": "L1",
+      "id": "generate_pwa_icons_mjs",
+      "community": 0,
+      "norm_label": "generate-pwa-icons.mjs"
+    },
+    {
+      "label": "generate()",
+      "file_type": "code",
+      "source_file": "generate-pwa-icons.mjs",
+      "source_location": "L87",
+      "id": "scripts_generate_pwa_icons_generate",
+      "community": 0,
+      "norm_label": "generate()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-pwa-icons.mjs",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "generate_pwa_icons_mjs",
+      "target": "scripts_generate_pwa_icons_generate",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "b6176d52672a15f2b8c8fda077d3d0ac4a4cd4fd"
+}

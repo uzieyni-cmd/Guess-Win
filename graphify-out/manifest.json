@@ -1,0 +1,777 @@
+{
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.mcp.json": {
+    "mtime": 1778740319.4131756,
+    "ast_hash": "884e3edc8e5710f18fcfde4502c1674a",
+    "semantic_hash": "884e3edc8e5710f18fcfde4502c1674a"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\components.json": {
+    "mtime": 1778740319.4211655,
+    "ast_hash": "519f93133ded707d8847caceca85dbac",
+    "semantic_hash": "519f93133ded707d8847caceca85dbac"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\C\uf03aTempmatches_response.json": {
+    "mtime": 1778740319.4161587,
+    "ast_hash": "e7686a763ea0122bd6962f0b4d4a5e5c",
+    "semantic_hash": "e7686a763ea0122bd6962f0b4d4a5e5c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\eslint.config.mjs": {
+    "mtime": 1778740319.4221554,
+    "ast_hash": "6c4307ffa009658f5c97f5629094c0c2",
+    "semantic_hash": "6c4307ffa009658f5c97f5629094c0c2"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\next.config.ts": {
+    "mtime": 1778740319.4812908,
+    "ast_hash": "6cff411027b8955686bfe84bcaab4672",
+    "semantic_hash": "6cff411027b8955686bfe84bcaab4672"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\package.json": {
+    "mtime": 1778740319.486287,
+    "ast_hash": "d2d8b3b9f6086a669185d36fe994b20f",
+    "semantic_hash": "d2d8b3b9f6086a669185d36fe994b20f"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\postcss.config.mjs": {
+    "mtime": 1778740319.4882889,
+    "ast_hash": "481fac0fdecd70e1821cc30b86030c1a",
+    "semantic_hash": "481fac0fdecd70e1821cc30b86030c1a"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\schema.sql": {
+    "mtime": 1778740319.5072832,
+    "ast_hash": "f21ce4579007ac62c577662a7efae2b6",
+    "semantic_hash": "f21ce4579007ac62c577662a7efae2b6"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\skills-lock.json": {
+    "mtime": 1778752609.5174298,
+    "ast_hash": "48ace434a29056cdaeb0423ffb55e440",
+    "semantic_hash": "48ace434a29056cdaeb0423ffb55e440"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\tsconfig.json": {
+    "mtime": 1778740319.6604774,
+    "ast_hash": "0a2f4ed9289b65cd3feb4fb4ab3a4fcd",
+    "semantic_hash": "0a2f4ed9289b65cd3feb4fb4ab3a4fcd"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\vercel.json": {
+    "mtime": 1778752609.6003735,
+    "ast_hash": "7d02c5bd4bef59ff33e707b6288b5d7d",
+    "semantic_hash": "7d02c5bd4bef59ff33e707b6288b5d7d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\vitest.config.ts": {
+    "mtime": 1778740319.6624765,
+    "ast_hash": "35a25730302189ba1ef1eb71d0651c19",
+    "semantic_hash": "35a25730302189ba1ef1eb71d0651c19"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_avatar_url.sql": {
+    "mtime": 1778740319.467291,
+    "ast_hash": "b54f8ee238471cfc383750d2dc614ad7",
+    "semantic_hash": "b54f8ee238471cfc383750d2dc614ad7"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_bet_points.sql": {
+    "mtime": 1778740319.4682922,
+    "ast_hash": "295c37e942e6b939bb393bc5bbd6617e",
+    "semantic_hash": "295c37e942e6b939bb393bc5bbd6617e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_bracket_config.sql": {
+    "mtime": 1778740319.4703126,
+    "ast_hash": "b0928a45ef88ad7394aba52fc1cabc4a",
+    "semantic_hash": "b0928a45ef88ad7394aba52fc1cabc4a"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_elapsed_minutes.sql": {
+    "mtime": 1778740319.4712832,
+    "ast_hash": "ae6508c7773e5b089e352d88f7663dde",
+    "semantic_hash": "ae6508c7773e5b089e352d88f7663dde"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_first_last_name.sql": {
+    "mtime": 1778740319.4712832,
+    "ast_hash": "9c5ec36d6d5e26b59df64dac8b890b66",
+    "semantic_hash": "9c5ec36d6d5e26b59df64dac8b890b66"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_leagues_cache.sql": {
+    "mtime": 1778740319.4723125,
+    "ast_hash": "aeb4edd2d6b10e1bf649e906e77453a5",
+    "semantic_hash": "aeb4edd2d6b10e1bf649e906e77453a5"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_matches_indexes.sql": {
+    "mtime": 1778740319.475283,
+    "ast_hash": "ad17a978577277a2c9ef1dd12ceee32e",
+    "semantic_hash": "ad17a978577277a2c9ef1dd12ceee32e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_match_odds.sql": {
+    "mtime": 1778740319.4732838,
+    "ast_hash": "7a456ac41b36b366599dec8d0144b157",
+    "semantic_hash": "7a456ac41b36b366599dec8d0144b157"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_match_period.sql": {
+    "mtime": 1778740319.474283,
+    "ast_hash": "5a29fc929c7e7fbe12e0aaa2b33e4b5d",
+    "semantic_hash": "5a29fc929c7e7fbe12e0aaa2b33e4b5d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_phone.sql": {
+    "mtime": 1778740319.476286,
+    "ast_hash": "8d975a798a35fb25049f9c553deb704d",
+    "semantic_hash": "8d975a798a35fb25049f9c553deb704d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\add_tournament_last_synced_at.sql": {
+    "mtime": 1778740319.477282,
+    "ast_hash": "0c4434df9c9a47caee7d65788e0f9e07",
+    "semantic_hash": "0c4434df9c9a47caee7d65788e0f9e07"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\backfill_missing_bet_points.sql": {
+    "mtime": 1778752609.5164108,
+    "ast_hash": "c304ab95c8486d42fa7209312c476e9d",
+    "semantic_hash": "c304ab95c8486d42fa7209312c476e9d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\enable_realtime_matches.sql": {
+    "mtime": 1778740319.477282,
+    "ast_hash": "f88625681bc884812251017b95f7f01c",
+    "semantic_hash": "f88625681bc884812251017b95f7f01c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\fix_sec08_bet_score_upper_bound.sql": {
+    "mtime": 1778740319.4792893,
+    "ast_hash": "d3ab9dee18c476bcbbf103518abe2685",
+    "semantic_hash": "d3ab9dee18c476bcbbf103518abe2685"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\migrations\\fix_sec09_trigger_no_role_from_metadata.sql": {
+    "mtime": 1778740319.4802897,
+    "ast_hash": "fb98eb33f86206f81ed599410403d155",
+    "semantic_hash": "fb98eb33f86206f81ed599410403d155"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\manifest.json": {
+    "mtime": 1778740319.5022826,
+    "ast_hash": "3807651c4b62064c26066ebb62f2c6e9",
+    "semantic_hash": "3807651c4b62064c26066ebb62f2c6e9"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\scripts\\generate-pwa-icons.mjs": {
+    "mtime": 1778740319.5092902,
+    "ast_hash": "944f2fd6e8ed18d4dda6abf80cbc32a1",
+    "semantic_hash": "944f2fd6e8ed18d4dda6abf80cbc32a1"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\instrumentation.ts": {
+    "mtime": 1778740319.6317384,
+    "ast_hash": "daa92b3278586b70603e643b753b1b03",
+    "semantic_hash": "daa92b3278586b70603e643b753b1b03"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\proxy.ts": {
+    "mtime": 1778740319.6537647,
+    "ast_hash": "3106c82785927da921d72a5b663d42a3",
+    "semantic_hash": "3106c82785927da921d72a5b663d42a3"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\layout.tsx": {
+    "mtime": 1778740319.5575821,
+    "ast_hash": "a580220e4a2f509fa6cc8bcff8a3b8be",
+    "semantic_hash": "a580220e4a2f509fa6cc8bcff8a3b8be"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\page.tsx": {
+    "mtime": 1778740319.5595846,
+    "ast_hash": "237628dee22af55fcf15eda4d5306379",
+    "semantic_hash": "237628dee22af55fcf15eda4d5306379"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\bets.ts": {
+    "mtime": 1779742462.0146728,
+    "ast_hash": "871e718e89124947cf5437276adac5e8",
+    "semantic_hash": "871e718e89124947cf5437276adac5e8"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\bonus.ts": {
+    "mtime": 1779805342.7749982,
+    "ast_hash": "4017625cc9cc63e553d8f374becd3279",
+    "semantic_hash": "4017625cc9cc63e553d8f374becd3279"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\fixtures.ts": {
+    "mtime": 1778752609.5239403,
+    "ast_hash": "2dba215a15f157600f920019e94cd051",
+    "semantic_hash": "2dba215a15f157600f920019e94cd051"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\joker.ts": {
+    "mtime": 1779743365.8074517,
+    "ast_hash": "a97376e9833458aa24165f7f7941c97e",
+    "semantic_hash": "a97376e9833458aa24165f7f7941c97e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\leagues.ts": {
+    "mtime": 1778740319.5142965,
+    "ast_hash": "fd38b3e85a7d8669833dd788d0c9460f",
+    "semantic_hash": "fd38b3e85a7d8669833dd788d0c9460f"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\profile.ts": {
+    "mtime": 1779806676.2138827,
+    "ast_hash": "393ea9422a4a6e823780f3be69e162c9",
+    "semantic_hash": "393ea9422a4a6e823780f3be69e162c9"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\roles.ts": {
+    "mtime": 1778752609.526941,
+    "ast_hash": "3f2a8416c84fe79930f491a87058317c",
+    "semantic_hash": "3f2a8416c84fe79930f491a87058317c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\roundBonus.ts": {
+    "mtime": 1779805366.7531452,
+    "ast_hash": "1d998db45e9333c9dcbdee86fd3f63db",
+    "semantic_hash": "1d998db45e9333c9dcbdee86fd3f63db"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\actions\\tournaments.ts": {
+    "mtime": 1778740319.517296,
+    "ast_hash": "8c0265f15500f7e24142bc11a180c053",
+    "semantic_hash": "8c0265f15500f7e24142bc11a180c053"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\admin\\layout.tsx": {
+    "mtime": 1779709120.0953608,
+    "ast_hash": "3cf22024134baf55e73de96e9ad27ae8",
+    "semantic_hash": "3cf22024134baf55e73de96e9ad27ae8"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\admin\\page.tsx": {
+    "mtime": 1779709165.097116,
+    "ast_hash": "7cabb02eb2fd5618ea6176c6fc737af6",
+    "semantic_hash": "7cabb02eb2fd5618ea6176c6fc737af6"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\admin\\tournaments\\page.tsx": {
+    "mtime": 1779709826.706534,
+    "ast_hash": "6aa5aaebcce56be31a11e3ccc946b9cf",
+    "semantic_hash": "6aa5aaebcce56be31a11e3ccc946b9cf"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\admin\\tournaments\\[id]\\page.tsx": {
+    "mtime": 1779806350.3584776,
+    "ast_hash": "34287b16e5a3ee506c0f26a0e8a2304b",
+    "semantic_hash": "34287b16e5a3ee506c0f26a0e8a2304b"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\admin\\users\\page.tsx": {
+    "mtime": 1779709782.915894,
+    "ast_hash": "678c5cf1f5886974b15fd070fbc07e6b",
+    "semantic_hash": "678c5cf1f5886974b15fd070fbc07e6b"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\admin\\rescore\\route.ts": {
+    "mtime": 1778752609.5387547,
+    "ast_hash": "c1f124344b953fd3143876ee9eed6976",
+    "semantic_hash": "c1f124344b953fd3143876ee9eed6976"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\chat\\route.ts": {
+    "mtime": 1779732605.574134,
+    "ast_hash": "c2498ce95851876f74f5425bd7e43086",
+    "semantic_hash": "c2498ce95851876f74f5425bd7e43086"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\cron\\refresh-leagues\\route.ts": {
+    "mtime": 1778740319.5330358,
+    "ast_hash": "e16e9dba3f6c252fa8a50e8f2ed05738",
+    "semantic_hash": "e16e9dba3f6c252fa8a50e8f2ed05738"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\cron\\sync\\route.ts": {
+    "mtime": 1778740319.5400558,
+    "ast_hash": "c2e126ade435ad8716f7b78f9478c07e",
+    "semantic_hash": "c2e126ade435ad8716f7b78f9478c07e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\cron\\sync-fixtures\\route.ts": {
+    "mtime": 1778740319.5350661,
+    "ast_hash": "8d300e193b40ad64117719cc91075422",
+    "semantic_hash": "8d300e193b40ad64117719cc91075422"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\cron\\sync-live\\route.ts": {
+    "mtime": 1778740319.536045,
+    "ast_hash": "e7fd65e641759b00fcd59a42a7496f1d",
+    "semantic_hash": "e7fd65e641759b00fcd59a42a7496f1d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\cron\\sync-odds\\route.ts": {
+    "mtime": 1778740319.5380528,
+    "ast_hash": "e1de514440930b3aad86c0bdba1e28e6",
+    "semantic_hash": "e1de514440930b3aad86c0bdba1e28e6"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\knockout\\[tournamentId]\\route.ts": {
+    "mtime": 1778740319.5420523,
+    "ast_hash": "3deb4776790ac62fbadeedef2b3009af",
+    "semantic_hash": "3deb4776790ac62fbadeedef2b3009af"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\live\\[tournamentId]\\route.ts": {
+    "mtime": 1778752609.5447688,
+    "ast_hash": "dee071d492ae3e54d95505a97e979a38",
+    "semantic_hash": "dee071d492ae3e54d95505a97e979a38"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\match-detail\\[fixtureId]\\route.ts": {
+    "mtime": 1778740319.5450664,
+    "ast_hash": "998342544bf5d5538f9dc072da3d5205",
+    "semantic_hash": "998342544bf5d5538f9dc072da3d5205"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\matches\\[tournamentId]\\route.ts": {
+    "mtime": 1778740319.5490596,
+    "ast_hash": "4c7a7f528b26919283421cdee0cd2110",
+    "semantic_hash": "4c7a7f528b26919283421cdee0cd2110"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\api\\standings\\[tournamentId]\\route.ts": {
+    "mtime": 1778740319.5515745,
+    "ast_hash": "02fed0cca508956d98e9373468687ecf",
+    "semantic_hash": "02fed0cca508956d98e9373468687ecf"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\auth\\callback\\route.ts": {
+    "mtime": 1779801770.9037404,
+    "ast_hash": "48047366d9b625b9a21145490a955a52",
+    "semantic_hash": "48047366d9b625b9a21145490a955a52"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\competitions\\page.tsx": {
+    "mtime": 1779710264.7961974,
+    "ast_hash": "4e5978f2cee8354763e4e853b5084f63",
+    "semantic_hash": "4e5978f2cee8354763e4e853b5084f63"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\login\\page.tsx": {
+    "mtime": 1779707760.938215,
+    "ast_hash": "698ea2fa48e14d3039047455c8ee9d5c",
+    "semantic_hash": "698ea2fa48e14d3039047455c8ee9d5c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\profile\\page.tsx": {
+    "mtime": 1779806687.8477683,
+    "ast_hash": "4a6c26d2cff0c49c27ceb3683752893e",
+    "semantic_hash": "4a6c26d2cff0c49c27ceb3683752893e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\profile\\__tests__\\page.test.tsx": {
+    "mtime": 1778740319.5615814,
+    "ast_hash": "c5dae87cd542b2dfd1b58734594ae715",
+    "semantic_hash": "c5dae87cd542b2dfd1b58734594ae715"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\reset-password\\page.tsx": {
+    "mtime": 1779801788.478958,
+    "ast_hash": "c815570de0b9bd9c59c41c58c94ef52c",
+    "semantic_hash": "c815570de0b9bd9c59c41c58c94ef52c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\tournament\\[id]\\layout.tsx": {
+    "mtime": 1779709110.7322044,
+    "ast_hash": "00bf07713de54ab00b0ef05d7a75b8e4",
+    "semantic_hash": "00bf07713de54ab00b0ef05d7a75b8e4"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\tournament\\[id]\\bonus\\page.tsx": {
+    "mtime": 1779805425.421453,
+    "ast_hash": "a067d97457b81cb02d81609f2a52e87b",
+    "semantic_hash": "a067d97457b81cb02d81609f2a52e87b"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\tournament\\[id]\\leaderboard\\page.tsx": {
+    "mtime": 1779710265.9006953,
+    "ast_hash": "422256ebb4b3c0de26d6ee911f2a226f",
+    "semantic_hash": "422256ebb4b3c0de26d6ee911f2a226f"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\tournament\\[id]\\match\\[matchId]\\page.tsx": {
+    "mtime": 1779709983.3581886,
+    "ast_hash": "bc2fa46d4c2301bc842b381624ebe666",
+    "semantic_hash": "bc2fa46d4c2301bc842b381624ebe666"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\tournament\\[id]\\matches\\page.tsx": {
+    "mtime": 1779709142.532914,
+    "ast_hash": "902b77590bd650105db37c9a56992fc9",
+    "semantic_hash": "902b77590bd650105db37c9a56992fc9"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\tournament\\[id]\\personal\\page.tsx": {
+    "mtime": 1779710182.470744,
+    "ast_hash": "4c22cf30c10ee8a3a48a400d5332ef4c",
+    "semantic_hash": "4c22cf30c10ee8a3a48a400d5332ef4c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\tournament\\[id]\\standings\\page.tsx": {
+    "mtime": 1779709564.887146,
+    "ast_hash": "7c8963fccc1792b887d72a646c8699fc",
+    "semantic_hash": "7c8963fccc1792b887d72a646c8699fc"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\app\\tournament\\[id]\\stats\\page.tsx": {
+    "mtime": 1779709606.3182285,
+    "ast_hash": "8a663fefe19db4524f703e899be1a9b1",
+    "semantic_hash": "8a663fefe19db4524f703e899be1a9b1"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\auth\\AuthGuard.tsx": {
+    "mtime": 1778740319.5833886,
+    "ast_hash": "69c5809c3ed66e3c1b2d362969de56ca",
+    "semantic_hash": "69c5809c3ed66e3c1b2d362969de56ca"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\auth\\LoginForm.tsx": {
+    "mtime": 1779801774.8373566,
+    "ast_hash": "e27d3866e3241a32a2630cbee9741de7",
+    "semantic_hash": "e27d3866e3241a32a2630cbee9741de7"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\auth\\__tests__\\LoginForm.test.tsx": {
+    "mtime": 1778740319.5873964,
+    "ast_hash": "99b3eb15b3bb08371450b4e661c81ec2",
+    "semantic_hash": "99b3eb15b3bb08371450b4e661c81ec2"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\competitions\\CompetitionCard.tsx": {
+    "mtime": 1779710285.533781,
+    "ast_hash": "8589ecb4fa0e30dbd5d0f6c3c0dd5a28",
+    "semantic_hash": "8589ecb4fa0e30dbd5d0f6c3c0dd5a28"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\shared\\ChatBot.tsx": {
+    "mtime": 1779710257.6195986,
+    "ast_hash": "c3a23cb3caf30fc24f99be3b733f7f57",
+    "semantic_hash": "c3a23cb3caf30fc24f99be3b733f7f57"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\shared\\EmptyState.tsx": {
+    "mtime": 1779709048.8760731,
+    "ast_hash": "3ddbbfaad39869661d4da4ae96eb4479",
+    "semantic_hash": "3ddbbfaad39869661d4da4ae96eb4479"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\shared\\OfflineBanner.tsx": {
+    "mtime": 1778740319.594391,
+    "ast_hash": "9265ad567e0a68834fb2575f909b11c6",
+    "semantic_hash": "9265ad567e0a68834fb2575f909b11c6"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\shared\\PointsBadge.tsx": {
+    "mtime": 1779709057.3433185,
+    "ast_hash": "8a3bad259d096e3f5cdc518d1b3e4b14",
+    "semantic_hash": "8a3bad259d096e3f5cdc518d1b3e4b14"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\shared\\SiteHeader.tsx": {
+    "mtime": 1779708410.1242595,
+    "ast_hash": "4043d36b52d5d717709fa49cd633501b",
+    "semantic_hash": "4043d36b52d5d717709fa49cd633501b"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\shared\\TeamFlag.tsx": {
+    "mtime": 1779710004.015325,
+    "ast_hash": "d6935b2ad813ce85c2a2fcf2b2ca6298",
+    "semantic_hash": "d6935b2ad813ce85c2a2fcf2b2ca6298"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\tournament\\BettingZone.tsx": {
+    "mtime": 1779743361.4674184,
+    "ast_hash": "365440722e1e44f17722a9b287252b80",
+    "semantic_hash": "365440722e1e44f17722a9b287252b80"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\tournament\\CountdownTimer.tsx": {
+    "mtime": 1778753713.016191,
+    "ast_hash": "5c6d5888a3279d6cfe3ac172766afb7f",
+    "semantic_hash": "5c6d5888a3279d6cfe3ac172766afb7f"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\tournament\\MatchCard.tsx": {
+    "mtime": 1779743357.7013948,
+    "ast_hash": "5f549dfce5b2a7fe05d1126730c56f47",
+    "semantic_hash": "5f549dfce5b2a7fe05d1126730c56f47"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\tournament\\MatchCardSkeleton.tsx": {
+    "mtime": 1779709068.6721838,
+    "ast_hash": "71d1000f0338c723a2c4e26177abf37c",
+    "semantic_hash": "71d1000f0338c723a2c4e26177abf37c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\tournament\\ScoreInput.tsx": {
+    "mtime": 1778740319.6063867,
+    "ast_hash": "442a3b2e43694483c0d435953c7aac4c",
+    "semantic_hash": "442a3b2e43694483c0d435953c7aac4c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\tournament\\__tests__\\MatchCard.test.tsx": {
+    "mtime": 1778740319.6083875,
+    "ast_hash": "557436a783333fd51bfa36b2fae38a70",
+    "semantic_hash": "557436a783333fd51bfa36b2fae38a70"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\avatar.tsx": {
+    "mtime": 1778740319.6116095,
+    "ast_hash": "d6a3082efd6c0ad6e3e7ea758232569e",
+    "semantic_hash": "d6a3082efd6c0ad6e3e7ea758232569e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\background-beams-with-collision.tsx": {
+    "mtime": 1778740319.6136088,
+    "ast_hash": "d1c7bd19079157169c0b35c7d2656d14",
+    "semantic_hash": "d1c7bd19079157169c0b35c7d2656d14"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\badge.tsx": {
+    "mtime": 1778740319.6156096,
+    "ast_hash": "db06d3f8b48bd7d7587c50bf2f373e74",
+    "semantic_hash": "db06d3f8b48bd7d7587c50bf2f373e74"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\button.tsx": {
+    "mtime": 1778740319.6166103,
+    "ast_hash": "03e4416666cdc2f38518b63b2a106fec",
+    "semantic_hash": "03e4416666cdc2f38518b63b2a106fec"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\card.tsx": {
+    "mtime": 1778740319.6176102,
+    "ast_hash": "67c217e79be7528d60147236a72a9b61",
+    "semantic_hash": "67c217e79be7528d60147236a72a9b61"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\dialog.tsx": {
+    "mtime": 1779734435.1193993,
+    "ast_hash": "af3482bbfca64a61bfca0a7f83b03d60",
+    "semantic_hash": "af3482bbfca64a61bfca0a7f83b03d60"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\input.tsx": {
+    "mtime": 1779734182.9694562,
+    "ast_hash": "79b6914b026bc276c40da8d0017f7c73",
+    "semantic_hash": "79b6914b026bc276c40da8d0017f7c73"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\label.tsx": {
+    "mtime": 1779734438.5584252,
+    "ast_hash": "64a305cd04515c314ce54b56d0435ecc",
+    "semantic_hash": "64a305cd04515c314ce54b56d0435ecc"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\separator.tsx": {
+    "mtime": 1778740319.622609,
+    "ast_hash": "973550685f10b28e37fd1a61b1990666",
+    "semantic_hash": "973550685f10b28e37fd1a61b1990666"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\components\\ui\\tabs.tsx": {
+    "mtime": 1778740319.6241133,
+    "ast_hash": "092d8fb474d916844080540f046f361e",
+    "semantic_hash": "092d8fb474d916844080540f046f361e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\context\\AppProviders.tsx": {
+    "mtime": 1778740319.625726,
+    "ast_hash": "ead709195fc1b45e602280bc19d6d0f6",
+    "semantic_hash": "ead709195fc1b45e602280bc19d6d0f6"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\context\\AuthContext.tsx": {
+    "mtime": 1778740319.6267319,
+    "ast_hash": "bdbb67d9b48e298402ec3f9da5374fcb",
+    "semantic_hash": "bdbb67d9b48e298402ec3f9da5374fcb"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\context\\TournamentContext.tsx": {
+    "mtime": 1779743369.729275,
+    "ast_hash": "552d76a8ff13b81ec58256d4c0e0a307",
+    "semantic_hash": "552d76a8ff13b81ec58256d4c0e0a307"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\hooks\\useCountdown.ts": {
+    "mtime": 1778753713.0226996,
+    "ast_hash": "013eca78ba5111113fb03292cc72b75d",
+    "semantic_hash": "013eca78ba5111113fb03292cc72b75d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\api-football.ts": {
+    "mtime": 1778740319.6342492,
+    "ast_hash": "f708c5a2b8d4c36f096b7531f6e84549",
+    "semantic_hash": "f708c5a2b8d4c36f096b7531f6e84549"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\auth-server.ts": {
+    "mtime": 1778752609.5859976,
+    "ast_hash": "c93415a15c4546d16b262bc59187064a",
+    "semantic_hash": "c93415a15c4546d16b262bc59187064a"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\bet-scoring.ts": {
+    "mtime": 1778752609.5898278,
+    "ast_hash": "594da07e0df0a2ab6e31461280b6b548",
+    "semantic_hash": "594da07e0df0a2ab6e31461280b6b548"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\constants.ts": {
+    "mtime": 1779743334.2810216,
+    "ast_hash": "5abe44b706ce692e9ba43875fce4332c",
+    "semantic_hash": "5abe44b706ce692e9ba43875fce4332c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\scoring.ts": {
+    "mtime": 1778740319.6372542,
+    "ast_hash": "e484eaa5a8bb9289e346c67b5190e9e6",
+    "semantic_hash": "e484eaa5a8bb9289e346c67b5190e9e6"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\storage.ts": {
+    "mtime": 1778740319.6382544,
+    "ast_hash": "41da7e07f87ba7b18e66e51d90eaeeec",
+    "semantic_hash": "41da7e07f87ba7b18e66e51d90eaeeec"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\supabase-admin.ts": {
+    "mtime": 1778740319.6392546,
+    "ast_hash": "aeae6f0820b7b481b894af01fd08a20d",
+    "semantic_hash": "aeae6f0820b7b481b894af01fd08a20d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\supabase-server.ts": {
+    "mtime": 1778740319.6422539,
+    "ast_hash": "747c3ffa8a2e27701ac1e99b9d2cfa96",
+    "semantic_hash": "747c3ffa8a2e27701ac1e99b9d2cfa96"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\supabase.ts": {
+    "mtime": 1778740319.6442554,
+    "ast_hash": "55fafef1b25f9504d10a0feb4f6ed57c",
+    "semantic_hash": "55fafef1b25f9504d10a0feb4f6ed57c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\sync-cron.ts": {
+    "mtime": 1778740319.6462533,
+    "ast_hash": "86c7038f77bb7bed530fa98dee53738f",
+    "semantic_hash": "86c7038f77bb7bed530fa98dee53738f"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\sync-live-matches.ts": {
+    "mtime": 1778752609.593864,
+    "ast_hash": "17ef4a05a9f031e07df2c591b38a5aad",
+    "semantic_hash": "17ef4a05a9f031e07df2c591b38a5aad"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\teams-he.ts": {
+    "mtime": 1778740319.6502533,
+    "ast_hash": "51bbe58fb7dc4eed327cd042fdf3acfc",
+    "semantic_hash": "51bbe58fb7dc4eed327cd042fdf3acfc"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\tournamentFactory.ts": {
+    "mtime": 1778740319.6517584,
+    "ast_hash": "1840eead47a6d9c4f0ef2ca2691d28a0",
+    "semantic_hash": "1840eead47a6d9c4f0ef2ca2691d28a0"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\lib\\utils.ts": {
+    "mtime": 1778740319.6527648,
+    "ast_hash": "1d8011eb18769078bf77502b220daa5e",
+    "semantic_hash": "1d8011eb18769078bf77502b220daa5e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\test\\logo.test.ts": {
+    "mtime": 1778740319.6557653,
+    "ast_hash": "c7667cdcd2d63d2b793349c3c2611310",
+    "semantic_hash": "c7667cdcd2d63d2b793349c3c2611310"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\test\\setup.ts": {
+    "mtime": 1778740319.6574934,
+    "ast_hash": "dc972af1d2b80e79814a7e1999178b15",
+    "semantic_hash": "dc972af1d2b80e79814a7e1999178b15"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\src\\types\\index.ts": {
+    "mtime": 1779805325.1587315,
+    "ast_hash": "c93d3b9077887ed613096cbdd5f229ae",
+    "semantic_hash": "c93d3b9077887ed613096cbdd5f229ae"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\supabase\\bonus_schema.sql": {
+    "mtime": 1778752609.596858,
+    "ast_hash": "57a63151f917796099e76e3562cde5b4",
+    "semantic_hash": "57a63151f917796099e76e3562cde5b4"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\supabase\\roles_schema.sql": {
+    "mtime": 1778752609.5988584,
+    "ast_hash": "9fd0fb23a8a5eda460b36ae2dff0e380",
+    "semantic_hash": "9fd0fb23a8a5eda460b36ae2dff0e380"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\AGENTS.md": {
+    "mtime": 1778740319.4141617,
+    "ast_hash": "9346a4897ff955555ddedb7bebf77adb",
+    "semantic_hash": "9346a4897ff955555ddedb7bebf77adb"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\claude.md": {
+    "mtime": 1778740319.420166,
+    "ast_hash": "208a4a71f674a5243d6b17aaed8f0ab8",
+    "semantic_hash": "208a4a71f674a5243d6b17aaed8f0ab8"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\design-preview.html": {
+    "mtime": 1778752609.5144303,
+    "ast_hash": "43f9bf593364619951b6ea4889884b13",
+    "semantic_hash": "43f9bf593364619951b6ea4889884b13"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\README.md": {
+    "mtime": 1778740319.417159,
+    "ast_hash": "9162add00befbcdb432430f405c4ad8d",
+    "semantic_hash": "9162add00befbcdb432430f405c4ad8d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\frontend-design\\LICENSE.txt": {
+    "mtime": 1778752609.4794576,
+    "ast_hash": "29256199be2a609aac596980ffc11996",
+    "semantic_hash": "29256199be2a609aac596980ffc11996"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\frontend-design\\SKILL.md": {
+    "mtime": 1778752609.481145,
+    "ast_hash": "400c8b8231420f30b48aed0a6f37df9f",
+    "semantic_hash": "400c8b8231420f30b48aed0a6f37df9f"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\SKILL.md": {
+    "mtime": 1778752609.4831512,
+    "ast_hash": "2ec1e869cf57aa1d7ca0a2c7bd42896d",
+    "semantic_hash": "2ec1e869cf57aa1d7ca0a2c7bd42896d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\chart.md": {
+    "mtime": 1778752609.4861512,
+    "ast_hash": "ec23d391fdb28d496e09a6e4ef03866b",
+    "semantic_hash": "ec23d391fdb28d496e09a6e4ef03866b"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\charts-components.md": {
+    "mtime": 1778752609.4881516,
+    "ast_hash": "af0dc2c93d40b924d3d9f3701b1ac49f",
+    "semantic_hash": "af0dc2c93d40b924d3d9f3701b1ac49f"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\customization.md": {
+    "mtime": 1778752609.4906654,
+    "ast_hash": "8cd18f6547747c0ce13efb51fb0d2fa0",
+    "semantic_hash": "8cd18f6547747c0ce13efb51fb0d2fa0"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\forms-and-validation.md": {
+    "mtime": 1778752609.4936712,
+    "ast_hash": "8e96da4ea5905fafc4e6491554aaaebd",
+    "semantic_hash": "8e96da4ea5905fafc4e6491554aaaebd"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\learn.md": {
+    "mtime": 1778752609.4956703,
+    "ast_hash": "14d00da661ba68568343bdad6b145ce8",
+    "semantic_hash": "14d00da661ba68568343bdad6b145ce8"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\nextjs-integration.md": {
+    "mtime": 1778752609.497671,
+    "ast_hash": "9bea40c7753908f761d4b3f966ec93e0",
+    "semantic_hash": "9bea40c7753908f761d4b3f966ec93e0"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\official-ui-reference.md": {
+    "mtime": 1778752609.5001829,
+    "ast_hash": "fcdd33407a031d3e515bdeaf61a276e7",
+    "semantic_hash": "fcdd33407a031d3e515bdeaf61a276e7"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\reference.md": {
+    "mtime": 1778752609.5021875,
+    "ast_hash": "762fb12c77789bfe496688187bcc7c7d",
+    "semantic_hash": "762fb12c77789bfe496688187bcc7c7d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\setup-and-configuration.md": {
+    "mtime": 1778752609.5041864,
+    "ast_hash": "c2aa0d546df24350e2848092c478e49a",
+    "semantic_hash": "c2aa0d546df24350e2848092c478e49a"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\ui-components.md": {
+    "mtime": 1778752609.5071874,
+    "ast_hash": "7016f6cd19c0b835620875298c02bb37",
+    "semantic_hash": "7016f6cd19c0b835620875298c02bb37"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\shadcn-ui\\references\\ui-reference.md": {
+    "mtime": 1778752609.5091872,
+    "ast_hash": "958cb7049c93befcb737a9cbc1e1813e",
+    "semantic_hash": "958cb7049c93befcb737a9cbc1e1813e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\.agents\\skills\\web-design-guidelines\\SKILL.md": {
+    "mtime": 1778752609.512412,
+    "ast_hash": "8d96a7f6f0c5e1908bab8faf8cd2f9b4",
+    "semantic_hash": "8d96a7f6f0c5e1908bab8faf8cd2f9b4"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\bet365.png": {
+    "mtime": 1778740319.4181645,
+    "ast_hash": "0ad3c70d0d453983037557b424227048",
+    "semantic_hash": "0ad3c70d0d453983037557b424227048"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\FwYWk8RagAE8mIn-1.jpg": {
+    "mtime": 1779708673.8705666,
+    "ast_hash": "1abfb58cf59cd579c12dc9ac1058cef2",
+    "semantic_hash": "1abfb58cf59cd579c12dc9ac1058cef2"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\guess_and_win.png": {
+    "mtime": 1778740319.463283,
+    "ast_hash": "0cedfebfe7ff2db85ed7af6e18f3fcb8",
+    "semantic_hash": "0cedfebfe7ff2db85ed7af6e18f3fcb8"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\apple-touch-icon.png": {
+    "mtime": 1778740319.4892893,
+    "ast_hash": "e395ad2d419891a1d9e468938b522ade",
+    "semantic_hash": "e395ad2d419891a1d9e468938b522ade"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\bet365-logo.png": {
+    "mtime": 1778740319.4912913,
+    "ast_hash": "f306330a693031a60b0f71f31a31af6c",
+    "semantic_hash": "f306330a693031a60b0f71f31a31af6c"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\favicon-32.png": {
+    "mtime": 1778740319.4922888,
+    "ast_hash": "73f57d665a2f948322af7bc300ed5a4d",
+    "semantic_hash": "73f57d665a2f948322af7bc300ed5a4d"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\file.svg": {
+    "mtime": 1778740319.4943056,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\globe.svg": {
+    "mtime": 1778740319.495283,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\icon-192.png": {
+    "mtime": 1778740319.4972844,
+    "ast_hash": "8e5964631e526a1acbbc7345376e8e6a",
+    "semantic_hash": "8e5964631e526a1acbbc7345376e8e6a"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\icon-512.png": {
+    "mtime": 1778740319.4993043,
+    "ast_hash": "fff192b9472b8ff537f4d60a38e9c128",
+    "semantic_hash": "fff192b9472b8ff537f4d60a38e9c128"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\logo.svg": {
+    "mtime": 1778740319.5012827,
+    "ast_hash": "9ab39948786984862fef3d0c03ceb2d0",
+    "semantic_hash": "9ab39948786984862fef3d0c03ceb2d0"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\next.svg": {
+    "mtime": 1778740319.5032828,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\vercel.svg": {
+    "mtime": 1778740319.5042844,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "C:\\Users\\uziey\\claude_code projects\\Guess-Win\\public\\window.svg": {
+    "mtime": 1778740319.5052824,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  }
+}

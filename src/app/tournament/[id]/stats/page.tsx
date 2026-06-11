@@ -67,7 +67,7 @@ export default function StatsPage() {
           <CardHeader><CardTitle className="text-sm">פירוט תוצאות</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {[
-              { label: 'מדויק (3 נק׳)', value: stats.exactHits, total: stats.scored, color: 'bg-green-500' },
+              { label: 'מדויק (4 נק׳)', value: stats.exactHits, total: stats.scored, color: 'bg-green-500' },
               { label: 'כיוון נכון (1 נק׳)', value: stats.outcomeHits, total: stats.scored, color: 'bg-blue-500' },
               { label: 'החטאה (0 נק׳)', value: stats.misses, total: stats.scored, color: 'bg-red-400' },
             ].map((bar) => (

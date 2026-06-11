@@ -142,7 +142,7 @@ export async function setMatchScore(
       let result: 'exact' | 'outcome' | 'miss'
       let points: number
       if (bet.predicted_home === homeScore && bet.predicted_away === awayScore) {
-        result = 'exact'; points = 3
+        result = 'exact'; points = 4
       } else {
         const predOut = bet.predicted_home > bet.predicted_away ? 'home' : bet.predicted_home < bet.predicted_away ? 'away' : 'draw'
         const actOut  = homeScore > awayScore ? 'home' : homeScore < awayScore ? 'away' : 'draw'

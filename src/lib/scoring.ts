@@ -16,7 +16,7 @@ export function calculateScore(bet: Bet, match: Match): BetResult {
 
   // Exact hit
   if (predicted.home === actual.home && predicted.away === actual.away) {
-    return { bet, match, result: 'exact', points: 3 }
+    return { bet, match, result: 'exact', points: 4 }
   }
 
   // Outcome hit (correct winner/draw)
