@@ -64,17 +64,17 @@ export async function rescoreTournamentBets(
       return { id: bet.id, userId: bet.user_id, result: 'miss', points: 0 }
     })
 
-    // ── Step B: בונוס ניחוש מדויק יחידני (+5) ─────────────────────
-    const exactOnes = scoredBets.filter(b => b.result === 'exact')
-    if (exactOnes.length === 1) exactOnes[0].points = 9   // 4 + 5
-
-    // ── Step C: מכפיל ג'וקר (×2) — מהמפה שנשלפה מראש ─────────────
+    // ── Step B: מכפיל ג'וקר (×2) — מהמפה שנשלפה מראש ──────────────
     const jokerUserIds = jokerMap.get(match.id)
     if (jokerUserIds?.size) {
       for (const b of scoredBets) {
         if (jokerUserIds.has(b.userId) && b.points > 0) b.points *= 2
       }
     }
+
+    // ── Step C: בונוס ניחוש מדויק יחידני (+5, לא מוכפל בג'וקר) ────
+    const exactOnes = scoredBets.filter(b => b.result === 'exact')
+    if (exactOnes.length === 1) exactOnes[0].points += 5
 
     // ── Step D: שמור ניקוד — batch upsert במקום N updates ─────────
     if (scoredBets.length > 0) {
@@ -209,11 +209,7 @@ export async function setActualScoreAction(
     return { id: bet.id, userId: bet.user_id, result: 'miss', points: 0 }
   })
 
-  // ── Step B: בונוס ניחוש מדויק יחידני (+5 אם רק אחד ניחש נכון) ──
-  const exactOnes = scored.filter(b => b.result === 'exact')
-  if (exactOnes.length === 1) exactOnes[0].points = 9   // 4 + 5
-
-  // ── Step C: מכפיל ג'וקר (×2 למשתמשים שסימנו ג'וקר על משחק זה) ──
+  // ── Step B: מכפיל ג'וקר (×2 למשתמשים שסימנו ג'וקר על משחק זה) ──
   const { data: jokerPicksRaw } = await supabaseAdmin
     .from('joker_picks')
     .select('user_id')
@@ -227,6 +223,10 @@ export async function setActualScoreAction(
       if (jokerUserIds.has(b.userId) && b.points > 0) b.points *= 2
     }
   }
+
+  // ── Step C: בונוס ניחוש מדויק יחידני (+5, לא מוכפל בג'וקר) ──────
+  const exactOnes = scored.filter(b => b.result === 'exact')
+  if (exactOnes.length === 1) exactOnes[0].points += 5
 
   // ── Step D: כתוב ניקוד סופי — batch upsert במקום N updates ──────
   await supabaseAdmin
