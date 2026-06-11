@@ -29,17 +29,26 @@ export async function awardRoundBonusForMatch(matchId: string): Promise<void> {
   // כל הבחירות של הנבחרת המנצחת (כל הבחירות הנוכחיות + ישנות)
   const { data: picks } = await supabaseAdmin
     .from('round_bonus_picks')
-    .select('id, points_awarded')
+    .select('id, user_id, points_awarded')
     .eq('tournament_id', m.tournament_id)
     .eq('team_name', winner)
 
   if (!picks?.length) return
 
-  for (const pick of picks as { id: string; points_awarded: number }[]) {
+  // משתמשים ששמו ג'וקר על המשחק הזה — הבונוס שלהם מוכפל ×2 (2 → 4)
+  const { data: jokerRows } = await supabaseAdmin
+    .from('joker_picks')
+    .select('user_id')
+    .eq('match_id', matchId)
+
+  const jokerUserIds = new Set((jokerRows ?? []).map((j) => (j as { user_id: string }).user_id))
+
+  for (const pick of picks as { id: string; user_id: string; points_awarded: number }[]) {
+    const bonus = jokerUserIds.has(pick.user_id) ? 4 : 2
     await supabaseAdmin
       .from('round_bonus_picks')
       .update({
-        points_awarded: (pick.points_awarded ?? 0) + 2,
+        points_awarded: (pick.points_awarded ?? 0) + bonus,
         updated_at: new Date().toISOString(),
       })
       .eq('id', pick.id)
