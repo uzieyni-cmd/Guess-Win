@@ -33,9 +33,9 @@ export interface ChatStatsResult {
   byTournament:    ChatTournamentStat[]
 }
 
-// Perplexity sonar-pro pricing (per 1M tokens)
-const PRICE_INPUT_PER_M  = 3.0   // USD
-const PRICE_OUTPUT_PER_M = 15.0  // USD
+// Gemini 2.5 Flash Lite pricing (per 1M tokens)
+const PRICE_INPUT_PER_M  = 0.10  // USD
+const PRICE_OUTPUT_PER_M = 0.40  // USD
 
 export async function getChatStats(days = 30): Promise<ChatStatsResult> {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()

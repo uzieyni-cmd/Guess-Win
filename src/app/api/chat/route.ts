@@ -433,7 +433,7 @@ ${contextBlock}`
     }
 
     const { text, usage } = await generateText({
-      model: gateway('perplexity/sonar-pro'),
+      model: gateway('google/gemini-2.5-flash-lite'),
       system: systemPrompt + teamDataBlock + playerDataBlock,
       messages: filteredMessages,
     })
@@ -448,7 +448,7 @@ ${contextBlock}`
           user_message: lastUserMsgText.slice(0, 500),
           tokens_input:  usage?.inputTokens  ?? null,
           tokens_output: usage?.outputTokens ?? null,
-          model: 'perplexity/sonar-pro',
+          model: 'google/gemini-2.5-flash-lite',
         })
       } catch (logErr) {
         console.warn('[chat] failed to write chat_log:', logErr instanceof Error ? logErr.message : logErr)

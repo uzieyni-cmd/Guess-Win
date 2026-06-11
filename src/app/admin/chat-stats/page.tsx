@@ -175,7 +175,7 @@ export default function ChatStatsPage() {
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            * עלות מחושבת לפי Perplexity sonar-pro: $3/M tokens קלט, $15/M tokens פלט
+            * עלות מחושבת לפי Gemini 2.5 Flash Lite: $0.10/M tokens קלט, $0.40/M tokens פלט
           </p>
         </div>
       )}
