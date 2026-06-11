@@ -144,6 +144,11 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
     }
   }, [userBet?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ברגע שהמשחק ננעל — פתח אוטומטית את ניחושי שאר המשתתפים
+  useEffect(() => {
+    if (isLocked || isFinished || isLive) setShowOthers(true)
+  }, [isLocked, isFinished, isLive])
+
   const handleHomeChange = (v: number) => { setHomeScore(v); setDirty(true); setSaved(false) }
   const handleAwayChange = (v: number) => { setAwayScore(v); setDirty(true); setSaved(false) }
 
