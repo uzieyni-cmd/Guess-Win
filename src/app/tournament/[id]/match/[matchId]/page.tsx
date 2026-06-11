@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils'
 import { ArrowRight, Download, Loader2, Users } from 'lucide-react'
 import { Match, Bet, User } from '@/types'
 import { translateRound } from '@/components/tournament/MatchCard'
+import { useCountdown } from '@/hooks/useCountdown'
+import { HIDDEN_USER_ID } from '@/lib/constants'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -401,6 +403,7 @@ export default function MatchDetailPage() {
   const { currentUser } = useAuth()
 
   const match = activeTournament?.matches.find(m => m.id === matchId)
+  const { isLocked: isBettingLocked } = useCountdown(match?.matchStartTime ?? '')
 
   const [detail,  setDetail]  = useState<MatchDetail | null>(null)
   const [loading, setLoading] = useState(false)
@@ -445,12 +448,13 @@ export default function MatchDetailPage() {
   }
 
   const matchBets  = bets.filter(b => b.matchId === matchId)
-  const isLocked   = match.status !== 'scheduled'
+  const isLocked   = match.status !== 'scheduled' || isBettingLocked
 
-  // current user always first
+  // current user always first (אם המשתמש הנוכחי הוא המשתמש המוסתר, הוא עדיין רואה את עצמו)
+  const visibleParticipants = participants.filter(p => p.id === currentUser?.id || p.id !== HIDDEN_USER_ID)
   const sortedParticipants = [
-    ...participants.filter(p => p.id === currentUser?.id),
-    ...participants.filter(p => p.id !== currentUser?.id),
+    ...visibleParticipants.filter(p => p.id === currentUser?.id),
+    ...visibleParticipants.filter(p => p.id !== currentUser?.id),
   ]
 
   const homeTeamId = detail?.teams.home.id ?? 0

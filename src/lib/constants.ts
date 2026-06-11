@@ -1,5 +1,8 @@
 // Shared constants — safe to import in both Server and Client components
 
+/** Admin/owner account excluded from public predictions/bonus distributions and summaries */
+export const HIDDEN_USER_ID = '9a3697c9-d23d-4ab6-99e1-7f6196d45f20'
+
 /** A group of tournament stages that shares its own joker quota */
 export interface JokerStageGroup {
   id: string

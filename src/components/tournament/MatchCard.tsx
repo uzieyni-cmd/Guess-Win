@@ -7,7 +7,7 @@ import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
-import { getJokerStageGroup } from '@/lib/constants'
+import { getJokerStageGroup, HIDDEN_USER_ID } from '@/lib/constants'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { CountdownTimer } from './CountdownTimer'
 import { ScoreInput } from './ScoreInput'
@@ -195,14 +195,14 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 
   // ניחושי משתתפים אחרים (גלויים רק אחרי נעילה)
   const otherBets = (isLocked || isFinished || isLive)
-    ? allBets.filter((b) => b.matchId === match.id && b.userId !== currentUser?.id)
+    ? allBets.filter((b) => b.matchId === match.id && b.userId !== currentUser?.id && b.userId !== HIDDEN_USER_ID)
     : []
 
   const userResult = isFinished && userBet && match.actualScore
     ? calculateScore(userBet, match)
     : null
 
-  const matchBetsAll = allBets.filter(b => b.matchId === match.id)
+  const matchBetsAll = allBets.filter(b => b.matchId === match.id && b.userId !== HIDDEN_USER_ID)
   const msToStart = new Date(match.matchStartTime).getTime() - Date.now()
   const isUrgent = !isLocked && !isFinished && !isLive && !userBet && msToStart > 0 && msToStart < 2 * 60 * 60 * 1000
 
@@ -351,7 +351,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 
           {/* פס חלוקת ניחושים — גלוי אחרי נעילה */}
           {(isLocked || isLive || isFinished) && matchBetsAll.length > 0 && (
-            <BetDistributionBar bets={matchBetsAll} totalParticipants={participants.length} />
+            <BetDistributionBar bets={matchBetsAll} totalParticipants={participants.filter(p => p.id !== HIDDEN_USER_ID).length} />
           )}
 
           {/* ממתינים לתוצאה — רק כשנעול ולא live ולא גמור */}

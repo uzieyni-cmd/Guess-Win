@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { requireAdmin } from '@/lib/auth-server'
 import { BonusQuestion, BonusPick } from '@/types'
+import { HIDDEN_USER_ID } from '@/lib/constants'
 
 type DbBonusQuestion = {
   id: string
@@ -286,6 +287,7 @@ export async function getPicksDistribution(tournamentId: string): Promise<PickDi
     .from('bonus_picks')
     .select('bonus_question_id, pick, user_id, profiles(id, display_name, avatar_url)')
     .in('bonus_question_id', lockedIds)
+    .neq('user_id', HIDDEN_USER_ID)
 
   const result: PickDistribution[] = lockedIds.map((qid: string) => {
     const q = (questions ?? []).find((x: { id: string }) => x.id === qid) as { id: string; options: string[] }
