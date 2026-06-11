@@ -19,11 +19,11 @@ export async function computeAndSaveBetPoints(
     let points: number
 
     if (p.home === actualScore.home && p.away === actualScore.away) {
-      result = 'exact'; points = 10
+      result = 'exact'; points = 3
     } else {
       const predOut = p.home > p.away ? 'home' : p.away > p.home ? 'away' : 'draw'
       const actOut = actualScore.home > actualScore.away ? 'home' : actualScore.away > actualScore.home ? 'away' : 'draw'
-      if (predOut === actOut) { result = 'outcome'; points = 5 }
+      if (predOut === actOut) { result = 'outcome'; points = 1 }
       else { result = 'miss'; points = 0 }
     }
 

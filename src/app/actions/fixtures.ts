@@ -142,11 +142,11 @@ export async function setMatchScore(
       let result: 'exact' | 'outcome' | 'miss'
       let points: number
       if (bet.predicted_home === homeScore && bet.predicted_away === awayScore) {
-        result = 'exact'; points = 10
+        result = 'exact'; points = 3
       } else {
         const predOut = bet.predicted_home > bet.predicted_away ? 'home' : bet.predicted_home < bet.predicted_away ? 'away' : 'draw'
         const actOut  = homeScore > awayScore ? 'home' : homeScore < awayScore ? 'away' : 'draw'
-        if (predOut === actOut) { result = 'outcome'; points = 5 }
+        if (predOut === actOut) { result = 'outcome'; points = 1 }
         else { result = 'miss'; points = 0 }
       }
       await supabaseAdmin.from('bets').update({ points, result }).eq('id', bet.id)

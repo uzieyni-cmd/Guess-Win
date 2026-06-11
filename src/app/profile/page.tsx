@@ -439,8 +439,8 @@ function ProfileContent() {
                   <StatBox label="תחרויות" value={stats.tournaments} color="text-foreground" />
                   <StatBox label="סה״כ נקודות" value={stats.totalPoints} color="text-primary" />
                   <StatBox label="ניחושים שהסתיימו" value={stats.finishedBets} color="text-foreground" />
-                  <StatBox label="תוצאה מדויקת" value={stats.exact} color="text-emerald-600" sub="10 נק׳ כל אחד" />
-                  <StatBox label="כיוון נכון" value={stats.outcome} color="text-blue-600" sub="5 נק׳ כל אחד" />
+                  <StatBox label="תוצאה מדויקת" value={stats.exact} color="text-emerald-600" sub="3 נק׳ כל אחד" />
+                  <StatBox label="כיוון נכון" value={stats.outcome} color="text-blue-600" sub="1 נק׳ כל אחד" />
                   <StatBox label="החטאה" value={stats.miss} color="text-red-500" sub="0 נק׳" />
                   {stats.finishedBets > 0 && (
                     <StatBox

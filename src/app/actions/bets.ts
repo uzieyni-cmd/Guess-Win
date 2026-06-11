@@ -66,7 +66,7 @@ export async function rescoreTournamentBets(
 
     // ── Step B: בונוס ניחוש מדויק יחידני (+5) ─────────────────────
     const exactOnes = scoredBets.filter(b => b.result === 'exact')
-    if (exactOnes.length === 1) exactOnes[0].points = 15
+    if (exactOnes.length === 1) exactOnes[0].points = 8   // 3 + 5
 
     // ── Step C: מכפיל ג'וקר (×2) — מהמפה שנשלפה מראש ─────────────
     const jokerUserIds = jokerMap.get(match.id)
@@ -169,7 +169,7 @@ export async function placeBetAction(
 
 /**
  * Admin: מעדכן תוצאה סופית למשחק ומחשב נקודות לכל הבטים.
- * exact = 10 נק', outcome = 5 נק', miss = 0.
+ * exact = 3 נק', outcome = 1 נק', miss = 0.
  */
 export async function setActualScoreAction(
   matchId: string,
@@ -201,17 +201,17 @@ export async function setActualScoreAction(
   type ScoredBet = { id: string; userId: string; result: 'exact' | 'outcome' | 'miss'; points: number }
   const scored: ScoredBet[] = betRows.map(bet => {
     if (bet.predicted_home === home && bet.predicted_away === away) {
-      return { id: bet.id, userId: bet.user_id, result: 'exact', points: 10 }
+      return { id: bet.id, userId: bet.user_id, result: 'exact', points: 3 }
     }
     const predOut = bet.predicted_home > bet.predicted_away ? 'home' : bet.predicted_home < bet.predicted_away ? 'away' : 'draw'
     const actOut  = home > away ? 'home' : home < away ? 'away' : 'draw'
-    if (predOut === actOut) return { id: bet.id, userId: bet.user_id, result: 'outcome', points: 5 }
+    if (predOut === actOut) return { id: bet.id, userId: bet.user_id, result: 'outcome', points: 1 }
     return { id: bet.id, userId: bet.user_id, result: 'miss', points: 0 }
   })
 
   // ── Step B: בונוס ניחוש מדויק יחידני (+5 אם רק אחד ניחש נכון) ──
   const exactOnes = scored.filter(b => b.result === 'exact')
-  if (exactOnes.length === 1) exactOnes[0].points = 15   // 10 + 5
+  if (exactOnes.length === 1) exactOnes[0].points = 8   // 3 + 5
 
   // ── Step C: מכפיל ג'וקר (×2 למשתמשים שסימנו ג'וקר על משחק זה) ──
   const { data: jokerPicksRaw } = await supabaseAdmin
