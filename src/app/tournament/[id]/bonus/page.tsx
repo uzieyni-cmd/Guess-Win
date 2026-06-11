@@ -394,7 +394,7 @@ function QuestionCard({ q, pick, dist, isPending, savedId, errorId, onPick }: {
                       style={{ background: SLICE_COLORS[i % SLICE_COLORS.length] }} />
                     <span className="text-xs text-foreground truncate flex-1">{sl.option}</span>
                     <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-                      {Math.round((sl.count / total) * 100)}%
+                      {Math.round((sl.count / total) * 100)}% ({sl.count})
                     </span>
                   </button>
                 ))}
