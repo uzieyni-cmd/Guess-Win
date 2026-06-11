@@ -81,20 +81,36 @@ export async function joinMonkeyToTournament(tournamentId: string): Promise<{ ok
   }
 }
 
+// מקסימום משחקים לעבד בכל הרצת cron (כדי לא לעבור את מגבלת הזמן של 60ש')
+const BATCH_SIZE = 6
+
+// קאש לתוצאות אחרונות של נבחרות — משותף בין כל הטורנירים באותה הרצה,
+// כדי לא לשלוף פעמיים את אותה נבחרת (טורנירים שונים חולקים את אותם משחקים)
+type FormCache = Map<string, Awaited<ReturnType<typeof fetchTeamRecentMatches>>>
+
+async function getTeamFormCached(team: string, cache: FormCache) {
+  const cached = cache.get(team)
+  if (cached) return cached
+  const form = await fetchTeamRecentMatches(team, 5).catch(() => [])
+  cache.set(team, form)
+  return form
+}
+
 // ── ניחוש AI לתוצאת משחק ─────────────────────────────────────────
 
 async function predictScore(
   homeTeam: string,
   awayTeam: string,
+  formCache: FormCache,
   oddsHome?: number | null,
   oddsDraw?: number | null,
   oddsAway?: number | null,
 ): Promise<{ home: number; away: number } | null> {
   try {
-    // שלוף תוצאות אחרונות מה-API לשתי הקבוצות במקביל
+    // שלוף תוצאות אחרונות מה-API לשתי הקבוצות במקביל (עם קאש)
     const [homeForm, awayForm] = await Promise.all([
-      fetchTeamRecentMatches(homeTeam, 5).catch(() => []),
-      fetchTeamRecentMatches(awayTeam, 5).catch(() => []),
+      getTeamFormCached(homeTeam, formCache),
+      getTeamFormCached(awayTeam, formCache),
     ])
 
     const formStr = (matches: Awaited<ReturnType<typeof fetchTeamRecentMatches>>, team: string) =>
@@ -167,7 +183,7 @@ async function predictBonus(question: string, options: string[]): Promise<string
 
 // ── מלא ניחושים לכל המשחקים החסרים בטורניר ──────────────────────
 
-export async function runMonkeyBets(tournamentId: string): Promise<{
+export async function runMonkeyBets(tournamentId: string, formCache: FormCache = new Map()): Promise<{
   ok: boolean
   placed: number
   skipped: number
@@ -205,6 +221,7 @@ export async function runMonkeyBets(tournamentId: string): Promise<{
 
     let placed = 0
     let skipped = 0
+    let processed = 0
 
     for (const match of matches as {
       id: string
@@ -216,10 +233,13 @@ export async function runMonkeyBets(tournamentId: string): Promise<{
       odds_away: number | null
     }[]) {
       if (alreadyBet.has(match.id)) { skipped++; continue }
+      if (processed >= BATCH_SIZE) break // הגבלת קצב — שאר המשחקים ייענו בהרצות הבאות
+      processed++
 
       const prediction = await predictScore(
         match.home_team_name,
         match.away_team_name,
+        formCache,
         match.odds_home,
         match.odds_draw,
         match.odds_away,
@@ -325,10 +345,11 @@ export async function runMonkeyForAllTournaments(): Promise<{
     .select('id')
     .eq('status', 'active')
 
+  const formCache: FormCache = new Map()
   const results = []
   for (const t of (tournaments ?? []) as { id: string }[]) {
     const [bets, bonuses] = await Promise.all([
-      runMonkeyBets(t.id),
+      runMonkeyBets(t.id, formCache),
       runMonkeyBonusPicks(t.id),
     ])
     results.push({ tournamentId: t.id, bets: bets.placed, bonuses: bonuses.placed })
