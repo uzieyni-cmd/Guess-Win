@@ -1,69 +1,24 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { BettingZone } from '@/components/tournament/BettingZone'
 import { BettingZoneSkeleton } from '@/components/tournament/MatchCardSkeleton'
-import { Target, ChevronDown, Loader2, EyeOff, Eye, Trophy } from 'lucide-react'
+import { Target, Trophy } from 'lucide-react'
 
 export default function MatchesPage() {
   const { id } = useParams() as { id: string }
   const { activeTournament, reloadMatches, bets, betsReady, standings } = useTournament()
   const { currentUser } = useAuth()
 
-  // ── state ───────────────────────────────────────────────────────
-  const [loadingAll, setLoadingAll]       = useState(false)
-  const [allPastLoaded, setAllPastLoaded] = useState(false)
-  const [hasPast, setHasPast]             = useState(false)
-  const [loadingMore, setLoadingMore]     = useState(false)
-  const [hasMore, setHasMore]             = useState(false)
-  const [cursor, setCursor]               = useState<string | null>(null)
-  const [hideFinished, setHideFinished]   = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
+  const [hideFinished, setHideFinished] = useState(true)
 
-  // ── טעינה ראשונית — קבל cursor + hasPast מה-API ────────────────
+  // ── טעינה ראשונית — כל המשחקים ─────────────────────────────────
   useEffect(() => {
     if (!id) return
-    reloadMatches(id).then((result) => {
-      if (!result) return
-      if (result.cursor) { setCursor(result.cursor); setHasMore(true) }
-      if (result.hasPast) setHasPast(true)
-    })
+    reloadMatches(id, { all: true })
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── infinite scroll — טעינת 20 משחקים עתידיים נוספים ───────────
-  const loadMore = useCallback(async () => {
-    if (!cursor || loadingMore || !hasMore) return
-    setLoadingMore(true)
-    const result = await reloadMatches(id, { after: cursor, append: true })
-    setLoadingMore(false)
-    if (result?.cursor) {
-      setCursor(result.cursor)
-    } else {
-      setHasMore(false)
-    }
-  }, [cursor, loadingMore, hasMore, id, reloadMatches])
-
-  // ── IntersectionObserver על sentinel div ──────────────────────
-  useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting) loadMore() },
-      { rootMargin: '200px' } // מתחיל לטעון 200px לפני הסוף
-    )
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [loadMore])
-
-  // ── כפתור "טען משחקים ישנים" ────────────────────────────────────
-  const handleLoadPast = async () => {
-    setLoadingAll(true)
-    await reloadMatches(id, { all: true, append: true })
-    setLoadingAll(false)
-    setAllPastLoaded(true)
-  }
 
   if (!activeTournament || !betsReady) {
     return <BettingZoneSkeleton />
@@ -72,9 +27,12 @@ export default function MatchesPage() {
   const isLoadingMatches = activeTournament.matches.length > 0 && activeTournament.matches.every(m => !m.homeTeam)
   const realMatches = activeTournament.matches.filter(m => !!m.homeTeam)
   const finishedCount = realMatches.filter(m => m.status === 'finished').length
-  const totalMatchCount = activeTournament.matches.length // כולל stubs
-  const visibleMatches = hideFinished
-    ? realMatches.filter(m => m.status !== 'finished')
+  const upcomingCount = realMatches.length - finishedCount
+  const showFilterToggle = finishedCount > 0 && upcomingCount > 0
+  const visibleMatches = showFilterToggle
+    ? (hideFinished
+        ? realMatches.filter(m => m.status !== 'finished')
+        : realMatches.filter(m => m.status === 'finished'))
     : realMatches
 
   // ── סיכום אישי — ניקוד / מיקום / פגיעות / ניחושים שמולאו ───────
@@ -138,52 +96,34 @@ export default function MatchesPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* כפתור הסתרת משחקים שהסתיימו */}
-          {finishedCount > 0 && (
+        {/* מתג קרובים / שוחקו */}
+        {showFilterToggle && (
+          <div className="flex items-center gap-1 bg-muted rounded-full p-1">
             <button
-              onClick={() => setHideFinished(v => !v)}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer min-h-[44px] px-2"
+              onClick={() => setHideFinished(true)}
+              className={`text-xs font-semibold rounded-full px-3 py-1.5 transition-colors cursor-pointer min-h-[36px] ${
+                hideFinished
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              {hideFinished
-                ? <><Eye className="h-3.5 w-3.5" />הצג הכל ({finishedCount})</>
-                : <><EyeOff className="h-3.5 w-3.5" />הסתר שהסתיימו ({finishedCount})</>}
+              קרובים
             </button>
-          )}
-
-          {/* כפתור לטעינת משחקים שהסתיימו */}
-          {!allPastLoaded && hasPast && (
             <button
-              onClick={handleLoadPast}
-              disabled={loadingAll}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors border border-border rounded-full px-3 py-2.5 min-h-[44px] hover:border-foreground/60"
+              onClick={() => setHideFinished(false)}
+              className={`text-xs font-semibold rounded-full px-3 py-1.5 transition-colors cursor-pointer min-h-[36px] ${
+                !hideFinished
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              {loadingAll
-                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />טוען...</>
-                : <><ChevronDown className="h-3.5 w-3.5" />טען משחקים ישנים</>}
+              שוחקו ({finishedCount})
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {isLoadingMatches ? <BettingZoneSkeleton /> : <BettingZone matches={visibleMatches} />}
-
-      {/* Sentinel — IntersectionObserver מזהה כשמגיעים לכאן */}
-      <div ref={sentinelRef} className="h-4" />
-
-      {/* אינדיקטור טעינה */}
-      {loadingMore && (
-        <div className="flex justify-center py-4 gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          טוען משחקים נוספים...
-        </div>
-      )}
-
-      {!hasMore && realMatches.length > 0 && (
-        <p className="text-center text-xs text-muted-foreground py-4">
-          כל המשחקים העתידיים נטענו ✓
-        </p>
-      )}
     </div>
   )
 }
