@@ -1,6 +1,6 @@
 'use client'
 import { useRef, useState } from 'react'
-import { Trophy, Flame, Search } from 'lucide-react'
+import { Trophy, Flame, Search, Zap } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -14,10 +14,16 @@ const rankStyles = [
 ]
 
 export default function LeaderboardPage() {
-  const { standings, activeTournament } = useTournament()
+  const { standings, activeTournament, jokerPicks } = useTournament()
   const { currentUser } = useAuth()
   const prevRanks = useRef<Record<string, number>>({})
   const [search, setSearch] = useState('')
+
+  // ספירת שימושי ג'וקר לכל משתמש
+  const jokerCountByUser = jokerPicks.reduce<Record<string, number>>((acc, j) => {
+    acc[j.userId] = (acc[j.userId] ?? 0) + 1
+    return acc
+  }, {})
 
   const hasLive = (activeTournament?.matches ?? []).some(m => m.status === 'live')
   const isLiveMode = hasLive && standings.some(s => (s.liveBonus ?? 0) > 0)
@@ -60,7 +66,12 @@ export default function LeaderboardPage() {
             </AvatarFallback>
           </Avatar>
 
-          <p className="flex-1 font-semibold text-sm truncate text-foreground">המיקום שלי</p>
+          <p className="flex-1 font-semibold text-sm truncate text-foreground flex items-center gap-1.5">
+            <span className="truncate">המיקום שלי</span>
+            {Array.from({ length: jokerCountByUser[myStanding.user.id] ?? 0 }).map((_, i) => (
+              <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
+            ))}
+          </p>
 
           <div className="shrink-0 flex flex-col items-center min-w-[36px]">
             <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{myStanding.exactCount}</p>
@@ -135,7 +146,12 @@ export default function LeaderboardPage() {
                 </Avatar>
 
                 {/* שם */}
-                <p className="flex-1 font-semibold text-sm truncate text-foreground">{s.user.displayName}</p>
+                <p className="flex-1 font-semibold text-sm truncate text-foreground flex items-center gap-1.5">
+                  <span className="truncate">{s.user.displayName}</span>
+                  {Array.from({ length: jokerCountByUser[s.user.id] ?? 0 }).map((_, i) => (
+                    <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
+                  ))}
+                </p>
 
                 {/* בול */}
                 <div className="shrink-0 flex flex-col items-center min-w-[36px]">
