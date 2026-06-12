@@ -12,10 +12,10 @@ import { cn } from '@/lib/utils'
 
 const NAV_TABS = [
   { label: 'משחקים', href: 'matches', icon: Target },
+  { label: 'דירוג', href: 'leaderboard', icon: Trophy },
+  { label: 'טבלה', href: 'standings', icon: TableProperties },
   { label: 'בונוס', href: 'bonus', icon: Gift },
   { label: 'סטטיסטיקת בונוס', href: 'bonus-stats', icon: Award },
-  { label: 'טבלה', href: 'standings', icon: TableProperties },
-  { label: 'דירוג', href: 'leaderboard', icon: Trophy },
   { label: 'סטטיסטיקה', href: 'stats', icon: TrendingUp },
   { label: 'תקנון', href: 'rules', icon: ScrollText },
 ]
