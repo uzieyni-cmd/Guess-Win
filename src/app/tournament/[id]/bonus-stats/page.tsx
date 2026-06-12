@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
-import { Gift, Square, Goal, Crosshair, Crown } from 'lucide-react'
+import { Gift, Square, Goal, Crosshair, Crown, RotateCcw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoadingState, EmptyState } from '@/components/shared/EmptyState'
 
 interface BonusStats {
+  totalGoals: number
   yellowCards: number
   redCards: number
   penalties: number
@@ -40,10 +41,11 @@ export default function BonusStatsPage() {
   if (!stats) return <EmptyState icon={Gift} title="אין נתונים עדיין" subtitle="הנתונים יופיעו לאחר משחקים שהסתיימו" />
 
   const cards = [
+    { label: 'שערים', value: stats.totalGoals, icon: Goal, color: 'text-primary' },
     { label: 'כרטיסים צהובים', value: stats.yellowCards, icon: Square, color: 'text-yellow-500' },
     { label: 'כרטיסים אדומים', value: stats.redCards, icon: Square, color: 'text-red-600' },
     { label: 'פנדלים שהוכנסו', value: stats.penalties, icon: Crosshair, color: 'text-emerald-600' },
-    { label: 'שערים עצמיים', value: stats.ownGoals, icon: Goal, color: 'text-blue-600' },
+    { label: 'שערים עצמיים', value: stats.ownGoals, icon: RotateCcw, color: 'text-blue-600' },
   ]
 
   return (
@@ -61,7 +63,7 @@ export default function BonusStatsPage() {
           <div key={item.label} className="animate-pop-in">
             <Card>
               <CardHeader className="pb-1 pt-4 px-4 flex items-center gap-2 flex-row">
-                <item.icon className={`h-4 w-4 ${item.color} shrink-0`} fill="currentColor" />
+                <item.icon className={`h-4 w-4 ${item.color} shrink-0`} />
                 <CardTitle className="text-xs text-muted-foreground font-medium">{item.label}</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
