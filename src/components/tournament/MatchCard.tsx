@@ -1,8 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { useRouter } from 'next/navigation'
-import { Lock, Check, Save, AlertCircle, Users, X, ChevronLeft, Zap } from 'lucide-react'
+import { Lock, Check, Save, AlertCircle, ChevronLeft, Zap } from 'lucide-react'
 import { Match, Bet } from '@/types'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useTournament } from '@/context/TournamentContext'
@@ -101,7 +100,6 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const [saveError, setSaveError] = useState<string | false>(false)
   const [dirty, setDirty] = useState(false)
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [showOthers, setShowOthers] = useState(false)
   const [jokerError, setJokerError] = useState<string | false>(false)
   const [jokerSaving, setJokerSaving] = useState(false)
 
@@ -143,11 +141,6 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
       setDirty(false)
     }
   }, [userBet?.id]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ברגע שהמשחק ננעל — פתח אוטומטית את ניחושי שאר המשתתפים
-  useEffect(() => {
-    if (isLocked || isFinished || isLive) setShowOthers(true)
-  }, [isLocked, isFinished, isLive])
 
   const handleHomeChange = (v: number) => { setHomeScore(v); setDirty(true); setSaved(false) }
   const handleAwayChange = (v: number) => { setAwayScore(v); setDirty(true); setSaved(false) }
@@ -192,11 +185,6 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const dateStr = matchDate.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'short' })
   const timeStr = matchDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
   const roundStr = match.round ? translateRound(match.round) : null
-
-  // ניחושי משתתפים אחרים (גלויים רק אחרי נעילה)
-  const otherBets = (isLocked || isFinished || isLive)
-    ? allBets.filter((b) => b.matchId === match.id && b.userId !== currentUser?.id && b.userId !== HIDDEN_USER_ID)
-    : []
 
   const userResult = isFinished && userBet && match.actualScore
     ? calculateScore(userBet, match)
@@ -405,22 +393,6 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
           )}
         </div>
 
-        {/* כפתור ניחושי שאר משתתפים */}
-        {(isLocked || isFinished || isLive) && otherBets.length > 0 && (
-          <div className="border-t">
-            <button
-              className="w-full px-4 py-3 text-xs text-muted-foreground flex items-center justify-between hover:bg-muted/50 transition-colors min-h-[44px]"
-              onClick={() => setShowOthers(true)}
-            >
-              <span className="flex items-center gap-1.5">
-                <Users className="h-3 w-3" />
-                ניחושי שאר המשתתפים ({otherBets.length})
-              </span>
-              <span className="text-xs opacity-60">לחץ לפתיחה</span>
-            </button>
-          </div>
-        )}
-
         {/* ── כפתור מעבר לפרטי המשחק ──────────────────────────── */}
         <div className="border-t border-border/60">
           <button
@@ -436,15 +408,6 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
         </div>
 
       </Card>
-
-      <OtherBetsDialog
-        open={showOthers}
-        onClose={() => setShowOthers(false)}
-        match={match}
-        bets={otherBets}
-        participants={participants}
-        isFinished={isFinished}
-      />
     </div>
   )
 }
@@ -509,77 +472,6 @@ function BetDistributionBar({ bets, totalParticipants }: { bets: Bet[]; totalPar
         </div>
       )}
     </div>
-  )
-}
-
-// ── דיאלוג ניחושי משתתפים (Radix) ────────────────────────────────────
-interface ModalProps {
-  open: boolean
-  onClose: () => void
-  match: Match
-  bets: Bet[]
-  participants: { id: string; displayName: string }[]
-  isFinished: boolean
-}
-
-function OtherBetsDialog({ open, onClose, match, bets, participants, isFinished }: ModalProps) {
-  return (
-    <DialogPrimitive.Root open={open} onOpenChange={(v) => { if (!v) onClose() }}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <DialogPrimitive.Content
-          dir="rtl"
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-2xl bg-card border border-border shadow-2xl overflow-hidden focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-4 data-[state=closed]:slide-out-to-bottom-4 duration-200"
-        >
-          <DialogPrimitive.Title className="sr-only">ניחושי משתתפים</DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">ניחושי שאר המשתתפים למשחק</DialogPrimitive.Description>
-
-          {/* handle */}
-          <div className="flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 rounded-full bg-border" />
-          </div>
-
-          {/* header */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
-            <div>
-              <p className="text-sm font-bold text-foreground">
-                {match.homeTeam.name} <span className="text-muted-foreground font-normal">נגד</span> {match.awayTeam.name}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">ניחושי המשתתפים · {bets.length}</p>
-            </div>
-            <DialogPrimitive.Close className="p-1.5 rounded-full hover:bg-foreground/8 transition-colors text-muted-foreground">
-              <X className="h-4 w-4" />
-            </DialogPrimitive.Close>
-          </div>
-
-          {/* list */}
-          <div className="overflow-y-auto max-h-64 divide-y divide-border/60">
-            {bets.map((bet) => {
-              const betUser = participants.find((u) => u.id === bet.userId)
-              const result = isFinished && match.actualScore ? calculateScore(bet, match) : null
-              return (
-                <div key={bet.id} className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-muted-foreground">{betUser?.displayName ?? 'משתתף'}</span>
-                  <div className="flex items-center gap-2.5">
-                    <span className="font-mono font-bold text-foreground tabular-nums text-sm">
-                      {bet.predictedScore.home} – {bet.predictedScore.away}
-                    </span>
-                    {result && <PointsBadge result={result.result} points={result.points} />}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* footer */}
-          <div className="px-4 py-3 border-t border-border/60">
-            <DialogPrimitive.Close className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
-              סגור
-            </DialogPrimitive.Close>
-          </div>
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
   )
 }
 
