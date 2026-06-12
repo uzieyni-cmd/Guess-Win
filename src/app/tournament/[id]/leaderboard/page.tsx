@@ -14,13 +14,17 @@ const rankStyles = [
 ]
 
 export default function LeaderboardPage() {
-  const { standings, activeTournament, jokerPicks } = useTournament()
+  const { standings, activeTournament, jokerPicks, bets } = useTournament()
   const { currentUser } = useAuth()
   const prevRanks = useRef<Record<string, number>>({})
   const [search, setSearch] = useState('')
 
-  // ספירת שימושי ג'וקר לכל משתמש
+  // ספירת ג'וקרים שמומשו בפועל — רק עבור ניחושים שכבר חושבו (points !== null)
+  const scoredBetKeys = new Set(
+    bets.filter(b => b.points !== null).map(b => `${b.userId}:${b.matchId}`)
+  )
   const jokerCountByUser = jokerPicks.reduce<Record<string, number>>((acc, j) => {
+    if (!scoredBetKeys.has(`${j.userId}:${j.matchId}`)) return acc
     acc[j.userId] = (acc[j.userId] ?? 0) + 1
     return acc
   }, {})
