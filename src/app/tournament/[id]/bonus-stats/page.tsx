@@ -41,11 +41,11 @@ export default function BonusStatsPage() {
   if (!stats) return <EmptyState icon={Gift} title="אין נתונים עדיין" subtitle="הנתונים יופיעו לאחר משחקים שהסתיימו" />
 
   const cards = [
-    { label: 'שערים', value: stats.totalGoals, icon: Goal, color: 'text-primary' },
-    { label: 'כרטיסים צהובים', value: stats.yellowCards, icon: Square, color: 'text-yellow-500' },
-    { label: 'כרטיסים אדומים', value: stats.redCards, icon: Square, color: 'text-red-600' },
-    { label: 'פנדלים שהוכנסו', value: stats.penalties, icon: Crosshair, color: 'text-emerald-600' },
-    { label: 'שערים עצמיים', value: stats.ownGoals, icon: RotateCcw, color: 'text-blue-600' },
+    { label: 'שערים', value: stats.totalGoals, icon: Goal, color: 'text-primary', line: 291.5 },
+    { label: 'כרטיסים צהובים', value: stats.yellowCards, icon: Square, color: 'text-yellow-500', line: 374.5 },
+    { label: 'כרטיסים אדומים', value: stats.redCards, icon: Square, color: 'text-red-600', line: 13.5 },
+    { label: 'פנדלים שהוכנסו', value: stats.penalties, icon: Crosshair, color: 'text-emerald-600', line: 31.5 },
+    { label: 'שערים עצמיים', value: stats.ownGoals, icon: RotateCcw, color: 'text-blue-600', line: 9.5 },
   ]
 
   return (
@@ -68,6 +68,12 @@ export default function BonusStatsPage() {
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className={`text-3xl font-bold ${item.color}`}>{item.value}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {item.value > item.line
+                    ? <span className="font-bold text-emerald-600">מעל</span>
+                    : <span className="font-bold text-red-500">מתחת</span>}
+                  {' '}{item.line}
+                </p>
               </CardContent>
             </Card>
           </div>
