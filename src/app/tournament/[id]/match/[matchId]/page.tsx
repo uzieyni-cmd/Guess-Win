@@ -276,13 +276,15 @@ function ParticipantsPanel({ participants, matchBets, match, jokerUserIds, curre
           <Users className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-bold text-foreground">ניחושי משתתפים</h3>
         </div>
-        <button
-          onClick={exportExcel}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-foreground/8"
-        >
-          <Download className="h-3.5 w-3.5" />
-          Excel
-        </button>
+        {isLocked && (
+          <button
+            onClick={exportExcel}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-foreground/8"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Excel
+          </button>
+        )}
       </div>
 
       <div className="divide-y divide-border/60 max-h-[480px] overflow-y-auto">
