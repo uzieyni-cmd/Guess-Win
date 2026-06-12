@@ -225,6 +225,31 @@ export async function fetchPlayerInfo(playerName: string): Promise<PlayerInfo | 
   }
 }
 
+// ── Fixture Events (כרטיסים, שערים, פנדלים, שערים עצמיים) ─────────
+
+export interface FixtureEvent {
+  time: { elapsed: number; extra: number | null }
+  team: { id: number; name: string; logo: string }
+  player: { id: number | null; name: string | null }
+  type: string   // 'Goal' | 'Card' | 'subst' | 'Var'
+  detail: string // 'Normal Goal' | 'Own Goal' | 'Penalty' | 'Yellow Card' | 'Red Card' | ...
+}
+
+export async function fetchFixtureEvents(fixtureId: number): Promise<FixtureEvent[]> {
+  return apiFetch<FixtureEvent>(`/fixtures/events?fixture=${fixtureId}`)
+}
+
+// ── Top Scorers ────────────────────────────────────────────────────
+
+export interface TopScorerEntry {
+  player: { id: number; name: string; photo: string }
+  statistics: { team: { name: string; logo: string }; goals: { total: number | null } }[]
+}
+
+export async function fetchTopScorers(leagueId: number, season: number): Promise<TopScorerEntry[]> {
+  return apiFetch<TopScorerEntry>(`/players/topscorers?league=${leagueId}&season=${season}`)
+}
+
 // ── Status Mapper ────────────────────────────────────────────────
 
 export function mapFixtureStatus(short: string): string {

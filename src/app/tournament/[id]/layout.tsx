@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, usePathname } from 'next/navigation'
-import { ArrowRight, Trophy, TrendingUp, Target, LogOut, Settings, TableProperties, Gift, ScrollText } from 'lucide-react'
+import { ArrowRight, Trophy, TrendingUp, Target, LogOut, Settings, TableProperties, Gift, ScrollText, Award } from 'lucide-react'
 import Link from 'next/link'
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useTournament } from '@/context/TournamentContext'
@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 const NAV_TABS = [
   { label: 'משחקים', href: 'matches', icon: Target },
   { label: 'בונוס', href: 'bonus', icon: Gift },
+  { label: 'סטטיסטיקת בונוס', href: 'bonus-stats', icon: Award },
   { label: 'טבלה', href: 'standings', icon: TableProperties },
   { label: 'דירוג', href: 'leaderboard', icon: Trophy },
   { label: 'סטטיסטיקה', href: 'stats', icon: TrendingUp },
