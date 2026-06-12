@@ -70,12 +70,16 @@ export default function LeaderboardPage() {
             </AvatarFallback>
           </Avatar>
 
-          <p className="flex-1 font-semibold text-sm truncate text-foreground flex items-center gap-1.5">
-            <span className="truncate">המיקום שלי</span>
-            {Array.from({ length: jokerCountByUser[myStanding.user.id] ?? 0 }).map((_, i) => (
-              <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
-            ))}
-          </p>
+          <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1.5">
+            <p className="font-semibold text-sm truncate text-foreground">המיקום שלי</p>
+            {(jokerCountByUser[myStanding.user.id] ?? 0) > 0 && (
+              <div className="flex items-center gap-0.5">
+                {Array.from({ length: jokerCountByUser[myStanding.user.id] ?? 0 }).map((_, i) => (
+                  <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="shrink-0 flex flex-col items-center min-w-[36px]">
             <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{myStanding.exactCount}</p>
@@ -150,12 +154,16 @@ export default function LeaderboardPage() {
                 </Avatar>
 
                 {/* שם */}
-                <p className="flex-1 font-semibold text-sm truncate text-foreground flex items-center gap-1.5">
-                  <span className="truncate">{s.user.displayName}</span>
-                  {Array.from({ length: jokerCountByUser[s.user.id] ?? 0 }).map((_, i) => (
-                    <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
-                  ))}
-                </p>
+                <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1.5">
+                  <p className="font-semibold text-sm truncate text-foreground">{s.user.displayName}</p>
+                  {(jokerCountByUser[s.user.id] ?? 0) > 0 && (
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: jokerCountByUser[s.user.id] ?? 0 }).map((_, i) => (
+                        <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* בול */}
                 <div className="shrink-0 flex flex-col items-center min-w-[36px]">
