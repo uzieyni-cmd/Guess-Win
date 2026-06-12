@@ -7,7 +7,7 @@ import { calculateScore } from '@/lib/scoring'
 import { PointsBadge } from '@/components/shared/PointsBadge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { cn } from '@/lib/utils'
-import { ArrowRight, Download, Loader2, Users } from 'lucide-react'
+import { ArrowRight, Download, Loader2, Users, Zap } from 'lucide-react'
 import { Match, Bet, User } from '@/types'
 import { translateRound } from '@/components/tournament/MatchCard'
 import { useCountdown } from '@/hooks/useCountdown'
@@ -241,10 +241,11 @@ function ScoreDistribution({ matchBets, match, isLocked }: {
 
 // ── פאנל משתתפים ─────────────────────────────────────────────────
 
-function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLocked }: {
+function ParticipantsPanel({ participants, matchBets, match, jokerUserIds, currentUserId, isLocked }: {
   participants: User[]
   matchBets: Bet[]
   match: Match
+  jokerUserIds: Set<string>
   currentUserId?: string
   isLocked: boolean
 }) {
@@ -288,6 +289,7 @@ function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLo
         {participants.map(p => {
           const bet    = matchBets.find(b => b.userId === p.id) ?? null
           const isMe   = p.id === currentUserId
+          const hasJoker = jokerUserIds.has(p.id)
           const result = (match.status === 'finished') && bet && match.actualScore
             ? calculateScore(bet, match) : null
           const showBet = isMe || isLocked
@@ -295,11 +297,15 @@ function ParticipantsPanel({ participants, matchBets, match, currentUserId, isLo
           return (
             <div key={p.id} className={cn(
               'flex items-center justify-between px-4 py-3',
-              isMe && 'bg-primary/8 border-r-2 border-primary'
+              hasJoker ? 'bg-red-100/80 border-r-2 border-red-400' : isMe && 'bg-primary/8 border-r-2 border-primary'
             )}>
-              <span className={cn('text-sm truncate max-w-[130px]', isMe ? 'text-primary font-semibold' : 'text-muted-foreground')}>
+              <span className={cn(
+                'text-sm truncate max-w-[130px]',
+                hasJoker ? 'text-red-700 font-semibold' : isMe ? 'text-primary font-semibold' : 'text-muted-foreground'
+              )}>
                 {p.displayName}
                 {isMe && <span className="text-xs text-primary/60 mr-1">· אני</span>}
+                {hasJoker && <Zap className="inline h-3.5 w-3.5 text-red-600 fill-red-600 mr-1" />}
               </span>
 
               <div className="flex items-center gap-2 shrink-0">
@@ -399,7 +405,7 @@ function MatchHeader({ match, detail }: { match: Match; detail: MatchDetail | nu
 export default function MatchDetailPage() {
   const { id: tournamentId, matchId } = useParams() as { id: string; matchId: string }
   const router   = useRouter()
-  const { activeTournament, bets, participants } = useTournament()
+  const { activeTournament, bets, participants, jokerPicks } = useTournament()
   const { currentUser } = useAuth()
 
   const match = activeTournament?.matches.find(m => m.id === matchId)
@@ -448,6 +454,7 @@ export default function MatchDetailPage() {
   }
 
   const matchBets  = bets.filter(b => b.matchId === matchId)
+  const jokerUserIds = new Set(jokerPicks.filter(j => j.matchId === matchId).map(j => j.userId))
   const isLocked   = match.status !== 'scheduled' || isBettingLocked
 
   // current user always first (אם המשתמש הנוכחי הוא המשתמש המוסתר, הוא עדיין רואה את עצמו)
@@ -486,6 +493,7 @@ export default function MatchDetailPage() {
               participants={sortedParticipants}
               matchBets={matchBets}
               match={match}
+              jokerUserIds={jokerUserIds}
               currentUserId={currentUser?.id}
               isLocked={isLocked}
             />
