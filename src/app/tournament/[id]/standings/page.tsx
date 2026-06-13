@@ -28,27 +28,27 @@ function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandi
         </div>
       )}
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-[10px] sm:text-xs">
           <thead>
             <tr className="border-b border-border/60 text-muted-foreground">
-              <th className="text-right px-3 py-2 font-medium w-6">#</th>
-              <th className="text-right px-3 py-2 font-medium">קבוצה</th>
-              <th className="px-2 py-2 font-medium text-center">מ׳</th>
-              <th className="px-2 py-2 font-medium text-center">נ׳</th>
-              <th className="px-2 py-2 font-medium text-center">ת׳</th>
-              <th className="px-2 py-2 font-medium text-center">ה׳</th>
-              <th className="px-2 py-2 font-medium text-center">שע׳</th>
-              <th className="px-2 py-2 font-medium text-center">+/-</th>
-              <th className="px-2 py-2 font-medium text-center text-primary">נק׳</th>
-              <th className="px-2 py-2 font-medium text-center hidden sm:table-cell">צורה</th>
+              <th className="text-right px-1.5 sm:px-3 py-2 font-medium w-6">#</th>
+              <th className="text-right px-1.5 sm:px-3 py-2 font-medium">קבוצה</th>
+              <th className="px-1 sm:px-2 py-2 font-medium text-center">מ׳</th>
+              <th className="px-1 sm:px-2 py-2 font-medium text-center">נ׳</th>
+              <th className="px-1 sm:px-2 py-2 font-medium text-center">ת׳</th>
+              <th className="px-1 sm:px-2 py-2 font-medium text-center">ה׳</th>
+              <th className="px-1 sm:px-2 py-2 font-medium text-center">שע׳</th>
+              <th className="px-1 sm:px-2 py-2 font-medium text-center">+/-</th>
+              <th className="px-1 sm:px-2 py-2 font-medium text-center text-primary">נק׳</th>
+              <th className="px-1 sm:px-2 py-2 font-medium text-center hidden sm:table-cell">צורה</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40">
             {rows.map((row) => (
               <tr key={row.team.id} className="hover:bg-foreground/4 transition-colors">
-                <td className="px-3 py-2.5 text-center">
+                <td className="px-1.5 sm:px-3 py-2.5 text-center">
                   <span className={cn(
-                    'inline-flex items-center justify-center h-5 w-5 rounded-full text-xs font-bold',
+                    'inline-flex items-center justify-center h-5 w-5 rounded-full text-[10px] sm:text-xs font-bold',
                     row.rank === 1 ? 'bg-yellow-400/20 text-yellow-600' :
                     row.rank === 2 ? 'bg-slate-400/20 text-muted-foreground' :
                     row.rank === 3 ? 'bg-amber-500/20 text-amber-600' :
@@ -57,26 +57,26 @@ function StandingsTable({ group, rows }: { group: string | null; rows: ApiStandi
                     {row.rank}
                   </span>
                 </td>
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-2">
+                <td className="px-1.5 sm:px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <Image src={row.team.logo} alt={row.team.name} width={18} height={18} className="rounded-full shrink-0" unoptimized />
-                    <span className="text-foreground font-medium truncate max-w-[100px] sm:max-w-none">
+                    <span className="text-foreground font-medium truncate max-w-[70px] sm:max-w-none">
                       {translateTeam(row.team.name)}
                     </span>
                   </div>
                 </td>
-                <td className="px-2 py-2.5 text-center text-muted-foreground">{row.all.played}</td>
-                <td className="px-2 py-2.5 text-center text-emerald-600">{row.all.win}</td>
-                <td className="px-2 py-2.5 text-center text-muted-foreground">{row.all.draw}</td>
-                <td className="px-2 py-2.5 text-center text-red-500">{row.all.lose}</td>
-                <td className="px-2 py-2.5 text-center text-muted-foreground">
+                <td className="px-1 sm:px-2 py-2.5 text-center text-muted-foreground">{row.all.played}</td>
+                <td className="px-1 sm:px-2 py-2.5 text-center text-emerald-600">{row.all.win}</td>
+                <td className="px-1 sm:px-2 py-2.5 text-center text-muted-foreground">{row.all.draw}</td>
+                <td className="px-1 sm:px-2 py-2.5 text-center text-red-500">{row.all.lose}</td>
+                <td className="px-1 sm:px-2 py-2.5 text-center text-muted-foreground">
                   <span dir="ltr" className="tabular-nums">{row.all.goals.for}:{row.all.goals.against}</span>
                 </td>
-                <td className={cn('px-2 py-2.5 text-center font-medium', row.goalsDiff > 0 ? 'text-emerald-600' : row.goalsDiff < 0 ? 'text-red-500' : 'text-muted-foreground')}>
+                <td className={cn('px-1 sm:px-2 py-2.5 text-center font-medium', row.goalsDiff > 0 ? 'text-emerald-600' : row.goalsDiff < 0 ? 'text-red-500' : 'text-muted-foreground')}>
                   {row.goalsDiff > 0 ? `+${row.goalsDiff}` : row.goalsDiff}
                 </td>
-                <td className="px-2 py-2.5 text-center font-bold text-foreground">{row.points}</td>
-                <td className="px-2 py-2.5 hidden sm:table-cell">
+                <td className="px-1 sm:px-2 py-2.5 text-center font-bold text-foreground">{row.points}</td>
+                <td className="px-1 sm:px-2 py-2.5 hidden sm:table-cell">
                   <div className="flex items-center gap-0.5 justify-center">
                     {(row.form ?? '').split('').slice(-5).map((c, i) => (
                       <FormBadge key={i} char={c} />
