@@ -48,7 +48,7 @@ export async function syncLiveMatches(opts: {
   // (stuck matches have match_start_time older than 3h and never got synced to 'finished')
   let query = supabaseAdmin
     .from('matches')
-    .select('id, api_fixture_id, status')
+    .select('id, api_fixture_id, status, actual_home_score, actual_away_score')
     .neq('status', 'finished')
     .not('api_fixture_id', 'is', null)
     .lte('match_start_time', windowEnd)
@@ -110,12 +110,14 @@ export async function syncLiveMatches(opts: {
       // וגם ברגע שהוא הופך ל-finished (ניקוד סופי). הפונקציה אידמפוטנטית,
       // כך שאין הבדל בין הרצה במהלך המשחק להרצה בסיומו — מנגנון אחד בלבד.
       const dbMatch = batch.find(
-        (m: { id: string; api_fixture_id: number; status: string }) =>
+        (m: { id: string; api_fixture_id: number; status: string; actual_home_score: number | null; actual_away_score: number | null }) =>
           m.api_fixture_id === f.fixture.id
       )
       if (dbMatch && isFinished) {
-        const home = f.score.fulltime.home ?? f.goals.home ?? 0
-        const away = f.score.fulltime.away ?? f.goals.away ?? 0
+        // נופל לערך החי האחרון שנשמר ב-DB אם הספק עדיין לא החזיר תוצאת סיום —
+        // כך שלא "מאפסים" בטעות את הניקוד של כולם ל-0:0 בטיק המעבר ל-finished
+        const home = f.score.fulltime.home ?? f.goals.home ?? dbMatch.actual_home_score ?? 0
+        const away = f.score.fulltime.away ?? f.goals.away ?? dbMatch.actual_away_score ?? 0
         await scoreFinishedMatch(dbMatch.id, { home, away })
       } else if (dbMatch && isLive && f.goals.home !== null && f.goals.away !== null) {
         await scoreFinishedMatch(dbMatch.id, { home: f.goals.home, away: f.goals.away })

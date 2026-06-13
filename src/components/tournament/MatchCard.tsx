@@ -196,6 +196,14 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
 
   return (
     <div className="animate-fade-up h-full">
+      {saveError && (
+        <div className="fixed top-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
+          <div className="flex items-center gap-2 bg-red-600 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-lg max-w-sm animate-fade-up" role="alert">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>הניחוש לא נשמר: {saveError}</span>
+          </div>
+        </div>
+      )}
       <Card className={cn(
         'overflow-hidden h-full flex flex-col',
         isFinished && 'border-emerald-400/50 bg-emerald-50/40',
