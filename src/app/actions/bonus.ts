@@ -329,11 +329,11 @@ export async function submitBonusPick(
   // Check lock + fetch type
   const { data: q } = await supabaseAdmin
     .from('bonus_questions')
-    .select('lock_time, options, type')
+    .select('lock_time, options')
     .eq('id', questionId)
     .single()
   if (!q) return { ok: false, error: 'שאלה לא נמצאה' }
-  const qRow = q as { lock_time: string; options: string[]; type: string }
+  const qRow = q as { lock_time: string; options: string[] }
   if (new Date() >= new Date(qRow.lock_time)) {
     return { ok: false, error: 'ההימור נעול' }
   }
@@ -353,22 +353,6 @@ export async function submitBonusPick(
     }, { onConflict: 'bonus_question_id,user_id' })
 
   if (error) return { ok: false, error: error.message }
-
-  // If this is a team_pick question, also mirror to round_bonus_picks
-  // stage = questionId ensures UNIQUE(tournament_id, user_id, stage) = one row per tier per user
-  if (qRow.type === 'team_pick') {
-    await supabaseAdmin
-      .from('round_bonus_picks')
-      .upsert({
-        tournament_id: tournamentId,
-        user_id: user.id,
-        stage: questionId,          // unique key per question
-        team_name: pick,
-        points_awarded: 0,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'tournament_id,user_id,stage' })
-    // שגיאה ב-mirror לא מונעת שמירת הבחירה הראשית
-  }
 
   return { ok: true }
 }

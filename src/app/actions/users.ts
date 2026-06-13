@@ -42,7 +42,6 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean; error?:
     // Delete all related data using admin client (bypasses RLS)
     await supabaseAdmin.from('bets').delete().eq('user_id', userId)
     await supabaseAdmin.from('bonus_picks').delete().eq('user_id', userId)
-    await supabaseAdmin.from('round_bonus_picks').delete().eq('user_id', userId)
     await supabaseAdmin.from('joker_picks').delete().eq('user_id', userId)
     await supabaseAdmin.from('tournament_participants').delete().eq('user_id', userId)
     await supabaseAdmin.from('tournament_admins').delete().eq('user_id', userId)

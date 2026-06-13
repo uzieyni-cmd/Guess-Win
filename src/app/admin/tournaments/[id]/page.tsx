@@ -9,7 +9,7 @@ import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app
 import { rescoreTournamentBets } from '@/app/actions/bets'
 import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonusQuestion, setBonusResult, syncAllBonusLockTimes } from '@/app/actions/bonus'
 import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
-import { awardAdvancementBonus, syncExistingTeamPicks, getTeamPickTeams } from '@/app/actions/roundBonus'
+import { awardAdvancementBonus, getTeamPickTeams } from '@/app/actions/roundBonus'
 import { setPaymentStatus } from '@/app/actions/users'
 import { setupMonkey, joinMonkeyToTournament, runMonkeyBets, runMonkeyBonusPicks } from '@/app/actions/ai-monkey'
 import { supabase } from '@/lib/supabase'
@@ -535,7 +535,6 @@ function AdvancementBonusSection({ tournamentId }: { tournamentId: string }) {
   const [teams,      setTeams]      = useState<string[]>([])
   const [selected,   setSelected]   = useState<Set<string>>(new Set())
   const [loading,    setLoading]    = useState(true)
-  const [syncing,    setSyncing]    = useState(false)
   const [awarding,   setAwarding]   = useState(false)
   const [msg,        setMsg]        = useState('')
 
@@ -566,17 +565,6 @@ function AdvancementBonusSection({ tournamentId }: { tournamentId: string }) {
     setTimeout(() => setMsg(''), 4000)
   }
 
-  const handleSync = async () => {
-    setSyncing(true)
-    setMsg('')
-    const res = await syncExistingTeamPicks(tournamentId)
-    setSyncing(false)
-    // Refresh teams list
-    getTeamPickTeams(tournamentId).then(setTeams)
-    setMsg(res.ok ? `✓ סונכרנו ${res.synced} בחירות` : `שגיאה: ${res.error}`)
-    setTimeout(() => setMsg(''), 4000)
-  }
-
   return (
     <Card className="mt-6">
       <CardHeader>
@@ -585,10 +573,6 @@ function AdvancementBonusSection({ tournamentId }: { tournamentId: string }) {
             <ArrowUp className="h-4 w-4 text-emerald-500" />
             עליה לשלב הבא — +5 נק' לכל מי שבחר
           </CardTitle>
-          <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing} title="סנכרן בחירות קיימות מ-bonus_picks ל-round_bonus_picks">
-            {syncing ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <RefreshCw className="h-4 w-4 ml-1" />}
-            סנכרן בחירות
-          </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           סמן את הנבחרות שעלו לשלב הבא ולחץ &quot;הענק 5 נק'&quot;. ניתן להפעיל מספר פעמים לפי שלב.
@@ -608,7 +592,7 @@ function AdvancementBonusSection({ tournamentId }: { tournamentId: string }) {
           </div>
         ) : teams.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
-            אין נבחרות בטבלה — לחץ &quot;סנכרן בחירות&quot; אחרי שהמשתמשים בחרו
+            אין עדיין בחירות נבחרת מדורגת בטורניר הזה
           </p>
         ) : (
           <>

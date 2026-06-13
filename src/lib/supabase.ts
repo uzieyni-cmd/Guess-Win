@@ -66,6 +66,7 @@ export type DbBet = {
   predicted_home: number
   predicted_away: number
   points: number | null
+  team_bonus_pick: number | null
   result: 'exact' | 'outcome' | 'miss' | null
   submitted_at: string
   updated_at: string

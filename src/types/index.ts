@@ -66,6 +66,7 @@ export interface Bet {
   updatedAt: string
   isLocked: boolean
   points: number | null
+  teamBonusPick: number
   betResult: ScoreResult | null
 }
 
@@ -114,5 +115,5 @@ export interface ParticipantStanding {
   betResults: BetResult[]
   scoredBetsCount: number
   exactCount: number  // פגיעות בול — tiebreaker
-  liveBonus?: number  // ניקוד זמני ממשחקים חיים (לא נשמר ב-DB)
+  liveBonus?: number  // חלק תצוגתי מ-totalPoints שמקורו במשחקים שעדיין live (הניקוד עצמו נשמר ב-DB)
 }

@@ -106,15 +106,19 @@ export async function syncLiveMatches(opts: {
         .eq('api_fixture_id', f.fixture.id)
       synced++
 
-      // Save points when match just transitioned to finished
+      // עדכון ניקוד — גם כשהמשחק עדיין live (ניקוד "חי" ב-DB, מתעדכן בכל סנכרון)
+      // וגם ברגע שהוא הופך ל-finished (ניקוד סופי). הפונקציה אידמפוטנטית,
+      // כך שאין הבדל בין הרצה במהלך המשחק להרצה בסיומו — מנגנון אחד בלבד.
       const dbMatch = batch.find(
         (m: { id: string; api_fixture_id: number; status: string }) =>
           m.api_fixture_id === f.fixture.id
       )
-      if (dbMatch && isFinished && dbMatch.status !== 'finished') {
+      if (dbMatch && isFinished) {
         const home = f.score.fulltime.home ?? f.goals.home ?? 0
         const away = f.score.fulltime.away ?? f.goals.away ?? 0
         await scoreFinishedMatch(dbMatch.id, { home, away })
+      } else if (dbMatch && isLive && f.goals.home !== null && f.goals.away !== null) {
+        await scoreFinishedMatch(dbMatch.id, { home: f.goals.home, away: f.goals.away })
       }
     }
   }
