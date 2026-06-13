@@ -157,7 +157,12 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   }
 
   const handleSave = async () => {
-    if (homeScore === null || awayScore === null || !currentUser) return
+    if (!currentUser) return
+    if (homeScore === null || awayScore === null) {
+      setSaveError('יש לבחור ניקוד לשתי הקבוצות')
+      setTimeout(() => setSaveError(false), 4000)
+      return
+    }
     const error = await placeBet(match.id, { home: homeScore, away: awayScore }, currentUser.id)
     if (error) {
       setSaveError(error)
@@ -297,7 +302,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
                     <div className="flex flex-col items-center gap-0.5">
                       <button
                         onClick={handleSave}
-                        disabled={!dirty || saved || homeScore === null || awayScore === null}
+                        disabled={saved}
                         className={cn(
                           'flex items-center gap-1 text-xs px-3 py-2 rounded-full font-medium transition-all min-h-[44px]',
                           saveError
