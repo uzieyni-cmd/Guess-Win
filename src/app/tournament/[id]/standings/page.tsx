@@ -719,6 +719,17 @@ function isThirdPlaceGroup(groupName: string | undefined | null): boolean {
   return lower.includes('3rd place') || lower.includes('third place') || lower.includes('ranking of third')
 }
 
+// "Group Stage" — טבלת סיכום מצרפית של כל הבתים יחד, לא טבלת בית בודד
+function isAggregateGroupStage(groupName: string | undefined | null): boolean {
+  return (groupName ?? '').trim().toLowerCase() === 'group stage'
+}
+
+// "Group A" → "בית A"
+function translateGroupName(groupName: string): string {
+  const m = groupName.match(/^Group\s+(.+)$/i)
+  return m ? `בית ${m[1]}` : groupName
+}
+
 export default function StandingsPage() {
   const { id } = useParams() as { id: string }
   const [standings, setStandings]   = useState<ApiStandingEntry[][] | null>(null)
@@ -763,7 +774,7 @@ export default function StandingsPage() {
 
   // Filter out "3rd place ranking" group (World Cup)
   const filteredStandings = standings?.filter(group =>
-    !isThirdPlaceGroup(group[0]?.group)
+    !isThirdPlaceGroup(group[0]?.group) && !isAggregateGroupStage(group[0]?.group)
   ) ?? []
 
   return (
@@ -773,7 +784,7 @@ export default function StandingsPage() {
       {filteredStandings.map((group, i) => (
         <StandingsTable
           key={i}
-          group={isGroups ? (group[0]?.group ?? `בית ${i + 1}`) : null}
+          group={isGroups ? translateGroupName(group[0]?.group ?? `Group ${i + 1}`) : null}
           rows={group}
         />
       ))}
