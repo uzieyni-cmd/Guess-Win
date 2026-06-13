@@ -239,17 +239,6 @@ export async function fetchFixtureEvents(fixtureId: number): Promise<FixtureEven
   return apiFetch<FixtureEvent>(`/fixtures/events?fixture=${fixtureId}`)
 }
 
-// ── Top Scorers ────────────────────────────────────────────────────
-
-export interface TopScorerEntry {
-  player: { id: number; name: string; photo: string }
-  statistics: { team: { name: string; logo: string }; goals: { total: number | null } }[]
-}
-
-export async function fetchTopScorers(leagueId: number, season: number): Promise<TopScorerEntry[]> {
-  return apiFetch<TopScorerEntry>(`/players/topscorers?league=${leagueId}&season=${season}`)
-}
-
 // ── Status Mapper ────────────────────────────────────────────────
 
 export function mapFixtureStatus(short: string): string {

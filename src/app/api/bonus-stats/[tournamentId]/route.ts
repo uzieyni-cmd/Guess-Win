@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { fetchFixtureEvents, fetchTopScorers } from '@/lib/api-football'
+import { fetchFixtureEvents } from '@/lib/api-football'
 import { translateTeam } from '@/lib/teams-he'
 
 export const revalidate = 1800 // cache 30 דקות
@@ -45,6 +45,10 @@ export async function GET(
     let penalties = 0
     let ownGoals = 0
 
+    // ניקוד כובשים מהאירועים של המשחקים שלנו — מסונכרן עם המשחקים שהסתיימו
+    // (ה-endpoint הגלובלי של מלכי השערים בספק מפגר ולא משקף משחקים טריים)
+    const scorerStats = new Map<number, { name: string; team: string; goals: number }>()
+
     for (const events of eventsByFixture) {
       for (const e of events) {
         if (e.type === 'Card') {
@@ -53,20 +57,32 @@ export async function GET(
         } else if (e.type === 'Goal') {
           if (e.detail === 'Penalty') penalties++
           else if (e.detail === 'Own Goal') ownGoals++
+
+          if (e.player.id !== null && e.detail !== 'Own Goal' && e.detail !== 'Missed Penalty') {
+            const existing = scorerStats.get(e.player.id)
+            if (existing) {
+              existing.goals++
+            } else {
+              scorerStats.set(e.player.id, {
+                name: e.player.name ?? '',
+                team: translateTeam(e.team.name),
+                goals: 1,
+              })
+            }
+          }
         }
       }
     }
 
-    let topScorers: { name: string; team: string; photo: string; goals: number }[] = []
-    try {
-      const ts = await fetchTopScorers(t.api_league_id, t.api_season)
-      topScorers = ts.slice(0, 3).map(p => ({
-        name: p.player.name,
-        photo: p.player.photo,
-        team: translateTeam(p.statistics[0]?.team.name ?? ''),
-        goals: p.statistics[0]?.goals.total ?? 0,
+    const topScorers = [...scorerStats.entries()]
+      .sort((a, b) => b[1].goals - a[1].goals)
+      .slice(0, 3)
+      .map(([playerId, s]) => ({
+        name: s.name,
+        team: s.team,
+        photo: `https://media.api-sports.io/football/players/${playerId}.png`,
+        goals: s.goals,
       }))
-    } catch { /* topscorers לא זמין לכל ליגה */ }
 
     return NextResponse.json(
       { totalGoals, yellowCards, redCards, penalties, ownGoals, topScorers, matchCount: fixtureIds.length },
