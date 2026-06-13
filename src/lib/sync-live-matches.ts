@@ -119,5 +119,34 @@ export async function syncLiveMatches(opts: {
     }
   }
 
+  // Self-healing: matches can end up status='finished' without scoring ever
+  // running (e.g. sync-fixtures upserts the final result/status directly).
+  // Find any finished match that still has unscored bets and score it now.
+  const { data: unscoredBets } = await supabaseAdmin
+    .from('bets')
+    .select('match_id')
+    .is('points', null)
+
+  if (unscoredBets?.length) {
+    const matchIds = [...new Set(unscoredBets.map((b: { match_id: string }) => b.match_id))]
+
+    let finishedQuery = supabaseAdmin
+      .from('matches')
+      .select('id, actual_home_score, actual_away_score, tournament_id')
+      .eq('status', 'finished')
+      .not('actual_home_score', 'is', null)
+      .not('actual_away_score', 'is', null)
+      .in('id', matchIds)
+
+    if (opts.tournamentId) {
+      finishedQuery = finishedQuery.eq('tournament_id', opts.tournamentId)
+    }
+
+    const { data: finishedUnscored } = await finishedQuery
+    for (const m of finishedUnscored ?? []) {
+      await scoreFinishedMatch(m.id, { home: m.actual_home_score!, away: m.actual_away_score! })
+    }
+  }
+
   return synced
 }
