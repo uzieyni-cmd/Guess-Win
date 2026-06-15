@@ -84,7 +84,7 @@ export default function BonusStatsPage() {
                   return (
                     <p className={`text-[11px] mt-0.5 flex items-center gap-1 ${trendColor}`}>
                       <TrendIcon className="h-3 w-3 shrink-0" />
-                      תחזית: {isOver ? 'מעל' : 'מתחת'}
+                      תחזית: {isOver ? 'מעל' : 'מתחת'} ~{Math.round(projected)}
                     </p>
                   )
                 })()}
