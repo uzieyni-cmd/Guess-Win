@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
-import { Gift, Square, Goal, Crosshair, Crown, RotateCcw } from 'lucide-react'
+import { Gift, Square, Goal, Crosshair, Crown, RotateCcw, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoadingState, EmptyState } from '@/components/shared/EmptyState'
 
@@ -15,6 +15,8 @@ interface BonusStats {
   topScorers: { name: string; team: string; photo: string; goals: number }[]
   matchCount: number
 }
+
+const TOTAL_MATCHES = 104
 
 const medalStyles = [
   'bg-yellow-400/20 border border-yellow-500/50 text-yellow-600',
@@ -74,6 +76,18 @@ export default function BonusStatsPage() {
                     : <span className="font-bold text-red-500">מתחת</span>}
                   {' '}{item.line}
                 </p>
+                {stats.matchCount > 0 && (() => {
+                  const projected = (item.value / stats.matchCount) * TOTAL_MATCHES
+                  const isOver = projected > item.line
+                  const TrendIcon = isOver ? TrendingUp : TrendingDown
+                  const trendColor = isOver ? 'text-emerald-600' : 'text-red-500'
+                  return (
+                    <p className={`text-[11px] mt-0.5 flex items-center gap-1 ${trendColor}`}>
+                      <TrendIcon className="h-3 w-3 shrink-0" />
+                      תחזית: {isOver ? 'מעל' : 'מתחת'}
+                    </p>
+                  )
+                })()}
               </CardContent>
             </Card>
           </div>
