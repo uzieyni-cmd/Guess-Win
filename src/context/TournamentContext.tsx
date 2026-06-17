@@ -224,7 +224,13 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
 
     setTournaments((prev) => prev.map((t) => {
       if (t.id !== tournamentId) return t
-      const existing = append ? t.matches.filter(m => !!m.homeTeam) : []
+      const existingReal = t.matches.filter(m => !!m.homeTeam)
+      // אם כבר טענו יותר משחקים (למשל all=true), לא להחליף עם טעינה חלקית
+      if (!append && !all && existingReal.length > newMatches.length) {
+        const patchMap = new Map(newMatches.map(m => [m.id, m]))
+        return { ...t, matches: existingReal.map(m => patchMap.get(m.id) ?? m) }
+      }
+      const existing = append ? existingReal : []
       const ids = new Set(existing.map(m => m.id))
       const merged = [...existing, ...newMatches.filter(m => !ids.has(m.id))]
       return { ...t, matches: merged }
