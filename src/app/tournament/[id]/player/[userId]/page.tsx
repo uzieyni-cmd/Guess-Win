@@ -28,7 +28,7 @@ export default function PlayerDetailPage() {
       .filter(b =>
         b.userId === userId &&
         b.tournamentId === tournamentId &&
-        b.points !== null
+        (b.points !== null || (b.teamBonusPick ?? 0) > 0)
       )
       .map(b => ({
         bet: b,
