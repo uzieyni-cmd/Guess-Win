@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
-import { calculateScore } from '@/lib/scoring'
 import { PointsBadge } from '@/components/shared/PointsBadge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { cn } from '@/lib/utils'
@@ -253,8 +252,9 @@ function ParticipantsPanel({ participants, matchBets, match, jokerUserIds, curre
     const { utils, writeFile } = await import('xlsx')
     const rows = participants.map(p => {
       const bet    = matchBets.find(b => b.userId === p.id) ?? null
-      const result = (match.status === 'finished') && bet && match.actualScore
-        ? calculateScore(bet, match) : null
+      const result = bet?.points !== null && bet?.betResult
+        ? { result: bet.betResult, points: bet.points ?? 0 }
+        : null
       return {
         'שם':        p.displayName,
         'ניחוש':     bet ? `${bet.predictedScore.home}–${bet.predictedScore.away}` : 'לא ניחש',
@@ -292,8 +292,9 @@ function ParticipantsPanel({ participants, matchBets, match, jokerUserIds, curre
           const bet    = matchBets.find(b => b.userId === p.id) ?? null
           const isMe   = p.id === currentUserId
           const hasJoker = jokerUserIds.has(p.id)
-          const result = (match.status === 'finished') && bet && match.actualScore
-            ? calculateScore(bet, match) : null
+          const result = bet?.points !== null && bet?.betResult
+            ? { result: bet.betResult, points: bet.points ?? 0 }
+            : null
           const showBet = isMe || isLocked
 
           return (
