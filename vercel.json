@@ -13,6 +13,10 @@
       "schedule": "0 */6 * * *"
     },
     {
+      "path": "/api/cron/sync-events",
+      "schedule": "0 */2 * * *"
+    },
+    {
       "path": "/api/cron/sync-odds",
       "schedule": "0 6 * * *"
     },

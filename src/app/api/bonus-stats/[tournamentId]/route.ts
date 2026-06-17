@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { fetchFixtureEvents } from '@/lib/api-football'
 import { translateTeam } from '@/lib/teams-he'
 
-export const revalidate = 1800 // cache 30 דקות
+export const revalidate = 300 // cache 5 דקות — נתונים מגיעים מ-DB, לא מ-API
 
 export async function GET(
   _req: Request,
@@ -11,17 +10,8 @@ export async function GET(
 ) {
   const { tournamentId } = await params
 
-  const { data: t } = await supabaseAdmin
-    .from('tournaments')
-    .select('api_league_id, api_season')
-    .eq('id', tournamentId)
-    .single()
-
-  if (!t?.api_league_id || !t?.api_season) {
-    return NextResponse.json({ error: 'no league config' }, { status: 404 })
-  }
-
   try {
+    // סכום שערים מהמשחקים עצמם (מהימן תמיד)
     const { data: matches } = await supabaseAdmin
       .from('matches')
       .select('api_fixture_id, actual_home_score, actual_away_score')
@@ -29,46 +19,43 @@ export async function GET(
       .eq('status', 'finished')
       .not('api_fixture_id', 'is', null)
 
-    const fixtureIds = (matches ?? []).map(m => m.api_fixture_id as number)
+    const matchCount = (matches ?? []).length
 
     const totalGoals = (matches ?? []).reduce(
       (sum, m) => sum + (m.actual_home_score ?? 0) + (m.actual_away_score ?? 0),
       0
     )
 
-    const eventsByFixture = await Promise.all(
-      fixtureIds.map(id => fetchFixtureEvents(id).catch(() => []))
-    )
+    // אירועים מה-DB (מסונכרן על ידי /api/cron/sync-events)
+    const { data: events } = await supabaseAdmin
+      .from('fixture_events')
+      .select('type, detail, player_id, player_name, team_name')
+      .eq('tournament_id', tournamentId)
 
     let yellowCards = 0
     let redCards = 0
     let penalties = 0
     let ownGoals = 0
-
-    // ניקוד כובשים מהאירועים של המשחקים שלנו — מסונכרן עם המשחקים שהסתיימו
-    // (ה-endpoint הגלובלי של מלכי השערים בספק מפגר ולא משקף משחקים טריים)
     const scorerStats = new Map<number, { name: string; team: string; goals: number }>()
 
-    for (const events of eventsByFixture) {
-      for (const e of events) {
-        if (e.type === 'Card') {
-          if (e.detail === 'Yellow Card') yellowCards++
-          else if (e.detail === 'Red Card') redCards++
-        } else if (e.type === 'Goal') {
-          if (e.detail === 'Penalty') penalties++
-          else if (e.detail === 'Own Goal') ownGoals++
+    for (const e of events ?? []) {
+      if (e.type === 'Card') {
+        if (e.detail === 'Yellow Card') yellowCards++
+        else if (e.detail === 'Red Card' || e.detail === 'Yellow Red Card') redCards++
+      } else if (e.type === 'Goal') {
+        if (e.detail === 'Penalty') penalties++
+        else if (e.detail === 'Own Goal') ownGoals++
 
-          if (e.player.id !== null && e.detail !== 'Own Goal' && e.detail !== 'Missed Penalty') {
-            const existing = scorerStats.get(e.player.id)
-            if (existing) {
-              existing.goals++
-            } else {
-              scorerStats.set(e.player.id, {
-                name: e.player.name ?? '',
-                team: translateTeam(e.team.name),
-                goals: 1,
-              })
-            }
+        if (e.player_id !== null && e.detail !== 'Own Goal' && e.detail !== 'Missed Penalty') {
+          const existing = scorerStats.get(e.player_id)
+          if (existing) {
+            existing.goals++
+          } else {
+            scorerStats.set(e.player_id, {
+              name: e.player_name ?? '',
+              team: translateTeam(e.team_name ?? ''),
+              goals: 1,
+            })
           }
         }
       }
@@ -85,8 +72,8 @@ export async function GET(
       }))
 
     return NextResponse.json(
-      { totalGoals, yellowCards, redCards, penalties, ownGoals, topScorers, matchCount: fixtureIds.length },
-      { headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600' } }
+      { totalGoals, yellowCards, redCards, penalties, ownGoals, topScorers, matchCount },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
     )
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
