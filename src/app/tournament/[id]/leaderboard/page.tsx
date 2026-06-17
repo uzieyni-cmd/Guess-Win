@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useState } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import { Trophy, Flame, Search, Zap } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
@@ -16,6 +17,8 @@ const rankStyles = [
 export default function LeaderboardPage() {
   const { standings, activeTournament, jokerPicks, bets } = useTournament()
   const { currentUser } = useAuth()
+  const router = useRouter()
+  const { id: tournamentId } = useParams() as { id: string }
   const prevRanks = useRef<Record<string, number>>({})
   const [search, setSearch] = useState('')
 
@@ -130,8 +133,9 @@ export default function LeaderboardPage() {
             return (
               <div
                 key={s.user.id}
+                onClick={() => router.push(`/tournament/${tournamentId}/player/${s.user.id}`)}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl bg-card border border-border transition-all duration-500',
+                  'flex items-center gap-3 p-3 rounded-xl bg-card border border-border transition-all duration-500 cursor-pointer active:opacity-70',
                   rankIdx < 3 && rankStyles[rankIdx].card,
                   moved && movedUp && 'ring-1 ring-emerald-500/40',
                   moved && !movedUp && 'ring-1 ring-red-500/20',
