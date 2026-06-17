@@ -93,29 +93,29 @@ export default function PlayerDetailPage() {
                     row.hasJoker && 'border-red-300/60 bg-red-50/40'
                   )}
                 >
-                  {/* קבוצות + תוצאה — בית משמאל, חוץ מימין (RTL) */}
-                  <div className="flex items-center gap-2 mb-3" dir="rtl">
-                    {/* בית */}
+                  {/* קבוצות + תוצאה — חוץ משמאל, בית מימין */}
+                  <div className="flex items-center gap-2 mb-3">
+                    {/* חוץ — שמאל */}
                     <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                      {row.homeTeam.flag && (
-                        <Image src={row.homeTeam.flag} alt={row.homeTeam.name} width={24} height={16} unoptimized className="rounded-sm shrink-0 object-cover" />
+                      {row.awayTeam.flag && (
+                        <Image src={row.awayTeam.flag} alt={row.awayTeam.name} width={24} height={16} unoptimized className="rounded-sm shrink-0 object-cover" />
                       )}
-                      <span className="text-xs font-semibold text-foreground truncate">{row.homeTeam.name}</span>
+                      <span className="text-xs font-semibold text-foreground truncate">{row.awayTeam.name}</span>
                     </div>
 
-                    {/* ניקוד */}
+                    {/* ניקוד — מרכז */}
                     <div className="flex flex-col items-center gap-0.5 shrink-0">
                       <span className="font-mono font-black text-base tabular-nums text-foreground">
-                        {row.actualScore.home}:{row.actualScore.away}
+                        {row.actualScore.away}:{row.actualScore.home}
                       </span>
                       <span className="text-[10px] text-muted-foreground">תוצאה</span>
                     </div>
 
-                    {/* חוץ */}
+                    {/* בית — ימין */}
                     <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                      <span className="text-xs font-semibold text-foreground truncate text-right">{row.awayTeam.name}</span>
-                      {row.awayTeam.flag && (
-                        <Image src={row.awayTeam.flag} alt={row.awayTeam.name} width={24} height={16} unoptimized className="rounded-sm shrink-0 object-cover" />
+                      <span className="text-xs font-semibold text-foreground truncate text-right">{row.homeTeam.name}</span>
+                      {row.homeTeam.flag && (
+                        <Image src={row.homeTeam.flag} alt={row.homeTeam.name} width={24} height={16} unoptimized className="rounded-sm shrink-0 object-cover" />
                       )}
                     </div>
                   </div>
@@ -127,7 +127,7 @@ export default function PlayerDetailPage() {
                         <>
                           <span className="text-xs text-muted-foreground">ניחוש:</span>
                           <span className="font-mono font-bold text-sm tabular-nums text-foreground">
-                            {row.predictedScore.home}:{row.predictedScore.away}
+                            {row.predictedScore.away}:{row.predictedScore.home}
                           </span>
                         </>
                       )}

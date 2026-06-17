@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
+import { translateTeam } from '@/lib/teams-he'
 
 export async function GET(
   _req: Request,
@@ -82,8 +83,8 @@ export async function GET(
       return {
         matchId: bet.match_id,
         matchStartTime: match.match_start_time,
-        homeTeam: { name: match.home_team_name, flag: match.home_team_flag, id: match.home_team_id },
-        awayTeam: { name: match.away_team_name, flag: match.away_team_flag, id: match.away_team_id },
+        homeTeam: { name: translateTeam(match.home_team_name), flag: match.home_team_flag, id: match.home_team_id },
+        awayTeam: { name: translateTeam(match.away_team_name), flag: match.away_team_flag, id: match.away_team_id },
         actualScore: { home: match.actual_home_score, away: match.actual_away_score },
         predictedScore: { home: bet.predicted_home, away: bet.predicted_away },
         points: bet.points,
