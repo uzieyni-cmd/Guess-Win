@@ -899,14 +899,10 @@ export default function AdminTournamentDetailPage() {
 
   // ── Refresh single match result ────────────────────────────────
   const handleRefreshMatch = async (match: Match) => {
-    const { data } = await supabase
-      .from('matches')
-      .select('api_fixture_id')
-      .eq('id', match.id)
-      .single()
-    if (!data?.api_fixture_id) return
-    await refreshMatchResult(data.api_fixture_id)
-    reloadMatches(id)
+    if (!match.apiFixtureId) return
+    const result = await refreshMatchResult(match.apiFixtureId)
+    if (result.error) alert(`שגיאה: ${result.error}`)
+    reloadMatches(id, { all: true })
   }
 
   // ── Manual score save ──────────────────────────────────────────
