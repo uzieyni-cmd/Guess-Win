@@ -66,17 +66,19 @@ function JokerStageBanner({ group, myCount }: { group: JokerStageGroup; myCount:
 
 interface Props {
   matches: Match[]
+  sortAscending?: boolean
 }
 
-export function BettingZone({ matches }: Props) {
+export function BettingZone({ matches, sortAscending = true }: Props) {
   const { bets, participants, jokerPicks, activeTournament } = useTournament()
   const { currentUser } = useAuth()
 
   const sorted = useMemo(() => {
+    const dir = sortAscending ? 1 : -1
     return [...matches].sort((a, b) =>
-      new Date(a.matchStartTime).getTime() - new Date(b.matchStartTime).getTime()
+      dir * (new Date(a.matchStartTime).getTime() - new Date(b.matchStartTime).getTime())
     )
-  }, [matches])
+  }, [matches, sortAscending])
 
   const grouped = useMemo(() => {
     const groups: Record<string, Match[]> = {}

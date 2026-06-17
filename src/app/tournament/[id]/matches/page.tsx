@@ -29,17 +29,14 @@ export default function MatchesPage() {
   const finishedCount = realMatches.filter(m => m.status === 'finished').length
   const upcomingCount = realMatches.length - finishedCount
   const showFilterToggle = finishedCount > 0 && upcomingCount > 0
+  const showingFinished = showFilterToggle ? !hideFinished : (finishedCount > 0 && upcomingCount === 0)
   const visibleMatches = (() => {
     const filtered = showFilterToggle
       ? (hideFinished
           ? realMatches.filter(m => m.status !== 'finished')
           : realMatches.filter(m => m.status === 'finished'))
       : realMatches
-    const showingFinished = showFilterToggle ? !hideFinished : (finishedCount > 0 && upcomingCount === 0)
-    const dir = showingFinished ? -1 : 1
-    return [...filtered].sort((a, b) =>
-      dir * (new Date(a.matchStartTime).getTime() - new Date(b.matchStartTime).getTime())
-    )
+    return filtered
   })()
 
   // ── סיכום אישי — ניקוד / מיקום / פגיעות / ניחושים שמולאו ───────
@@ -130,7 +127,7 @@ export default function MatchesPage() {
         )}
       </div>
 
-      {isLoadingMatches ? <BettingZoneSkeleton /> : <BettingZone matches={visibleMatches} />}
+      {isLoadingMatches ? <BettingZoneSkeleton /> : <BettingZone matches={visibleMatches} sortAscending={!showingFinished} />}
     </div>
   )
 }
