@@ -70,8 +70,8 @@ export async function fetchFixtures(
 }
 
 export async function fetchFixtureById(fixtureId: number): Promise<ApiFixture | null> {
-  const results = await apiFetch<ApiFixture>(`/fixtures?id=${fixtureId}`)
-  return results[0] ?? null
+  const data = await apiFetchRaw<ApiFixture>(`/fixtures?id=${fixtureId}`, true)
+  return data.response[0] ?? null
 }
 
 export interface ApiStandingEntry {
