@@ -143,7 +143,7 @@ export default function PlayerDetailPage() {
                       <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                         {row.betResult === 'exact' && <span>בול</span>}
                         {row.betResult === 'outcome' && <span>כיוון</span>}
-                        {teamBonus > 0 && <span>+{teamBonus} מדורגת</span>}
+                        {teamBonus > 0 && <span>+ מדורגת</span>}
                       </div>
                       {row.betResult && (
                         <PointsBadge result={row.betResult as ScoreResult} points={row.total} />
