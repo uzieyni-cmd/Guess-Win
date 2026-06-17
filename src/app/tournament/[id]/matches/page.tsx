@@ -29,11 +29,17 @@ export default function MatchesPage() {
   const finishedCount = realMatches.filter(m => m.status === 'finished').length
   const upcomingCount = realMatches.length - finishedCount
   const showFilterToggle = finishedCount > 0 && upcomingCount > 0
-  const visibleMatches = showFilterToggle
-    ? (hideFinished
-        ? realMatches.filter(m => m.status !== 'finished')
-        : realMatches.filter(m => m.status === 'finished'))
-    : realMatches
+  const visibleMatches = (() => {
+    const filtered = showFilterToggle
+      ? (hideFinished
+          ? realMatches.filter(m => m.status !== 'finished')
+          : realMatches.filter(m => m.status === 'finished'))
+      : realMatches
+    const dir = hideFinished ? 1 : -1
+    return [...filtered].sort((a, b) =>
+      dir * (new Date(a.matchStartTime).getTime() - new Date(b.matchStartTime).getTime())
+    )
+  })()
 
   // ── סיכום אישי — ניקוד / מיקום / פגיעות / ניחושים שמולאו ───────
   const myStanding = standings.find(s => s.user.id === currentUser?.id)
