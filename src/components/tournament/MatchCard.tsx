@@ -11,7 +11,7 @@ import { TeamFlag } from '@/components/shared/TeamFlag'
 import { CountdownTimer } from './CountdownTimer'
 import { ScoreInput } from './ScoreInput'
 import { PointsBadge } from '@/components/shared/PointsBadge'
-import { calculateScore } from '@/lib/scoring'
+import { betDisplayResult } from '@/lib/scoring'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -191,9 +191,7 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const timeStr = matchDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
   const roundStr = match.round ? translateRound(match.round) : null
 
-  const userResult = isFinished && userBet && match.actualScore && userBet.betResult && userBet.points !== null
-    ? { result: userBet.betResult, points: userBet.points + (userBet.teamBonusPick ?? 0) }
-    : null
+  const userResult = isFinished && userBet && match.actualScore ? betDisplayResult(userBet) : null
 
   const matchBetsAll = allBets.filter(b => b.matchId === match.id && b.userId !== HIDDEN_USER_ID)
   const msToStart = new Date(match.matchStartTime).getTime() - Date.now()

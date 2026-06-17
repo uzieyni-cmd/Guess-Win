@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { ArrowRight, Download, Loader2, Users, Zap } from 'lucide-react'
 import { Match, Bet, User } from '@/types'
 import { translateRound } from '@/components/tournament/MatchCard'
+import { betDisplayResult } from '@/lib/scoring'
 import { useCountdown } from '@/hooks/useCountdown'
 import { HIDDEN_USER_ID } from '@/lib/constants'
 
@@ -252,9 +253,7 @@ function ParticipantsPanel({ participants, matchBets, match, jokerUserIds, curre
     const { utils, writeFile } = await import('xlsx')
     const rows = participants.map(p => {
       const bet    = matchBets.find(b => b.userId === p.id) ?? null
-      const result = bet?.points !== null && bet?.betResult
-        ? { result: bet.betResult, points: bet.points ?? 0 }
-        : null
+      const result = bet ? betDisplayResult(bet) : null
       return {
         'שם':        p.displayName,
         'ניחוש':     bet ? `${bet.predictedScore.home}–${bet.predictedScore.away}` : 'לא ניחש',
@@ -292,9 +291,7 @@ function ParticipantsPanel({ participants, matchBets, match, jokerUserIds, curre
           const bet    = matchBets.find(b => b.userId === p.id) ?? null
           const isMe   = p.id === currentUserId
           const hasJoker = jokerUserIds.has(p.id)
-          const result = bet?.points !== null && bet?.betResult
-            ? { result: bet.betResult, points: (bet.points ?? 0) + (bet.teamBonusPick ?? 0) }
-            : null
+          const result = bet ? betDisplayResult(bet) : null
           const showBet = isMe || isLocked
 
           return (

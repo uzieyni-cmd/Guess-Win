@@ -4,7 +4,7 @@ import { User } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { useAuth } from '@/context/AuthContext'
-import { calculateScore } from '@/lib/scoring'
+import { betDisplayResult } from '@/lib/scoring'
 import { PointsBadge } from '@/components/shared/PointsBadge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,7 +21,7 @@ export default function PersonalPage() {
       .filter((b) => b.userId === currentUser.id && b.tournamentId === activeTournament.id)
       .map((bet) => {
         const match = matchMap.get(bet.matchId)!
-        const result = match?.actualScore ? calculateScore(bet, match) : null
+        const result = match?.actualScore ? betDisplayResult(bet) : null
         return { bet, match, result }
       })
       .filter((x) => x.match)

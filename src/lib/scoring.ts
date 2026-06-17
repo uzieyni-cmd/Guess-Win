@@ -6,6 +6,12 @@ export function getMatchOutcome(score: Score): 'home' | 'away' | 'draw' {
   return 'draw'
 }
 
+// הניקוד שמוצג למשתמש — לוקח מה-DB (כולל מדורגת וג'וקר)
+export function betDisplayResult(bet: { points: number | null; betResult: string | null; teamBonusPick?: number }): { result: ScoreResult; points: number } | null {
+  if (!bet.betResult || bet.points === null) return null
+  return { result: bet.betResult as ScoreResult, points: bet.points + (bet.teamBonusPick ?? 0) }
+}
+
 export function calculateScore(bet: Bet, match: Match): BetResult {
   if (!match.actualScore) {
     return { bet, match, result: 'miss', points: 0 }
