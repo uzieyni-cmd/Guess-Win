@@ -35,7 +35,8 @@ export default function MatchesPage() {
           ? realMatches.filter(m => m.status !== 'finished')
           : realMatches.filter(m => m.status === 'finished'))
       : realMatches
-    const dir = hideFinished ? 1 : -1
+    const showingFinished = showFilterToggle ? !hideFinished : (finishedCount > 0 && upcomingCount === 0)
+    const dir = showingFinished ? -1 : 1
     return [...filtered].sort((a, b) =>
       dir * (new Date(a.matchStartTime).getTime() - new Date(b.matchStartTime).getTime())
     )
