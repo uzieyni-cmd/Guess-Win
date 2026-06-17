@@ -191,8 +191,8 @@ export function MatchCard({ match, userBet, allBets, participants }: Props) {
   const timeStr = matchDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
   const roundStr = match.round ? translateRound(match.round) : null
 
-  const userResult = isFinished && userBet && match.actualScore
-    ? calculateScore(userBet, match)
+  const userResult = isFinished && userBet && match.actualScore && userBet.betResult && userBet.points !== null
+    ? { result: userBet.betResult, points: userBet.points + (userBet.teamBonusPick ?? 0) }
     : null
 
   const matchBetsAll = allBets.filter(b => b.matchId === match.id && b.userId !== HIDDEN_USER_ID)
