@@ -293,7 +293,7 @@ function ParticipantsPanel({ participants, matchBets, match, jokerUserIds, curre
           const isMe   = p.id === currentUserId
           const hasJoker = jokerUserIds.has(p.id)
           const result = bet?.points !== null && bet?.betResult
-            ? { result: bet.betResult, points: bet.points ?? 0 }
+            ? { result: bet.betResult, points: (bet.points ?? 0) + (bet.teamBonusPick ?? 0) }
             : null
           const showBet = isMe || isLocked
 
