@@ -14,14 +14,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const url = new URL(req.url)
+  const backfill = url.searchParams.get('backfill') === 'true'
+
   const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
 
-  const { data: matches, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('matches')
     .select('api_fixture_id, tournament_id')
     .eq('status', 'finished')
     .not('api_fixture_id', 'is', null)
-    .gte('match_start_time', threeDaysAgo)
+
+  if (!backfill) query = query.gte('match_start_time', threeDaysAgo)
+
+  const { data: matches, error } = await query
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!matches?.length) return NextResponse.json({ synced: 0 })
@@ -34,11 +40,12 @@ export async function GET(req: Request) {
     try {
       const events = await fetchFixtureEvents(match.api_fixture_id as number)
 
-      // מחק אירועים ישנים של המשחק הזה
+      // מחק אירועים ישנים של המשחק הזה בטורניר הזה בלבד
       await supabaseAdmin
         .from('fixture_events')
         .delete()
         .eq('api_fixture_id', match.api_fixture_id)
+        .eq('tournament_id', match.tournament_id)
 
       if (events.length > 0) {
         const rows = events.map(e => ({
