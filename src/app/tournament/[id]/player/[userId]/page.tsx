@@ -141,7 +141,8 @@ export default function PlayerDetailPage() {
 
                     <div className="flex items-center gap-1.5">
                       <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                        {base > 0 && <span>{base} ניחוש</span>}
+                        {row.betResult === 'exact' && <span>בול</span>}
+                        {row.betResult === 'outcome' && <span>כיוון</span>}
                         {teamBonus > 0 && <span>+{teamBonus} מדורגת</span>}
                       </div>
                       {row.betResult && (
