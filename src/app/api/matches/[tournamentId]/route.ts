@@ -19,7 +19,7 @@ const COLS =
   'match_start_time,status,actual_home_score,actual_away_score,api_fixture_id,round,elapsed_minutes,match_period,' +
   'odds_home,odds_draw,odds_away'
 
-const WINDOW_FUTURE = 30  // ימים קדימה לחלון הראשוני
+const WINDOW_FUTURE = 60  // ימים קדימה לחלון הראשוני
 const PAGE_SIZE     = 20  // גודל דף infinite scroll
 
 export async function GET(
