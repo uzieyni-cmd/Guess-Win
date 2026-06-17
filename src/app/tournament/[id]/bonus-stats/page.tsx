@@ -14,6 +14,7 @@ interface BonusStats {
   ownGoals: number
   topScorers: { name: string; team: string; photo: string; goals: number }[]
   matchCount: number
+  lastSyncedAt: string | null
 }
 
 const TOTAL_MATCHES = 104
@@ -52,13 +53,18 @@ export default function BonusStatsPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-1">
         <Gift className="h-5 w-5 text-primary" />
         <h2 className="font-suez text-xl text-foreground">סטטיסטיקת בונוסים</h2>
         <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
           {stats.matchCount} משחקים שהסתיימו
         </span>
       </div>
+      {stats.lastSyncedAt && (
+        <p className="text-[11px] text-muted-foreground mb-4">
+          עודכן לאחרונה: {new Date(stats.lastSyncedAt).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-3 mb-4 stagger">
         {cards.map((item) => (

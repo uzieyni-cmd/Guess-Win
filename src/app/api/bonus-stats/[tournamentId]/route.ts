@@ -29,7 +29,7 @@ export async function GET(
     // אירועים מה-DB (מסונכרן על ידי /api/cron/sync-events)
     const { data: events } = await supabaseAdmin
       .from('fixture_events')
-      .select('type, detail, player_id, player_name, team_name')
+      .select('type, detail, player_id, player_name, team_name, synced_at')
       .eq('tournament_id', tournamentId)
 
     let yellowCards = 0
@@ -71,8 +71,13 @@ export async function GET(
         goals: s.goals,
       }))
 
+    const lastSyncedAt = (events ?? []).reduce<string | null>((max, e) => {
+      if (!max || e.synced_at > max) return e.synced_at
+      return max
+    }, null)
+
     return NextResponse.json(
-      { totalGoals, yellowCards, redCards, penalties, ownGoals, topScorers, matchCount },
+      { totalGoals, yellowCards, redCards, penalties, ownGoals, topScorers, matchCount, lastSyncedAt },
       { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
     )
   } catch (e) {
