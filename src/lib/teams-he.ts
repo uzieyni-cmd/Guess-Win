@@ -293,6 +293,7 @@ export const TEAMS_HE: Record<string, string> = {
   'Denmark':           'דנמרק',
   'Serbia':            'סרביה',
   'Czech Republic':    'צ׳כיה',
+  'Czechia':           'צ׳כיה',
   'Austria':           'אוסטריה',
   'Turkey':            'טורקיה',
   'Türkiye':           'טורקיה',
