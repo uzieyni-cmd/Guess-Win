@@ -95,12 +95,12 @@ export default function PlayerDetailPage() {
                 >
                   {/* קבוצות + תוצאה — חוץ משמאל, בית מימין */}
                   <div className="flex items-center gap-2 mb-3">
-                    {/* חוץ — שמאל */}
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    {/* חוץ — שמאל: שם קרוב למרכז, דגל בקצה */}
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end flex-row-reverse">
                       {row.awayTeam.flag && (
                         <Image src={row.awayTeam.flag} alt={row.awayTeam.name} width={24} height={16} unoptimized className="rounded-sm shrink-0 object-cover" />
                       )}
-                      <span className="text-xs font-semibold text-foreground truncate">{row.awayTeam.name}</span>
+                      <span className="text-xs font-semibold text-foreground truncate text-left">{row.awayTeam.name}</span>
                     </div>
 
                     {/* ניקוד — מרכז */}
@@ -111,12 +111,12 @@ export default function PlayerDetailPage() {
                       <span className="text-[10px] text-muted-foreground">תוצאה</span>
                     </div>
 
-                    {/* בית — ימין */}
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                      <span className="text-xs font-semibold text-foreground truncate text-right">{row.homeTeam.name}</span>
+                    {/* בית — ימין: דגל קרוב למרכז, שם בקצה */}
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-row-reverse justify-end">
                       {row.homeTeam.flag && (
                         <Image src={row.homeTeam.flag} alt={row.homeTeam.name} width={24} height={16} unoptimized className="rounded-sm shrink-0 object-cover" />
                       )}
+                      <span className="text-xs font-semibold text-foreground truncate text-right">{row.homeTeam.name}</span>
                     </div>
                   </div>
 
