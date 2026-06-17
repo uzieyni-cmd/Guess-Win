@@ -105,8 +105,8 @@ export default function PlayerDetailPage() {
 
                     {/* ניקוד — מרכז */}
                     <div className="flex flex-col items-center gap-0.5 shrink-0 min-w-[56px]">
-                      <span className="font-mono font-black text-base tabular-nums text-foreground">
-                        {row.actualScore.home}:{row.actualScore.away}
+                      <span className="font-mono font-black text-base tabular-nums text-foreground" dir="ltr">
+                        {row.actualScore.away}:{row.actualScore.home}
                       </span>
                       <span className="text-[10px] text-muted-foreground">תוצאה</span>
                     </div>
