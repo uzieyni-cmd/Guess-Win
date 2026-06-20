@@ -3,7 +3,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { requireAdmin } from '@/lib/auth-server'
-import { scoreFinishedMatch } from '@/lib/bet-scoring'
+import { scoreMatch } from '@/lib/bet-scoring'
 
 /**
  * Rescore ALL finished matches in a tournament.
@@ -29,7 +29,7 @@ export async function rescoreTournamentBets(
 
   let scored = 0
   for (const match of matches as MatchRow[]) {
-    await scoreFinishedMatch(match.id, { home: match.actual_home_score, away: match.actual_away_score })
+    await scoreMatch(match.id, { home: match.actual_home_score, away: match.actual_away_score })
     scored++
   }
 
@@ -128,7 +128,7 @@ export async function setActualScoreAction(
   if (matchErr) return { ok: false, error: matchErr.message }
 
   // 2. חשב ושמור ניקוד מלא (ניקוד בסיס, ג'וקר, בונוס יחיד, בונוס דרגים)
-  await scoreFinishedMatch(matchId, { home, away })
+  await scoreMatch(matchId, { home, away })
 
   return { ok: true }
 }

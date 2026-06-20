@@ -8,7 +8,7 @@ import { ENGLISH_TO_HEBREW_TEAM } from './team-names'
  * אידמפוטנטית (reset-then-recompute) — נקראת גם במהלך משחק חי (בכל סנכרון)
  * וגם כשהוא מסתיים, כך שאין הבדל בין ניקוד "חי" לניקוד סופי.
  */
-export async function scoreFinishedMatch(
+export async function scoreMatch(
   matchId: string,
   actualScore: { home: number; away: number }
 ): Promise<void> {

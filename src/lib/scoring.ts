@@ -8,8 +8,13 @@ export function getMatchOutcome(score: Score): 'home' | 'away' | 'draw' {
 
 // הניקוד שמוצג למשתמש — לוקח מה-DB (כולל מדורגת וג'וקר)
 export function betDisplayResult(bet: { points: number | null; betResult: string | null; teamBonusPick?: number }): { result: ScoreResult; points: number } | null {
+  const bonus = bet.teamBonusPick ?? 0
+  if (!bet.betResult && bet.points === null) {
+    if (bonus > 0) return { result: 'miss', points: bonus }
+    return null
+  }
   if (!bet.betResult || bet.points === null) return null
-  return { result: bet.betResult as ScoreResult, points: bet.points + (bet.teamBonusPick ?? 0) }
+  return { result: bet.betResult as ScoreResult, points: bet.points + bonus }
 }
 
 export function calculateScore(bet: Bet, match: Match): BetResult {

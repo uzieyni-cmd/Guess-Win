@@ -2,7 +2,7 @@
 // מסנכרן תוצאות של משחקים חיים כל 30 שניות
 
 import { createClient } from '@supabase/supabase-js'
-import { scoreFinishedMatch } from './bet-scoring'
+import { scoreMatch } from './bet-scoring'
 
 let started = false
 
@@ -86,7 +86,7 @@ export function startSyncCron() {
           if (dbMatch && isFinished && dbMatch.status !== 'finished') {
             const home = f.score.fulltime.home ?? f.goals.home ?? 0
             const away = f.score.fulltime.away ?? f.goals.away ?? 0
-            await scoreFinishedMatch(dbMatch.id, { home, away })
+            await scoreMatch(dbMatch.id, { home, away })
           }
         }
       }

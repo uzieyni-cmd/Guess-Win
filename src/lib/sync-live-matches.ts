@@ -1,6 +1,6 @@
 // SEC-04: מייבא supabaseAdmin מ-lib/supabase-admin במקום ליצור instance חדש בכל קריאה.
 import { supabaseAdmin } from './supabase-admin'
-import { scoreFinishedMatch } from './bet-scoring'
+import { scoreMatch } from './bet-scoring'
 
 // PERF-06: rate limit ב-DB — מונע sync כפול כשיש מספר serverless instances
 const SYNC_INTERVAL_MS = 55_000
@@ -118,9 +118,9 @@ export async function syncLiveMatches(opts: {
         // כך שלא "מאפסים" בטעות את הניקוד של כולם ל-0:0 בטיק המעבר ל-finished
         const home = f.score.fulltime.home ?? f.goals.home ?? dbMatch.actual_home_score ?? 0
         const away = f.score.fulltime.away ?? f.goals.away ?? dbMatch.actual_away_score ?? 0
-        await scoreFinishedMatch(dbMatch.id, { home, away })
+        await scoreMatch(dbMatch.id, { home, away })
       } else if (dbMatch && isLive && f.goals.home !== null && f.goals.away !== null) {
-        await scoreFinishedMatch(dbMatch.id, { home: f.goals.home, away: f.goals.away })
+        await scoreMatch(dbMatch.id, { home: f.goals.home, away: f.goals.away })
       }
     }
   }
@@ -150,7 +150,7 @@ export async function syncLiveMatches(opts: {
 
     const { data: finishedUnscored } = await finishedQuery
     for (const m of finishedUnscored ?? []) {
-      await scoreFinishedMatch(m.id, { home: m.actual_home_score!, away: m.actual_away_score! })
+      await scoreMatch(m.id, { home: m.actual_home_score!, away: m.actual_away_score! })
     }
   }
 

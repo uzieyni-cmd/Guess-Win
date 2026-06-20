@@ -3,7 +3,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth-server'
 import { fetchFixtures, fetchFixtureById, fetchOdds, mapFixtureStatus } from '@/lib/api-football'
-import { scoreFinishedMatch } from '@/lib/bet-scoring'
+import { scoreMatch } from '@/lib/bet-scoring'
 
 // סנכרון משחקים מ-API-Football לתחרות קיימת
 // fromDate (YYYY-MM-DD) — אופציונלי: אם מוגדר, שולף רק משחקים מתאריך זה והלאה (לcron יומי)
@@ -107,7 +107,7 @@ export async function refreshMatchResult(
 
     if (status === 'finished' && homeScore !== null && awayScore !== null && updated?.length) {
       for (const row of updated) {
-        await scoreFinishedMatch(row.id, { home: homeScore, away: awayScore })
+        await scoreMatch(row.id, { home: homeScore, away: awayScore })
       }
     }
 
