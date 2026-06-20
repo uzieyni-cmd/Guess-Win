@@ -7,6 +7,9 @@ import { ENGLISH_TO_HEBREW_TEAM } from './team-names'
  * בונוס ניחוש מדויק יחידני (+5, אחרי הכפלת ג'וקר), ובונוס נבחרת מדורגת.
  * אידמפוטנטית (reset-then-recompute) — נקראת גם במהלך משחק חי (בכל סנכרון)
  * וגם כשהוא מסתיים, כך שאין הבדל בין ניקוד "חי" לניקוד סופי.
+ *
+ * כל ה-fields (points, result, team_bonus_pick) נכתבים ב-write אחד per bet
+ * כדי למנוע אירועי Realtime ביניים שגורמים לרעידת ניקוד בצד הלקוח.
  */
 export async function scoreMatch(
   matchId: string,
@@ -28,8 +31,12 @@ export async function scoreMatch(
     (jokerPicksRaw ?? []).map((j) => (j as { user_id: string }).user_id)
   )
 
+  // ── חשב בונוס נבחרת מדורגת מראש (ללא כתיבה ל-DB) ──────────────
+  const teamBonusMap = await computeTeamBonusMap(matchId, actualScore, jokerUserIds)
+
   if (!bets?.length) {
-    await awardTeamBonusForMatch(matchId, actualScore, jokerUserIds)
+    // אין ניחושים רגילים — רק בונוס נבחרת (insert/update נפרד)
+    await applyTeamBonusOnly(matchId, actualScore, teamBonusMap)
     return
   }
 
@@ -56,85 +63,138 @@ export async function scoreMatch(
   const exactOnes = scored.filter(b => b.result === 'exact')
   if (exactOnes.length === 1) exactOnes[0].points += 5
 
-  // ── Step D: כתוב ניקוד סופי ──────────────────────────────────
+  // ── Step D: כתוב ניקוד סופי + team_bonus_pick ב-write אחד ──────
+  // מיזוג team_bonus_pick לאותו update מונע שני אירועי Realtime
+  // (reset ואז award) שגרמו לרעידת ניקוד בצד הלקוח.
+  const betUserIds = new Set(scored.map(b => b.userId))
   for (const b of scored) {
     await supabaseAdmin
       .from('bets')
-      .update({ points: b.points, result: b.result })
+      .update({ points: b.points, result: b.result, team_bonus_pick: teamBonusMap.get(b.userId) ?? 0 })
       .eq('id', b.id)
   }
 
-  // ── Step E: בונוס נבחרת מדורגת (+2, או +4 עם ג'וקר על המשחק) ──
-  await awardTeamBonusForMatch(matchId, actualScore, jokerUserIds)
+  // ── Step E: בונוס נבחרת למשתמשים ללא ניחוש רגיל ──────────────
+  // (למשל מי שבחר נבחרת מדורגת אך לא הגיש ניחוש למשחק זה)
+  for (const [userId, bonus] of teamBonusMap) {
+    if (betUserIds.has(userId)) continue // כבר טופל ב-Step D
+    // insert or update bet with team_bonus_pick only
+    const { data: existing } = await supabaseAdmin
+      .from('bets')
+      .select('id')
+      .eq('match_id', matchId)
+      .eq('user_id', userId)
+      .limit(1)
+    const existingId = (existing as { id: string }[] | null)?.[0]?.id
+    if (existingId) {
+      await supabaseAdmin.from('bets').update({ team_bonus_pick: bonus }).eq('id', existingId)
+    } else {
+      const { data: match } = await supabaseAdmin
+        .from('matches')
+        .select('tournament_id')
+        .eq('id', matchId)
+        .single()
+      if (match) {
+        await supabaseAdmin.from('bets').insert({
+          user_id: userId,
+          match_id: matchId,
+          tournament_id: (match as { tournament_id: string }).tournament_id,
+          predicted_home: 0,
+          predicted_away: 0,
+          team_bonus_pick: bonus,
+        })
+      }
+    }
+  }
 }
 
 /**
- * בונוס +2 (או +4 עם ג'וקר) לכל מי שבחר את הקבוצה המנצחת כ"נבחרת מדורגת".
- * נשמר על bets.team_bonus_pick — מאופס ומחושב מחדש בכל קריאה (idempotent).
+ * מחשב את סכום בונוס הנבחרת המדורגת לכל משתמש — ללא כתיבה ל-DB.
+ * מחזיר Map<userId, bonusAmount> רק עבור מי שזכאי לבונוס חיובי.
+ * תיקו → Map ריקה.
  */
-async function awardTeamBonusForMatch(
+async function computeTeamBonusMap(
   matchId: string,
   actualScore: { home: number; away: number },
   jokerUserIds: Set<string>
-): Promise<void> {
-  // איפוס — מאפשר להריץ את הפונקציה שוב על אותו משחק בלי הצטברות
-  await supabaseAdmin.from('bets').update({ team_bonus_pick: 0 }).eq('match_id', matchId)
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>()
 
-  if (actualScore.home === actualScore.away) return // תיקו — אין מנצח
+  if (actualScore.home === actualScore.away) return result // תיקו — אין מנצח
 
   const { data: match } = await supabaseAdmin
     .from('matches')
     .select('tournament_id, home_team_name, away_team_name')
     .eq('id', matchId)
     .single()
-  if (!match) return
+  if (!match) return result
 
   const m = match as { tournament_id: string; home_team_name: string; away_team_name: string }
   const winnerEn = actualScore.home > actualScore.away ? m.home_team_name : m.away_team_name
   const winnerHe = ENGLISH_TO_HEBREW_TEAM[winnerEn]
-  if (!winnerHe) return
+  if (!winnerHe) return result
 
-  // כל שאלות "נבחרת מדורגת" בטורניר
   const { data: questions } = await supabaseAdmin
     .from('bonus_questions')
     .select('id')
     .eq('tournament_id', m.tournament_id)
     .eq('type', 'team_pick')
-  if (!questions?.length) return
+  if (!questions?.length) return result
 
-  // כל מי שבחר את הקבוצה המנצחת
   const { data: picks } = await supabaseAdmin
     .from('bonus_picks')
     .select('user_id')
     .in('bonus_question_id', (questions as { id: string }[]).map(q => q.id))
     .eq('pick', winnerHe)
-  if (!picks?.length) return
+  if (!picks?.length) return result
 
-  const userIds = (picks as { user_id: string }[]).map(p => p.user_id)
+  for (const p of picks as { user_id: string }[]) {
+    result.set(p.user_id, jokerUserIds.has(p.user_id) ? 4 : 2)
+  }
+  return result
+}
 
-  const { data: existingBets } = await supabaseAdmin
-    .from('bets')
-    .select('id, user_id')
-    .eq('match_id', matchId)
-    .in('user_id', userIds)
+/**
+ * מחיל בונוס נבחרת מדורגת למשתמשים שאין להם ניחוש רגיל על המשחק.
+ * נקרא רק כשאין bets כלל (מקרה קצה נדיר).
+ */
+async function applyTeamBonusOnly(
+  matchId: string,
+  actualScore: { home: number; away: number },
+  teamBonusMap: Map<string, number>
+): Promise<void> {
+  if (!teamBonusMap.size) {
+    // תיקו או אין זוכים — אפס את כל הבונוסים הקיימים
+    await supabaseAdmin.from('bets').update({ team_bonus_pick: 0 }).eq('match_id', matchId)
+    return
+  }
 
-  const betIdByUser = new Map(
-    (existingBets ?? []).map((b) => {
-      const row = b as { id: string; user_id: string }
-      return [row.user_id, row.id] as const
-    })
-  )
+  const { data: match } = await supabaseAdmin
+    .from('matches')
+    .select('tournament_id')
+    .eq('id', matchId)
+    .single()
+  if (!match) return
+  const tournamentId = (match as { tournament_id: string }).tournament_id
 
-  for (const userId of userIds) {
-    const bonus = jokerUserIds.has(userId) ? 4 : 2
-    const existingId = betIdByUser.get(userId)
+  // אפס קודם — פעולה אחת, ואחריה award
+  await supabaseAdmin.from('bets').update({ team_bonus_pick: 0 }).eq('match_id', matchId)
+
+  for (const [userId, bonus] of teamBonusMap) {
+    const { data: existing } = await supabaseAdmin
+      .from('bets')
+      .select('id')
+      .eq('match_id', matchId)
+      .eq('user_id', userId)
+      .limit(1)
+    const existingId = (existing as { id: string }[] | null)?.[0]?.id
     if (existingId) {
       await supabaseAdmin.from('bets').update({ team_bonus_pick: bonus }).eq('id', existingId)
     } else {
       await supabaseAdmin.from('bets').insert({
         user_id: userId,
         match_id: matchId,
-        tournament_id: m.tournament_id,
+        tournament_id: tournamentId,
         predicted_home: 0,
         predicted_away: 0,
         team_bonus_pick: bonus,
