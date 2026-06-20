@@ -14,7 +14,7 @@ export async function GET(
 
   const { data: matches, error: matchErr } = await supabaseAdmin
     .from('matches')
-    .select('status, actual_home_score, actual_away_score, home_team_id, away_team_id, home_team_name, away_team_name, home_team_flag, away_team_flag')
+    .select('status, actual_home_score, actual_away_score, home_team_id, away_team_id, home_team_name, away_team_name, home_team_flag, away_team_flag, tournament_id')
     .eq('api_fixture_id', id)
     .limit(1)
 
@@ -26,6 +26,7 @@ export async function GET(
     .from('fixture_events')
     .select('type, detail, player_name, team_id, elapsed')
     .eq('api_fixture_id', id)
+    .eq('tournament_id', (match as { tournament_id: string }).tournament_id)
     .order('elapsed', { ascending: true })
 
   const m = match as {
