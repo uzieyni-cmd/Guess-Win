@@ -26,7 +26,6 @@ export async function GET(
     .from('fixture_events')
     .select('type, detail, player_name, team_id, elapsed')
     .eq('api_fixture_id', id)
-    .eq('tournament_id', (match as { tournament_id: string }).tournament_id)
     .order('elapsed', { ascending: true })
 
   const m = match as {
