@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
-import { syncLiveMatches } from '@/lib/sync-live-matches'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -17,9 +15,6 @@ export async function GET(
   { params }: { params: Promise<{ tournamentId: string }> }
 ) {
   const { tournamentId } = await params
-
-  // H5: סנכרון רץ אחרי ה-response — לא חוסם את הלקוח
-  after(() => syncLiveMatches({ tournamentId }))
 
   // החזר משחקים חיים + כאלה שסיימו ב-3 השעות האחרונות (כדי שהלקוח יקבל תוצאות סופיות)
   const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
