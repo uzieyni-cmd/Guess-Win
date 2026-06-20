@@ -32,20 +32,27 @@ export async function GET(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!matches?.length) return NextResponse.json({ synced: 0 })
 
+  // dedup — אותו fixture יכול להופיע בכמה טורנירים; מסנכרנים פעם אחת בלבד
+  const seenFixtures = new Set<number>()
+  const uniqueMatches = (matches as { api_fixture_id: number; tournament_id: string }[]).filter(m => {
+    if (seenFixtures.has(m.api_fixture_id)) return false
+    seenFixtures.add(m.api_fixture_id)
+    return true
+  })
+
   let synced = 0
   let failed = 0
   const errors: string[] = []
 
-  for (const match of matches) {
+  for (const match of uniqueMatches) {
     try {
       const events = await fetchFixtureEvents(match.api_fixture_id as number)
 
-      // מחק אירועים ישנים של המשחק הזה בטורניר הזה בלבד
+      // מחק לפי api_fixture_id בלבד — שומר שורה אחת לכל fixture
       await supabaseAdmin
         .from('fixture_events')
         .delete()
         .eq('api_fixture_id', match.api_fixture_id)
-        .eq('tournament_id', match.tournament_id)
 
       if (events.length > 0) {
         const rows = events.map(e => ({
