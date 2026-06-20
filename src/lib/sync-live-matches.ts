@@ -48,7 +48,7 @@ export async function syncLiveMatches(opts: {
   // (stuck matches have match_start_time older than 3h and never got synced to 'finished')
   let query = supabaseAdmin
     .from('matches')
-    .select('id, api_fixture_id, status, actual_home_score, actual_away_score')
+    .select('id, api_fixture_id, tournament_id, status, actual_home_score, actual_away_score')
     .neq('status', 'finished')
     .not('api_fixture_id', 'is', null)
     .lte('match_start_time', windowEnd)
@@ -121,6 +121,41 @@ export async function syncLiveMatches(opts: {
         await scoreMatch(dbMatch.id, { home, away })
       } else if (dbMatch && isLive && f.goals.home !== null && f.goals.away !== null) {
         await scoreMatch(dbMatch.id, { home: f.goals.home, away: f.goals.away })
+      }
+
+      // סנכרון events למשחקים חיים — delete + insert בכל טיק
+      if (isLive && dbMatch) {
+        const evRes = await fetch(
+          `https://v3.football.api-sports.io/fixtures/events?fixture=${f.fixture.id}`,
+          { headers: { 'x-apisports-key': apiKey }, cache: 'no-store' }
+        )
+        if (evRes.ok) {
+          const evJson = await evRes.json()
+          const events: {
+            time: { elapsed: number }
+            team: { id: number; name: string }
+            player: { id: number | null; name: string | null }
+            type: string
+            detail: string
+          }[] = evJson.response ?? []
+
+          await supabaseAdmin.from('fixture_events').delete().eq('api_fixture_id', f.fixture.id)
+          if (events.length > 0) {
+            await supabaseAdmin.from('fixture_events').insert(
+              events.map(e => ({
+                api_fixture_id: f.fixture.id,
+                tournament_id:  (dbMatch as unknown as { tournament_id: string }).tournament_id,
+                type:           e.type,
+                detail:         e.detail,
+                player_id:      e.player.id ?? null,
+                player_name:    e.player.name ?? null,
+                team_id:        e.team.id ?? null,
+                team_name:      e.team.name ?? null,
+                elapsed:        e.time.elapsed ?? null,
+              }))
+            )
+          }
+        }
       }
     }
   }
