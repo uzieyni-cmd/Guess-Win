@@ -119,8 +119,10 @@ export async function syncLiveMatches(opts: {
         const home = f.score.fulltime.home ?? f.goals.home ?? dbMatch.actual_home_score ?? 0
         const away = f.score.fulltime.away ?? f.goals.away ?? dbMatch.actual_away_score ?? 0
         await scoreMatch(dbMatch.id, { home, away })
-      } else if (dbMatch && isLive && f.goals.home !== null && f.goals.away !== null) {
-        await scoreMatch(dbMatch.id, { home: f.goals.home, away: f.goals.away })
+      } else if (dbMatch && isLive) {
+        const home = f.goals.home ?? (dbMatch as unknown as { actual_home_score: number | null }).actual_home_score ?? 0
+        const away = f.goals.away ?? (dbMatch as unknown as { actual_away_score: number | null }).actual_away_score ?? 0
+        await scoreMatch(dbMatch.id, { home, away })
       }
 
       // סנכרון events למשחקים חיים — delete + insert בכל טיק
