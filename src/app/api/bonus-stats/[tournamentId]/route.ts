@@ -26,11 +26,18 @@ export async function GET(
       0
     )
 
-    // אירועים מה-DB (מסונכרן על ידי /api/cron/sync-events)
-    const { data: events } = await supabaseAdmin
-      .from('fixture_events')
-      .select('type, detail, player_id, player_name, team_name, synced_at')
-      .eq('tournament_id', tournamentId)
+    // אירועים מה-DB — מסונן לפי api_fixture_id של הטורניר
+    // (לא לפי tournament_id — אחרי dedup יש שורה אחת לכל אירוע ללא קשר לטורניר)
+    const fixtureIds = (matches ?? [])
+      .map(m => m.api_fixture_id)
+      .filter((id): id is number => id !== null)
+
+    const { data: events } = fixtureIds.length
+      ? await supabaseAdmin
+          .from('fixture_events')
+          .select('type, detail, player_id, player_name, team_name, synced_at')
+          .in('api_fixture_id', fixtureIds)
+      : { data: [] }
 
     let yellowCards = 0
     let redCards = 0
