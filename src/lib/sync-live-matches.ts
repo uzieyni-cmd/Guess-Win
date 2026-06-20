@@ -58,8 +58,16 @@ export async function syncLiveMatches(opts: {
     query = query.eq('tournament_id', opts.tournamentId)
   }
 
-  const { data: matches } = await query
-  if (!matches?.length) return 0
+  const { data: matchesRaw } = await query
+  if (!matchesRaw?.length) return 0
+
+  // dedup by api_fixture_id — אותו משחק יכול להופיע בכמה טורנירים
+  const seen = new Set<number>()
+  const matches = matchesRaw.filter((m: { api_fixture_id: number }) => {
+    if (seen.has(m.api_fixture_id)) return false
+    seen.add(m.api_fixture_id)
+    return true
+  })
 
   const BATCH = 20
   let synced = 0
