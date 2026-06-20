@@ -12,19 +12,33 @@ export async function GET(
   const id = Number(fixtureId)
   if (!id) return NextResponse.json({ error: 'invalid id' }, { status: 400 })
 
-  const { data: match } = await supabaseAdmin
+  const { data: matches, error: matchErr } = await supabaseAdmin
     .from('matches')
-    .select('status, actual_home_score, actual_away_score, home_team_name, away_team_name, home_team_flag, away_team_flag, home_team_id, away_team_id')
+    .select('status, actual_home_score, actual_away_score, home_team_id, away_team_id, home_team_name, away_team_name, home_team_flag, away_team_flag')
     .eq('api_fixture_id', id)
-    .single()
+    .limit(1)
 
+  if (matchErr) return NextResponse.json({ error: matchErr.message }, { status: 500 })
+  const match = matches?.[0]
   if (!match) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
   const { data: eventsRaw } = await supabaseAdmin
     .from('fixture_events')
-    .select('type, detail, player_id, player_name, team_id, team_name, elapsed')
+    .select('type, detail, player_name, team_id, elapsed')
     .eq('api_fixture_id', id)
     .order('elapsed', { ascending: true })
+
+  const m = match as {
+    status: string
+    actual_home_score: number | null
+    actual_away_score: number | null
+    home_team_id: number | null
+    away_team_id: number | null
+    home_team_name: string
+    away_team_name: string
+    home_team_flag: string | null
+    away_team_flag: string | null
+  }
 
   const events = (eventsRaw ?? [])
     .filter((e: { type: string }) => e.type === 'Goal' || e.type === 'Card')
@@ -36,22 +50,13 @@ export async function GET(
       detail: e.detail,
     }))
 
-  const m = match as {
-    status: string
-    actual_home_score: number | null
-    actual_away_score: number | null
-    home_team_name: string
-    away_team_name: string
-    home_team_flag: string | null
-    away_team_flag: string | null
-    home_team_id: number | null
-    away_team_id: number | null
-  }
-
   return NextResponse.json({
-    status: { short: m.status },
+    status: { short: m.status, elapsed: null },
     goals:  { home: m.actual_home_score, away: m.actual_away_score },
-    score:  { fulltime: { home: m.actual_home_score, away: m.actual_away_score } },
+    score:  {
+      halftime: { home: null, away: null },
+      fulltime: { home: m.actual_home_score, away: m.actual_away_score },
+    },
     teams:  {
       home: { id: m.home_team_id, name: m.home_team_name, logo: m.home_team_flag },
       away: { id: m.away_team_id, name: m.away_team_name, logo: m.away_team_flag },
