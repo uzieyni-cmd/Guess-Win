@@ -22,11 +22,11 @@ export async function GET(
   const match = matches?.[0]
   if (!match) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
-  const { data: eventsRaw } = await supabaseAdmin
-    .from('fixture_events')
-    .select('type, detail, player_name, player_id, team_id, elapsed, players(heb_name, name)')
+  const { data: eventsRaw } = await (supabaseAdmin as unknown as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
+    .from('vw_fixture_events')
+    .select('type, detail, heb_name, team_id, elapsed')
     .eq('api_fixture_id', id)
-    .order('elapsed', { ascending: true })
+    .order('elapsed', { ascending: true }) as { data: { type: string; detail: string; heb_name: string | null; team_id: number | null; elapsed: number | null }[] | null }
 
   const m = match as {
     status: string
@@ -41,11 +41,11 @@ export async function GET(
   }
 
   const events = (eventsRaw ?? [])
-    .filter((e: { type: string }) => e.type === 'Goal' || e.type === 'Card')
-    .map((e: { type: string; detail: string; player_name: string | null; player_id: number | null; team_id: number | null; elapsed: number | null; players: { heb_name: string | null; name: string | null }[] | null }) => ({
+    .filter(e => e.type === 'Goal' || e.type === 'Card')
+    .map(e => ({
       minute: e.elapsed ?? 0,
       teamId: e.team_id,
-      player: e.players?.[0]?.heb_name ?? e.players?.[0]?.name ?? e.player_name ?? '',
+      player: e.heb_name ?? '',
       type:   e.type,
       detail: e.detail,
     }))
