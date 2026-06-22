@@ -57,6 +57,8 @@ export default function PlayerDetailPage() {
   }, [tournamentId, userId])
 
   const totalPoints = rows.reduce((sum, r) => sum + r.total, 0)
+  const totalBonus  = bonusPicks.reduce((sum, b) => sum + b.pointsAwarded, 0)
+  const grandTotal  = totalPoints + totalBonus
 
   if (loading) return <LoadingState />
   if (error) return <p className="text-center py-16 text-muted-foreground">{error}</p>
@@ -82,7 +84,7 @@ export default function PlayerDetailPage() {
           </div>
           <div>
             <h1 className="font-suez text-lg text-foreground">{player?.displayName ?? 'משתתף'}</h1>
-            <p className="text-xs text-muted-foreground">{rows.length} משחקים עם ניקוד · {totalPoints} נק׳ סה״כ</p>
+            <p className="text-xs text-muted-foreground">{rows.length} משחקים עם ניקוד · {grandTotal} נק׳ סה״כ</p>
           </div>
         </div>
       </div>
