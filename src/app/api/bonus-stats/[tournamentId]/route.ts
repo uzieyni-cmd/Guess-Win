@@ -35,7 +35,7 @@ export async function GET(
     const { data: events } = fixtureIds.length
       ? await supabaseAdmin
           .from('fixture_events')
-          .select('type, detail, player_id, player_name, team_name, synced_at')
+          .select('type, detail, player_id, player_name, team_name, synced_at, players(heb_name, name)')
           .in('api_fixture_id', fixtureIds)
       : { data: [] }
 
@@ -58,8 +58,10 @@ export async function GET(
           if (existing) {
             existing.goals++
           } else {
+            const player = (e as unknown as { players: { heb_name: string | null; name: string | null } | null }).players
+            const displayName = player?.heb_name ?? player?.name ?? e.player_name ?? ''
             scorerStats.set(e.player_id, {
-              name: e.player_name ?? '',
+              name: displayName,
               team: translateTeam(e.team_name ?? ''),
               goals: 1,
             })
