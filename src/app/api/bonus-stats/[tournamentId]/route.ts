@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
 
-export const revalidate = 300 // cache 5 דקות — נתונים מגיעים מ-DB, לא מ-API
+export const dynamic = 'force-dynamic'
 
 export async function GET(
   _req: Request,
