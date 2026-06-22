@@ -42,10 +42,10 @@ export async function GET(
 
   const events = (eventsRaw ?? [])
     .filter((e: { type: string }) => e.type === 'Goal' || e.type === 'Card')
-    .map((e: { type: string; detail: string; player_name: string | null; player_id: number | null; team_id: number | null; elapsed: number | null; players: { heb_name: string | null; name: string | null } | null }) => ({
+    .map((e: { type: string; detail: string; player_name: string | null; player_id: number | null; team_id: number | null; elapsed: number | null; players: { heb_name: string | null; name: string | null }[] | null }) => ({
       minute: e.elapsed ?? 0,
       teamId: e.team_id,
-      player: e.players?.heb_name ?? e.players?.name ?? e.player_name ?? '',
+      player: e.players?.[0]?.heb_name ?? e.players?.[0]?.name ?? e.player_name ?? '',
       type:   e.type,
       detail: e.detail,
     }))
