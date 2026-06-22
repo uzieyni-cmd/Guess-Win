@@ -24,9 +24,9 @@ export async function GET(
 
   const { data: eventsRaw } = await (supabaseAdmin as unknown as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
     .from('vw_fixture_events')
-    .select('type, detail, heb_name, team_id, elapsed')
+    .select('type, detail, heb_name, team_id, team_name, elapsed')
     .eq('api_fixture_id', id)
-    .order('elapsed', { ascending: true }) as { data: { type: string; detail: string; heb_name: string | null; team_id: number | null; elapsed: number | null }[] | null }
+    .order('elapsed', { ascending: true }) as { data: { type: string; detail: string; heb_name: string | null; team_id: number | null; team_name: string | null; elapsed: number | null }[] | null }
 
   const m = match as {
     status: string
@@ -43,11 +43,12 @@ export async function GET(
   const events = (eventsRaw ?? [])
     .filter(e => e.type === 'Goal' || e.type === 'Card')
     .map(e => ({
-      minute: e.elapsed ?? 0,
-      teamId: e.team_id,
-      player: e.heb_name ?? '',
-      type:   e.type,
-      detail: e.detail,
+      minute:   e.elapsed ?? 0,
+      teamId:   e.team_id,
+      teamName: e.team_name,
+      player:   e.heb_name ?? '',
+      type:     e.type,
+      detail:   e.detail,
     }))
 
   return NextResponse.json({

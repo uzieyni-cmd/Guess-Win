@@ -17,7 +17,8 @@ import { HIDDEN_USER_ID } from '@/lib/constants'
 
 interface MatchEvent {
   minute: number
-  teamId: number
+  teamId: number | null
+  teamName: string | null
   player: string
   type: 'Goal' | 'Card'
   detail: string
@@ -30,7 +31,7 @@ interface MatchDetail {
     halftime: { home: number | null; away: number | null }
     fulltime: { home: number | null; away: number | null }
   }
-  teams:  { home: { id: number }; away: { id: number } }
+  teams:  { home: { id: number | null; name: string }; away: { id: number | null; name: string } }
   events: MatchEvent[]
 }
 
@@ -105,8 +106,10 @@ function EventIcon({ type, detail }: { type: string; detail: string }) {
 
 // ── שורת אירוע ────────────────────────────────────────────────────
 
-function EventRow({ event, homeTeamId }: { event: MatchEvent; homeTeamId: number }) {
-  const isHome = event.teamId === homeTeamId
+function EventRow({ event, homeTeamId, homeTeamName }: { event: MatchEvent; homeTeamId: number | null; homeTeamName: string }) {
+  const isHome = (homeTeamId && event.teamId)
+    ? Number(event.teamId) === Number(homeTeamId)
+    : event.teamName === homeTeamName
   return (
     <div className="grid grid-cols-[1fr_52px_1fr] items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-foreground/4 transition-colors">
       {/* שמאל — קבוצת חוץ */}
@@ -130,9 +133,10 @@ function EventRow({ event, homeTeamId }: { event: MatchEvent; homeTeamId: number
 
 // ── ציר אירועים ──────────────────────────────────────────────────
 
-function EventsTimeline({ events, homeTeamId, htScore }: {
+function EventsTimeline({ events, homeTeamId, homeTeamName, htScore }: {
   events: MatchEvent[]
-  homeTeamId: number
+  homeTeamId: number | null
+  homeTeamName: string
   htScore: { home: number | null; away: number | null }
 }) {
   // החדש למעלה — הפוך לפי דקה
@@ -153,7 +157,7 @@ function EventsTimeline({ events, homeTeamId, htScore }: {
     <div className="space-y-0.5" dir="ltr">
       {/* מחצית שנייה תחילה (חדש למעלה) */}
       {secondHalf.map((e, i) => (
-        <EventRow key={`2h-${i}`} event={e} homeTeamId={homeTeamId} />
+        <EventRow key={`2h-${i}`} event={e} homeTeamId={homeTeamId} homeTeamName={homeTeamName} />
       ))}
 
       {/* מפריד מחצית */}
@@ -167,7 +171,7 @@ function EventsTimeline({ events, homeTeamId, htScore }: {
 
       {/* מחצית ראשונה */}
       {firstHalf.map((e, i) => (
-        <EventRow key={`1h-${i}`} event={e} homeTeamId={homeTeamId} />
+        <EventRow key={`1h-${i}`} event={e} homeTeamId={homeTeamId} homeTeamName={homeTeamName} />
       ))}
     </div>
   )
@@ -464,7 +468,8 @@ export default function MatchDetailPage() {
     ...visibleParticipants.filter(p => p.id !== currentUser?.id),
   ]
 
-  const homeTeamId = detail?.teams.home.id ?? 0
+  const homeTeamId   = detail?.teams.home.id ?? null
+  const homeTeamName = detail?.teams.home.name ?? match.homeTeam.name
   const htScore    = detail?.score.halftime ?? { home: null, away: null }
 
   return (
@@ -516,6 +521,7 @@ export default function MatchDetailPage() {
                   <EventsTimeline
                     events={detail.events}
                     homeTeamId={homeTeamId}
+                    homeTeamName={homeTeamName}
                     htScore={htScore}
                   />
                 )}
