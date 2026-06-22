@@ -34,29 +34,10 @@ export async function GET(
 
     const { data: events } = fixtureIds.length
       ? await supabaseAdmin
-          .from('fixture_events')
-          .select('type, detail, player_id, player_name, team_name, synced_at')
+          .from('vw_fixture_events' as 'fixture_events')
+          .select('type, detail, player_id, player_name, heb_name, team_name, synced_at')
           .in('api_fixture_id', fixtureIds)
       : { data: [] }
-
-    // שלוף שמות עבריים לשחקנים שמופיעים באירועים
-    const playerIds = [...new Set(
-      (events ?? [])
-        .map(e => e.player_id)
-        .filter((id): id is number => id !== null)
-    )]
-    const hebNameMap = new Map<number, string>()
-    if (playerIds.length) {
-      const { data: players } = await supabaseAdmin
-        .from('players')
-        .select('id, heb_name, name')
-        .in('id', playerIds)
-      for (const p of players ?? []) {
-        const row = p as { id: number; heb_name: string | null; name: string | null }
-        const displayName = row.heb_name ?? row.name
-        if (displayName) hebNameMap.set(row.id, displayName)
-      }
-    }
 
     let yellowCards = 0
     let redCards = 0
@@ -77,7 +58,8 @@ export async function GET(
           if (existing) {
             existing.goals++
           } else {
-            const displayName = hebNameMap.get(e.player_id) ?? e.player_name ?? ''
+            const row = e as unknown as { heb_name: string | null }
+            const displayName = row.heb_name ?? e.player_name ?? ''
             scorerStats.set(e.player_id, {
               name: displayName,
               team: translateTeam(e.team_name ?? ''),
