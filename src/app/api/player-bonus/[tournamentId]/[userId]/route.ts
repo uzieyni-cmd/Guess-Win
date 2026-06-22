@@ -23,7 +23,7 @@ export async function GET(
     bonus_questions: { question: string; correct_option: string | null; points: number } | null
   }
 
-  const picks = (data as Row[]).map(r => ({
+  const picks = (data as unknown as Row[]).map(r => ({
     question:      r.bonus_questions?.question ?? '',
     pick:          r.pick,
     pointsAwarded: r.points_awarded ?? 0,
