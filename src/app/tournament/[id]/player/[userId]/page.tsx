@@ -5,10 +5,17 @@ import { useTournament } from '@/context/TournamentContext'
 import { PointsBadge } from '@/components/shared/PointsBadge'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { LoadingState } from '@/components/shared/EmptyState'
-import { ArrowRight, User, Zap } from 'lucide-react'
+import { ArrowRight, User, Zap, Gift } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScoreResult } from '@/types'
 import Image from 'next/image'
+
+interface BonusPick {
+  question: string
+  pick: string
+  pointsAwarded: number
+  isCorrect: boolean | null
+}
 
 interface PlayerBetRow {
   matchId: string
@@ -30,15 +37,21 @@ export default function PlayerDetailPage() {
   const { participants } = useTournament()
 
   const [rows, setRows] = useState<PlayerBetRow[]>([])
+  const [bonusPicks, setBonusPicks] = useState<BonusPick[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const player = participants.find(p => p.id === userId)
 
   useEffect(() => {
-    fetch(`/api/player-bets/${tournamentId}/${userId}`)
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => setRows(d.rows))
+    Promise.all([
+      fetch(`/api/player-bets/${tournamentId}/${userId}`).then(r => r.ok ? r.json() : Promise.reject()),
+      fetch(`/api/player-bonus/${tournamentId}/${userId}`).then(r => r.ok ? r.json() : { picks: [] }),
+    ])
+      .then(([bets, bonus]) => {
+        setRows(bets.rows)
+        setBonusPicks(bonus.picks)
+      })
       .catch(() => setError('לא ניתן לטעון נתונים'))
       .finally(() => setLoading(false))
   }, [tournamentId, userId])
@@ -73,6 +86,39 @@ export default function PlayerDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* בחירות בונוס */}
+      {bonusPicks.length > 0 && (
+        <div className="px-4 py-4 border-b border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Gift className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold text-foreground">בחירות בונוס</h2>
+          </div>
+          <div className="space-y-2">
+            {bonusPicks.map((bp, i) => (
+              <div key={i} className={cn(
+                'flex items-center justify-between rounded-xl px-3 py-2.5 border',
+                bp.isCorrect === true  && 'bg-emerald-50 border-emerald-200',
+                bp.isCorrect === false && 'bg-red-50 border-red-200',
+                bp.isCorrect === null  && 'bg-muted/40 border-border',
+              )}>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">{bp.question}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{bp.pick}</p>
+                </div>
+                <span className={cn(
+                  'text-sm font-bold shrink-0 mr-3 tabular-nums',
+                  bp.isCorrect === true  && 'text-emerald-600',
+                  bp.isCorrect === false && 'text-red-500',
+                  bp.isCorrect === null  && 'text-muted-foreground',
+                )}>
+                  {bp.pointsAwarded} נק׳
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Rows */}
       <div className="px-4 py-4">
