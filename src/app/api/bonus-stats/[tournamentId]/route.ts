@@ -32,12 +32,13 @@ export async function GET(
       .map(m => m.api_fixture_id)
       .filter((id): id is number => id !== null)
 
+    type EventRow = { type: string; detail: string; player_id: number | null; player_name: string | null; heb_name: string | null; team_name: string | null; synced_at: string }
     const { data: events } = fixtureIds.length
-      ? await supabaseAdmin
-          .from('vw_fixture_events' as 'fixture_events')
+      ? await (supabaseAdmin as unknown as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
+          .from('vw_fixture_events')
           .select('type, detail, player_id, player_name, heb_name, team_name, synced_at')
-          .in('api_fixture_id', fixtureIds)
-      : { data: [] }
+          .in('api_fixture_id', fixtureIds) as { data: EventRow[] | null }
+      : { data: [] as EventRow[] }
 
     let yellowCards = 0
     let redCards = 0
@@ -58,8 +59,7 @@ export async function GET(
           if (existing) {
             existing.goals++
           } else {
-            const row = e as unknown as { heb_name: string | null }
-            const displayName = row.heb_name ?? e.player_name ?? ''
+            const displayName = e.heb_name ?? e.player_name ?? ''
             scorerStats.set(e.player_id, {
               name: displayName,
               team: translateTeam(e.team_name ?? ''),
