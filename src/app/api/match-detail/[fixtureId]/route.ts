@@ -51,8 +51,6 @@ export async function GET(
       detail:   e.detail,
     }))
 
-  console.log('[match-detail] homeTeamId:', m.home_team_id, typeof m.home_team_id, '| first event teamId:', events[0]?.teamId, typeof events[0]?.teamId, '| first event teamName:', events[0]?.teamName, '| homeTeamName:', m.home_team_name)
-
   return NextResponse.json({
     status: { short: m.status, elapsed: null },
     goals:  { home: m.actual_home_score, away: m.actual_away_score },
