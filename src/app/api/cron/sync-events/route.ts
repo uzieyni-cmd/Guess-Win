@@ -80,7 +80,7 @@ export async function GET(req: Request) {
       await new Promise(r => setTimeout(r, 200))
     } catch (err) {
       failed++
-      errors.push(`fixture ${match.api_fixture_id}: ${String(err)}`)
+      errors.push(`fixture ${match.api_fixture_id}: ${err instanceof Error ? err.message : JSON.stringify(err)}`)
     }
   }
 
