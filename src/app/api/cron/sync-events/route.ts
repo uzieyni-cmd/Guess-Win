@@ -59,7 +59,7 @@ export async function GET(req: Request) {
           api_fixture_id: match.api_fixture_id,
           tournament_id:  match.tournament_id,
           type:           e.type,
-          detail:         e.detail,
+          detail:         e.detail ?? '',
           player_id:      e.player.id ?? null,
           player_name:    e.player.name ?? null,
           team_id:        e.team.id ?? null,
