@@ -37,10 +37,10 @@ interface MatchDetail {
 
 // ── אייקון אירוע ──────────────────────────────────────────────────
 
-function BallIcon({ ownGoal = false, penalty = false }: { ownGoal?: boolean; penalty?: boolean }) {
-  // שחור-לבן לשער רגיל · אדום-לבן לגול עצמי
-  const bg   = ownGoal ? '#dc2626' : '#ffffff'
-  const line = ownGoal ? '#ffffff' : '#111111'
+function BallIcon({ ownGoal = false, penalty = false, missed = false }: { ownGoal?: boolean; penalty?: boolean; missed?: boolean }) {
+  // שחור-לבן לשער רגיל · אדום-לבן לגול עצמי · מעומעם לפנדל מוחמץ
+  const bg   = missed ? '#e5e7eb' : ownGoal ? '#dc2626' : '#ffffff'
+  const line = missed ? '#9ca3af' : ownGoal ? '#ffffff' : '#111111'
   const patches = [
     '12,5.5 15.5,8 14.2,12 9.8,12 8.5,8',
     '12,5.5 8.5,8 6,6.5 6.5,3 10,2',
@@ -59,11 +59,18 @@ function BallIcon({ ownGoal = false, penalty = false }: { ownGoal?: boolean; pen
         <polygon key={i} points={pts} fill={bg} stroke={line} strokeWidth="0.8" strokeLinejoin="round" />
       ))}
       <polygon points={star} fill={line} />
-      {/* badge פנדל — פינה ימנית תחתונה */}
+      {/* X אדום לפנדל מוחמץ — מסמן שלא הובקע */}
+      {missed && (
+        <>
+          <line x1="5" y1="5" x2="19" y2="19" stroke="#dc2626" strokeWidth="2.4" strokeLinecap="round" />
+          <line x1="19" y1="5" x2="5" y2="19" stroke="#dc2626" strokeWidth="2.4" strokeLinecap="round" />
+        </>
+      )}
+      {/* badge פנדל — פינה ימנית תחתונה (אדום אם מוחמץ) */}
       {penalty && (
         <>
-          <circle cx="21" cy="21" r="4.5" fill="#f59e0b" stroke={bg} strokeWidth="1" />
-          <text x="21" y="23.5" textAnchor="middle" fontSize="5.5" fontWeight="bold" fill="#111" fontFamily="sans-serif">P</text>
+          <circle cx="21" cy="21" r="4.5" fill={missed ? '#dc2626' : '#f59e0b'} stroke="#ffffff" strokeWidth="1" />
+          <text x="21" y="23.5" textAnchor="middle" fontSize="5.5" fontWeight="bold" fill={missed ? '#fff' : '#111'} fontFamily="sans-serif">P</text>
         </>
       )}
     </svg>
@@ -95,7 +102,7 @@ function CardIcon({ color }: { color: 'yellow' | 'red' | 'yr' }) {
 }
 
 function EventIcon({ type, detail }: { type: string; detail: string }) {
-  if (type === 'Goal') return <BallIcon ownGoal={detail === 'Own Goal'} penalty={detail === 'Penalty'} />
+  if (type === 'Goal') return <BallIcon ownGoal={detail === 'Own Goal'} penalty={detail === 'Penalty' || detail === 'Missed Penalty'} missed={detail === 'Missed Penalty'} />
   if (type === 'Card') {
     if (detail === 'Yellow Card')      return <CardIcon color="yellow" />
     if (detail === 'Red Card')         return <CardIcon color="red" />
