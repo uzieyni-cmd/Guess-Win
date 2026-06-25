@@ -18,10 +18,10 @@ const rankStyles = [
 function PointsSplit({ match, bonus }: { match: number; bonus: number }) {
   if (match === 0 && bonus === 0) return null
   return (
-    <span className="flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums mt-0.5">
-      <span><span className="font-semibold text-foreground/70">{match}</span> משחקים</span>
+    <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums mt-0.5">
+      <span><span className="font-semibold text-foreground/70">{match}</span> נק׳ משחקים</span>
       <span className="text-muted-foreground/40">·</span>
-      <span><span className="font-semibold text-emerald-600">{bonus}</span> בונוס</span>
+      <span><span className="font-semibold text-emerald-600">{bonus}</span> נק׳ בונוס</span>
     </span>
   )
 }
