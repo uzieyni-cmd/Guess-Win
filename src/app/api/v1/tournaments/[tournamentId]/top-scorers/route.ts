@@ -19,9 +19,9 @@ export async function GET(
   try {
     const { data: events, error } = await (supabaseAdmin as unknown as { from: (t: string) => ReturnType<typeof supabaseAdmin.from> })
       .from('vw_fixture_events')
-      .select('heb_name, photo')
+      .select('heb_name, photo, detail')
       .eq('tournament_id', tournamentId)
-      .eq('type', 'Goal') as { data: { heb_name: string | null; photo: string | null }[] | null; error: { message: string } | null }
+      .eq('type', 'Goal') as { data: { heb_name: string | null; photo: string | null; detail: string | null }[] | null; error: { message: string } | null }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
@@ -31,10 +31,15 @@ export async function GET(
       return NextResponse.json({ topScorers: [] })
     }
 
+    // ספירת שערים שהובקעו בלבד — לא פנדל מוחמץ ולא גול עצמי
+    const scored = events.filter(
+      e => e.detail !== 'Missed Penalty' && e.detail !== 'Own Goal'
+    )
+
     // Group by player and count goals
     const scorersMap = new Map<string, { name: string; photo: string | null; goals: number }>()
 
-    for (const event of events) {
+    for (const event of scored) {
       const playerKey = event.heb_name || 'Unknown'
       if (scorersMap.has(playerKey)) {
         const existing = scorersMap.get(playerKey)!
