@@ -14,15 +14,15 @@ const rankStyles = [
   { badge: 'bg-amber-500/15 border border-amber-500/50 text-amber-600',    card: 'border-amber-500/30',  points: 'text-amber-600'  },
 ]
 
-// פירוק ניקוד קומפקטי: משחקים · בונוס
+// פירוק ניקוד — שורה עצמאית ברוחב מלא מתחת לשורה הראשית
 function PointsSplit({ match, bonus }: { match: number; bonus: number }) {
   if (match === 0 && bonus === 0) return null
   return (
-    <span className="flex items-center gap-1 text-xs text-muted-foreground tabular-nums mt-0.5">
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums mt-2 pt-2 border-t border-border/40">
       <span><span className="font-semibold text-foreground/70">{match}</span> נק׳ משחקים</span>
       <span className="text-muted-foreground/40">·</span>
       <span><span className="font-semibold text-emerald-600">{bonus}</span> נק׳ בונוס</span>
-    </span>
+    </div>
   )
 }
 
@@ -73,20 +73,20 @@ export default function LeaderboardPage() {
 
       {/* המיקום שלי */}
       {myStanding && (
-        <div className="flex items-center gap-3 p-3 mb-3 rounded-xl bg-primary/10 border border-primary/30">
-          <div className="w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0 bg-primary/15 text-primary">
-            {myStanding.rank}
-          </div>
+        <div className="flex flex-col p-3 mb-3 rounded-xl bg-primary/10 border border-primary/30">
+          <div className="flex items-center gap-3 w-full">
+            <div className="w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0 bg-primary/15 text-primary">
+              {myStanding.rank}
+            </div>
 
-          <Avatar className="h-10 w-10 shrink-0">
-            <AvatarImage src={myStanding.user.avatarUrl} className="object-cover" />
-            <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-sm font-bold">
-              {myStanding.user.displayName.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+            <Avatar className="h-10 w-10 shrink-0">
+              <AvatarImage src={myStanding.user.avatarUrl} className="object-cover" />
+              <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-sm font-bold">
+                {myStanding.user.displayName.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex-1 min-w-0 flex items-center gap-1.5">
               <p className="font-semibold text-sm truncate text-foreground min-w-0">המיקום שלי</p>
               {(jokerCountByUser[myStanding.user.id] ?? 0) > 0 && (
                 <div className="flex items-center gap-0.5 shrink-0">
@@ -96,25 +96,26 @@ export default function LeaderboardPage() {
                 </div>
               )}
             </div>
-            <PointsSplit match={myStanding.matchPoints} bonus={myStanding.bonusPoints} />
-          </div>
 
-          <div className="shrink-0 flex flex-col items-center min-w-[36px]">
-            <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{myStanding.exactCount}</p>
-            <p className="text-xs text-muted-foreground">בול</p>
-          </div>
+            <div className="shrink-0 flex flex-col items-center min-w-[36px]">
+              <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{myStanding.exactCount}</p>
+              <p className="text-xs text-muted-foreground">בול</p>
+            </div>
 
-          <div className="text-left shrink-0 flex flex-col items-center min-w-[52px]">
-            <p className="font-condensed text-3xl font-bold tabular-nums text-primary leading-none">{myStanding.totalPoints}</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-xs text-muted-foreground">נק׳</span>
-              {(myStanding.liveBonus ?? 0) > 0 && (
-                <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
-                  <Flame className="h-2.5 w-2.5" />+{myStanding.liveBonus}
-                </span>
-              )}
+            <div className="text-left shrink-0 flex flex-col items-center min-w-[52px]">
+              <p className="font-condensed text-3xl font-bold tabular-nums text-primary leading-none">{myStanding.totalPoints}</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-xs text-muted-foreground">נק׳</span>
+                {(myStanding.liveBonus ?? 0) > 0 && (
+                  <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
+                    <Flame className="h-2.5 w-2.5" />+{myStanding.liveBonus}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+
+          <PointsSplit match={myStanding.matchPoints} bonus={myStanding.bonusPoints} />
         </div>
       )}
 
@@ -151,31 +152,31 @@ export default function LeaderboardPage() {
                 key={s.user.id}
                 onClick={() => router.push(`/tournament/${tournamentId}/player/${s.user.id}`)}
                 className={cn(
-                  'flex items-center gap-3 p-3 rounded-xl bg-card border border-border transition-all duration-500 cursor-pointer active:opacity-70',
+                  'flex flex-col p-3 rounded-xl bg-card border border-border transition-all duration-500 cursor-pointer active:opacity-70',
                   rankIdx < 3 && rankStyles[rankIdx].card,
                   moved && movedUp && 'ring-1 ring-emerald-500/40',
                   moved && !movedUp && 'ring-1 ring-red-500/20',
                 )}
               >
-                {/* מספר דירוג */}
-                <div className={cn(
-                  'w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0',
-                  rankIdx < 3 ? rankStyles[rankIdx].badge : 'text-muted-foreground'
-                )}>
-                  {s.rank}
-                </div>
+                <div className="flex items-center gap-3 w-full">
+                  {/* מספר דירוג */}
+                  <div className={cn(
+                    'w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0',
+                    rankIdx < 3 ? rankStyles[rankIdx].badge : 'text-muted-foreground'
+                  )}>
+                    {s.rank}
+                  </div>
 
-                {/* תמונת פרופיל */}
-                <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarImage src={s.user.avatarUrl} className="object-cover" />
-                  <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-sm font-bold">
-                    {s.user.displayName.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                  {/* תמונת פרופיל */}
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarImage src={s.user.avatarUrl} className="object-cover" />
+                    <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-sm font-bold">
+                      {s.user.displayName.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
 
-                {/* שם */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 min-w-0">
+                  {/* שם */}
+                  <div className="flex-1 min-w-0 flex items-center gap-1.5">
                     <p className="font-semibold text-sm truncate text-foreground min-w-0">{s.user.displayName}</p>
                     {(jokerCountByUser[s.user.id] ?? 0) > 0 && (
                       <div className="flex items-center gap-0.5 shrink-0">
@@ -185,29 +186,30 @@ export default function LeaderboardPage() {
                       </div>
                     )}
                   </div>
-                  <PointsSplit match={s.matchPoints} bonus={s.bonusPoints} />
-                </div>
 
-                {/* בול */}
-                <div className="shrink-0 flex flex-col items-center min-w-[36px]">
-                  <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{s.exactCount}</p>
-                  <p className="text-xs text-muted-foreground">בול</p>
-                </div>
+                  {/* בול */}
+                  <div className="shrink-0 flex flex-col items-center min-w-[36px]">
+                    <p className="font-condensed text-lg font-bold tabular-nums text-amber-500">{s.exactCount}</p>
+                    <p className="text-xs text-muted-foreground">בול</p>
+                  </div>
 
-                {/* ניקוד */}
-                <div className="text-left shrink-0 flex flex-col items-center min-w-[52px]">
-                  <p className={cn('font-condensed text-3xl font-bold tabular-nums leading-none', rankIdx < 3 ? rankStyles[rankIdx].points : 'text-primary')}>
-                    {s.totalPoints}
-                  </p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-xs text-muted-foreground">נק׳</span>
-                    {liveBonus > 0 && (
-                      <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
-                        <Flame className="h-2.5 w-2.5" />+{liveBonus}
-                      </span>
-                    )}
+                  {/* ניקוד */}
+                  <div className="text-left shrink-0 flex flex-col items-center min-w-[52px]">
+                    <p className={cn('font-condensed text-3xl font-bold tabular-nums leading-none', rankIdx < 3 ? rankStyles[rankIdx].points : 'text-primary')}>
+                      {s.totalPoints}
+                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-xs text-muted-foreground">נק׳</span>
+                      {liveBonus > 0 && (
+                        <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
+                          <Flame className="h-2.5 w-2.5" />+{liveBonus}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                <PointsSplit match={s.matchPoints} bonus={s.bonusPoints} />
               </div>
             )
           })}
