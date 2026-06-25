@@ -4,7 +4,6 @@ import { useRouter, useParams } from 'next/navigation'
 import { Trophy, Flame, Search, Zap } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { cn } from '@/lib/utils'
 
@@ -78,13 +77,6 @@ export default function LeaderboardPage() {
             <div className="w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0 bg-primary/15 text-primary">
               {myStanding.rank}
             </div>
-
-            <Avatar className="h-10 w-10 shrink-0">
-              <AvatarImage src={myStanding.user.avatarUrl} className="object-cover" />
-              <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-sm font-bold">
-                {myStanding.user.displayName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
 
             <div className="flex-1 min-w-0 flex items-center gap-1.5">
               <p className="font-semibold text-sm truncate text-foreground min-w-0">המיקום שלי</p>
@@ -166,14 +158,6 @@ export default function LeaderboardPage() {
                   )}>
                     {s.rank}
                   </div>
-
-                  {/* תמונת פרופיל */}
-                  <Avatar className="h-10 w-10 shrink-0">
-                    <AvatarImage src={s.user.avatarUrl} className="object-cover" />
-                    <AvatarFallback delayMs={0} className="bg-primary text-primary-foreground text-sm font-bold">
-                      {s.user.displayName.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
 
                   {/* שם */}
                   <div className="flex-1 min-w-0 flex items-center gap-1.5">
