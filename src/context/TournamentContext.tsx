@@ -127,7 +127,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const baseStandings = useMemo<ParticipantStanding[]>(() => {
     if (!participants.length) return []
     const pointsByUser: Record<string, number> = { ...bonusPointsByUser }
-    // ניקוד בונוס = שאלות בונוס (bonusPointsByUser) + בונוס נבחרת/מדורגת (teamBonusPick)
+    // ניקוד בונוס = שאלות בונוס בלבד; בונוס נבחרת מדורגת (teamBonusPick) נחשב חלק מניקוד המשחקים
     const bonusByUser: Record<string, number> = { ...bonusPointsByUser }
     const matchByUser: Record<string, number> = {}
     const countByUser: Record<string, number> = {}
@@ -135,7 +135,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     for (const bet of activeBets) {
       if (bet.teamBonusPick) {
         pointsByUser[bet.userId] = (pointsByUser[bet.userId] ?? 0) + bet.teamBonusPick
-        bonusByUser[bet.userId] = (bonusByUser[bet.userId] ?? 0) + bet.teamBonusPick
+        matchByUser[bet.userId] = (matchByUser[bet.userId] ?? 0) + bet.teamBonusPick
       }
       if (bet.points === null) continue
       pointsByUser[bet.userId] = (pointsByUser[bet.userId] ?? 0) + bet.points
