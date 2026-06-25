@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { after } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { translateTeam } from '@/lib/teams-he'
-import { scoreMatch } from '@/lib/bet-scoring'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
@@ -18,22 +16,7 @@ export async function GET(
 ) {
   const { tournamentId } = await params
 
-  // חשב ניקוד למשחקים חיים מה-DB (ללא קריאה ל-API)
-  after(async () => {
-    const { data: liveMatches } = await supabaseAdmin
-      .from('matches')
-      .select('id, actual_home_score, actual_away_score')
-      .eq('tournament_id', tournamentId)
-      .eq('status', 'live')
-      .not('actual_home_score', 'is', null)
-      .not('actual_away_score', 'is', null)
-
-    for (const m of liveMatches ?? []) {
-      const row = m as { id: string; actual_home_score: number; actual_away_score: number }
-      await scoreMatch(row.id, { home: row.actual_home_score, away: row.actual_away_score })
-    }
-  })
-
+  // read-only — ניקוד חי מחושב ע"י cron sync-live (כל דקה), לא פר-לקוח.
   // החזר משחקים חיים + כאלה שסיימו ב-3 השעות האחרונות (כדי שהלקוח יקבל תוצאות סופיות)
   const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString()
 

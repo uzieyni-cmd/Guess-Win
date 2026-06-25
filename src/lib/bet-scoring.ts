@@ -19,7 +19,7 @@ export async function scoreMatch(
 
   const { data: bets } = await supabaseAdmin
     .from('bets')
-    .select('id, user_id, predicted_home, predicted_away')
+    .select('id, user_id, predicted_home, predicted_away, points, result, team_bonus_pick')
     .eq('match_id', matchId)
 
   // ── ג'וקר — נדרש גם לבונוס נבחרת מדורגת, גם אם אין bets רגילים ──
@@ -40,8 +40,13 @@ export async function scoreMatch(
     return
   }
 
-  type BetRow = { id: string; user_id: string; predicted_home: number; predicted_away: number }
+  type BetRow = { id: string; user_id: string; predicted_home: number; predicted_away: number; points: number | null; result: string | null; team_bonus_pick: number | null }
   type ScoredBet = { id: string; userId: string; result: 'exact' | 'outcome' | 'miss'; points: number }
+
+  // ערכים נוכחיים ב-DB — כדי לדלג על כתיבות מיותרות (חוסך אירועי Realtime)
+  const currentById = new Map(
+    (bets as BetRow[]).map(b => [b.id, { points: b.points, result: b.result, team_bonus_pick: b.team_bonus_pick ?? 0 }])
+  )
 
   // ── Step A: ניקוד בסיס ────────────────────────────────────────
   const scored: ScoredBet[] = (bets as BetRow[]).map(bet => {
@@ -68,9 +73,15 @@ export async function scoreMatch(
   // (reset ואז award) שגרמו לרעידת ניקוד בצד הלקוח.
   const betUserIds = new Set(scored.map(b => b.userId))
   for (const b of scored) {
+    const desiredTeamBonus = teamBonusMap.get(b.userId) ?? 0
+    const cur = currentById.get(b.id)
+    // דלג אם הניקוד זהה למה שכבר שמור — מונע UPDATE מיותר ואירוע Realtime
+    if (cur && cur.points === b.points && cur.result === b.result && cur.team_bonus_pick === desiredTeamBonus) {
+      continue
+    }
     await supabaseAdmin
       .from('bets')
-      .update({ points: b.points, result: b.result, team_bonus_pick: teamBonusMap.get(b.userId) ?? 0 })
+      .update({ points: b.points, result: b.result, team_bonus_pick: desiredTeamBonus })
       .eq('id', b.id)
   }
 
@@ -81,13 +92,15 @@ export async function scoreMatch(
     // insert or update bet with team_bonus_pick only
     const { data: existing } = await supabaseAdmin
       .from('bets')
-      .select('id')
+      .select('id, team_bonus_pick')
       .eq('match_id', matchId)
       .eq('user_id', userId)
       .limit(1)
-    const existingId = (existing as { id: string }[] | null)?.[0]?.id
-    if (existingId) {
-      await supabaseAdmin.from('bets').update({ team_bonus_pick: bonus }).eq('id', existingId)
+    const existingRow = (existing as { id: string; team_bonus_pick: number | null }[] | null)?.[0]
+    if (existingRow) {
+      if ((existingRow.team_bonus_pick ?? 0) !== bonus) {
+        await supabaseAdmin.from('bets').update({ team_bonus_pick: bonus }).eq('id', existingRow.id)
+      }
     } else {
       const { data: match } = await supabaseAdmin
         .from('matches')
