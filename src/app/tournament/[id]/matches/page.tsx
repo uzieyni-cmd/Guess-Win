@@ -76,6 +76,23 @@ export default function MatchesPage() {
               </div>
             ))}
           </div>
+
+          {/* פירוק ניקוד: משחקים + בונוס = כולל */}
+          <div className="grid grid-cols-3 gap-2 mb-4 rounded-xl border border-border/60 bg-muted/40 p-2.5">
+            <div className="text-center">
+              <p className="font-condensed text-lg font-bold text-foreground tabular-nums">{myStanding?.matchPoints ?? 0}</p>
+              <p className="text-[11px] text-muted-foreground">ניקוד משחקים</p>
+            </div>
+            <div className="text-center border-x border-border/60">
+              <p className="font-condensed text-lg font-bold text-emerald-600 tabular-nums">{myStanding?.bonusPoints ?? 0}</p>
+              <p className="text-[11px] text-muted-foreground">ניקוד בונוס</p>
+            </div>
+            <div className="text-center">
+              <p className="font-condensed text-lg font-bold text-primary tabular-nums">{myStanding?.totalPoints ?? 0}</p>
+              <p className="text-[11px] text-muted-foreground">ניקוד כולל</p>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between text-xs mb-1.5">
             <span className="font-bold text-foreground tabular-nums">{progressPct}%</span>
             <span className="font-semibold text-foreground/80">ניחושים: {placedCount} / {realMatches.length}</span>

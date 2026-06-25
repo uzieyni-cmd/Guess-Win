@@ -62,7 +62,7 @@ export function deriveLeaderboard(
 
     const totalPoints = betResults.reduce((sum, r) => sum + r.points, 0)
     const exactCount = betResults.filter(r => r.result === 'exact').length
-    return { user, totalPoints, rank: 0, betResults, scoredBetsCount: betResults.length, exactCount }
+    return { user, totalPoints, rank: 0, betResults, scoredBetsCount: betResults.length, exactCount, matchPoints: totalPoints, bonusPoints: 0 }
   })
 
   standings.sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)

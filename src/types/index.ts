@@ -116,5 +116,7 @@ export interface ParticipantStanding {
   betResults: BetResult[]
   scoredBetsCount: number
   exactCount: number  // פגיעות בול — tiebreaker
+  matchPoints: number // ניקוד ממשחקים בלבד (sum של bet.points, כולל ג'וקר ובונוס מנחש יחיד)
+  bonusPoints: number // ניקוד מבונוסים: שאלות בונוס + בונוס נבחרת/מדורגת
   liveBonus?: number  // חלק תצוגתי מ-totalPoints שמקורו במשחקים שעדיין live (הניקוד עצמו נשמר ב-DB)
 }

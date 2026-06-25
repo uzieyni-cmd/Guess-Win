@@ -127,14 +127,19 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   const baseStandings = useMemo<ParticipantStanding[]>(() => {
     if (!participants.length) return []
     const pointsByUser: Record<string, number> = { ...bonusPointsByUser }
+    // ניקוד בונוס = שאלות בונוס (bonusPointsByUser) + בונוס נבחרת/מדורגת (teamBonusPick)
+    const bonusByUser: Record<string, number> = { ...bonusPointsByUser }
+    const matchByUser: Record<string, number> = {}
     const countByUser: Record<string, number> = {}
     const exactByUser: Record<string, number> = {}
     for (const bet of activeBets) {
       if (bet.teamBonusPick) {
         pointsByUser[bet.userId] = (pointsByUser[bet.userId] ?? 0) + bet.teamBonusPick
+        bonusByUser[bet.userId] = (bonusByUser[bet.userId] ?? 0) + bet.teamBonusPick
       }
       if (bet.points === null) continue
       pointsByUser[bet.userId] = (pointsByUser[bet.userId] ?? 0) + bet.points
+      matchByUser[bet.userId] = (matchByUser[bet.userId] ?? 0) + bet.points
       countByUser[bet.userId] = (countByUser[bet.userId] ?? 0) + 1
       if (bet.betResult === 'exact') {
         exactByUser[bet.userId] = (exactByUser[bet.userId] ?? 0) + 1
@@ -148,6 +153,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         betResults: [],
         scoredBetsCount: countByUser[user.id] ?? 0,
         exactCount: exactByUser[user.id] ?? 0,
+        matchPoints: matchByUser[user.id] ?? 0,
+        bonusPoints: bonusByUser[user.id] ?? 0,
       }))
       .sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)
     newStandings.forEach((s, i) => { s.rank = i + 1 })
