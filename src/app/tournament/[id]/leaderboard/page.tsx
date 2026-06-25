@@ -72,7 +72,10 @@ export default function LeaderboardPage() {
 
       {/* המיקום שלי */}
       {myStanding && (
-        <div className="flex flex-col p-3 mb-3 rounded-xl bg-primary/10 border border-primary/30">
+        <div
+          onClick={() => router.push(`/tournament/${tournamentId}/player/${myStanding.user.id}`)}
+          className="flex flex-col p-3 mb-3 rounded-xl bg-primary/10 border border-primary/30 cursor-pointer active:opacity-70 transition-opacity"
+        >
           <div className="flex items-center gap-3 w-full">
             <div className="w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0 bg-primary/15 text-primary">
               {myStanding.rank}
