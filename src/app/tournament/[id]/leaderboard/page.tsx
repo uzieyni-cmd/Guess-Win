@@ -14,6 +14,18 @@ const rankStyles = [
   { badge: 'bg-amber-500/15 border border-amber-500/50 text-amber-600',    card: 'border-amber-500/30',  points: 'text-amber-600'  },
 ]
 
+// פירוק ניקוד קומפקטי: משחקים · בונוס
+function PointsSplit({ match, bonus }: { match: number; bonus: number }) {
+  if (match === 0 && bonus === 0) return null
+  return (
+    <span className="flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums mt-0.5">
+      <span><span className="font-semibold text-foreground/70">{match}</span> משחקים</span>
+      <span className="text-muted-foreground/40">·</span>
+      <span><span className="font-semibold text-emerald-600">{bonus}</span> בונוס</span>
+    </span>
+  )
+}
+
 export default function LeaderboardPage() {
   const { standings, activeTournament, jokerPicks, bets } = useTournament()
   const { currentUser } = useAuth()
@@ -73,15 +85,18 @@ export default function LeaderboardPage() {
             </AvatarFallback>
           </Avatar>
 
-          <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1.5">
-            <p className="font-semibold text-sm truncate text-foreground">המיקום שלי</p>
-            {(jokerCountByUser[myStanding.user.id] ?? 0) > 0 && (
-              <div className="flex items-center gap-0.5">
-                {Array.from({ length: jokerCountByUser[myStanding.user.id] ?? 0 }).map((_, i) => (
-                  <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
-                ))}
-              </div>
-            )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold text-sm truncate text-foreground">המיקום שלי</p>
+              {(jokerCountByUser[myStanding.user.id] ?? 0) > 0 && (
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: jokerCountByUser[myStanding.user.id] ?? 0 }).map((_, i) => (
+                    <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
+                  ))}
+                </div>
+              )}
+            </div>
+            <PointsSplit match={myStanding.matchPoints} bonus={myStanding.bonusPoints} />
           </div>
 
           <div className="shrink-0 flex flex-col items-center min-w-[36px]">
@@ -158,15 +173,18 @@ export default function LeaderboardPage() {
                 </Avatar>
 
                 {/* שם */}
-                <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-1.5">
-                  <p className="font-semibold text-sm truncate text-foreground">{s.user.displayName}</p>
-                  {(jokerCountByUser[s.user.id] ?? 0) > 0 && (
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({ length: jokerCountByUser[s.user.id] ?? 0 }).map((_, i) => (
-                        <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
-                      ))}
-                    </div>
-                  )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-semibold text-sm truncate text-foreground">{s.user.displayName}</p>
+                    {(jokerCountByUser[s.user.id] ?? 0) > 0 && (
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: jokerCountByUser[s.user.id] ?? 0 }).map((_, i) => (
+                          <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <PointsSplit match={s.matchPoints} bonus={s.bonusPoints} />
                 </div>
 
                 {/* בול */}
