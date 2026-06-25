@@ -95,7 +95,7 @@ export default function LeaderboardPage() {
             </div>
 
             <div className="text-left shrink-0 flex flex-col items-center min-w-[52px]">
-              <p className="font-condensed text-3xl font-bold tabular-nums text-primary leading-none">{myStanding.totalPoints}</p>
+              <p className="font-condensed text-2xl font-bold tabular-nums text-primary leading-none">{myStanding.totalPoints}</p>
               <div className="flex items-center gap-1 mt-0.5">
                 <span className="text-xs text-muted-foreground">נק׳</span>
                 {(myStanding.liveBonus ?? 0) > 0 && (
@@ -179,7 +179,7 @@ export default function LeaderboardPage() {
 
                   {/* ניקוד */}
                   <div className="text-left shrink-0 flex flex-col items-center min-w-[52px]">
-                    <p className={cn('font-condensed text-3xl font-bold tabular-nums leading-none', rankIdx < 3 ? rankStyles[rankIdx].points : 'text-primary')}>
+                    <p className={cn('font-condensed text-2xl font-bold tabular-nums leading-none', rankIdx < 3 ? rankStyles[rankIdx].points : 'text-primary')}>
                       {s.totalPoints}
                     </p>
                     <div className="flex items-center gap-1 mt-0.5">
