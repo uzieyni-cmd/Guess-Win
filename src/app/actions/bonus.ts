@@ -92,21 +92,31 @@ export async function createBonusQuestion(input: {
   question: string
   options: string[]
   points: number
+  lockTime?: string   // ISO — אם מסופק, גובר על החישוב האוטומטי
 }): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin()
 
-  // lock_time = first match start − 60 min
-  const { data: firstMatch } = await supabaseAdmin
-    .from('matches')
-    .select('match_start_time')
-    .eq('tournament_id', input.tournamentId)
-    .order('match_start_time', { ascending: true })
-    .limit(1)
-    .single()
+  let lockTime: string
 
-  if (!firstMatch) return { ok: false, error: 'אין משחקים בטורניר — לא ניתן לחשב זמן נעילה' }
+  if (input.lockTime) {
+    // נעילה ידנית לשאלה זו
+    const parsed = new Date(input.lockTime)
+    if (isNaN(parsed.getTime())) return { ok: false, error: 'זמן נעילה לא תקין' }
+    lockTime = parsed.toISOString()
+  } else {
+    // ברירת מחדל: 60 דק' לפני המשחק הראשון
+    const { data: firstMatch } = await supabaseAdmin
+      .from('matches')
+      .select('match_start_time')
+      .eq('tournament_id', input.tournamentId)
+      .order('match_start_time', { ascending: true })
+      .limit(1)
+      .single()
 
-  const lockTime = new Date(new Date(firstMatch.match_start_time).getTime() - 60 * 60 * 1000).toISOString()
+    if (!firstMatch) return { ok: false, error: 'אין משחקים בטורניר — לא ניתן לחשב זמן נעילה' }
+
+    lockTime = new Date(new Date(firstMatch.match_start_time).getTime() - 60 * 60 * 1000).toISOString()
+  }
 
   const { error } = await supabaseAdmin
     .from('bonus_questions')

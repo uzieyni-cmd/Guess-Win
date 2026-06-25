@@ -687,6 +687,7 @@ export default function AdminTournamentDetailPage() {
     question: '',
     optionsRaw: '',   // comma-separated
     points: '10',
+    lockTime: '',     // datetime-local — ריק = אוטומטי
   })
   const [editBonusOpen, setEditBonusOpen] = useState(false)
   const [editingBonus, setEditingBonus] = useState<BonusQuestion | null>(null)
@@ -732,10 +733,11 @@ export default function AdminTournamentDetailPage() {
       question: newBonus.question,
       options,
       points: parseInt(newBonus.points) || 10,
+      lockTime: newBonus.lockTime ? localInputToIso(newBonus.lockTime) : undefined,
     })
     if (res.ok) {
       setAddBonusOpen(false)
-      setNewBonus({ type: 'custom', question: '', optionsRaw: '', points: '10' })
+      setNewBonus({ type: 'custom', question: '', optionsRaw: '', points: '10', lockTime: '' })
       loadBonusQuestions()
     } else {
       setBonusMsg(res.error ?? 'שגיאה')
@@ -1310,6 +1312,15 @@ export default function AdminTournamentDetailPage() {
                     <Input className="mt-1 w-24" type="number" min={1} max={100}
                       value={newBonus.points}
                       onChange={e => setNewBonus(p => ({ ...p, points: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label>זמן נעילה</Label>
+                    <Input className="mt-1" type="datetime-local"
+                      value={newBonus.lockTime}
+                      onChange={e => setNewBonus(p => ({ ...p, lockTime: e.target.value }))} />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      השאר ריק לחישוב אוטומטי (60 דק&apos; לפני המשחק הראשון).
+                    </p>
                   </div>
                   <Button type="submit" className="w-full">הוסף</Button>
                 </form>
