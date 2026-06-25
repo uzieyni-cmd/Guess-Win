@@ -86,10 +86,10 @@ export default function LeaderboardPage() {
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-sm truncate text-foreground">המיקום שלי</p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p className="font-semibold text-sm truncate text-foreground min-w-0">המיקום שלי</p>
               {(jokerCountByUser[myStanding.user.id] ?? 0) > 0 && (
-                <div className="flex items-center gap-0.5">
+                <div className="flex items-center gap-0.5 shrink-0">
                   {Array.from({ length: jokerCountByUser[myStanding.user.id] ?? 0 }).map((_, i) => (
                     <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
                   ))}
@@ -175,10 +175,10 @@ export default function LeaderboardPage() {
 
                 {/* שם */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="font-semibold text-sm truncate text-foreground">{s.user.displayName}</p>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <p className="font-semibold text-sm truncate text-foreground min-w-0">{s.user.displayName}</p>
                     {(jokerCountByUser[s.user.id] ?? 0) > 0 && (
-                      <div className="flex items-center gap-0.5">
+                      <div className="flex items-center gap-0.5 shrink-0">
                         {Array.from({ length: jokerCountByUser[s.user.id] ?? 0 }).map((_, i) => (
                           <Zap key={i} className="h-3.5 w-3.5 text-red-500 fill-red-500 shrink-0" />
                         ))}
