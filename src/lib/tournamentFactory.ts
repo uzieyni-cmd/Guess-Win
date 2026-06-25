@@ -15,6 +15,7 @@ export function generateTournament(input: CreateTournamentInput): Tournament {
     description: input.description,
     status: 'upcoming',
     isHidden: false,
+    rules: null,
     participantIds: input.participantIds,
     matches: [],
     createdAt: new Date().toISOString(),

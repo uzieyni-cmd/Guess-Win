@@ -1,7 +1,7 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil, Clock, ArrowUp, BarChart2, Users, CreditCard } from 'lucide-react'
+import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, Trash2, Gift, Shield, Pencil, Clock, ArrowUp, BarChart2, Users, CreditCard, ScrollText } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
@@ -12,6 +12,7 @@ import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } fro
 import { awardAdvancementBonus, getTeamPickTeams } from '@/app/actions/roundBonus'
 import { setPaymentStatus } from '@/app/actions/users'
 import { setupMonkey, joinMonkeyToTournament, runMonkeyBets, runMonkeyBonusPicks } from '@/app/actions/ai-monkey'
+import { setTournamentRules, uploadRulesImage } from '@/app/actions/tournaments'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -653,6 +654,84 @@ function AdvancementBonusSection({ tournamentId }: { tournamentId: string }) {
   )
 }
 
+// ── Rules editor (Markdown + image upload) ───────────────────────
+function RulesSection({ tournamentId, initialRules }: { tournamentId: string; initialRules: string }) {
+  const [text, setText] = useState(initialRules)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [msg, setMsg] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const handleSave = async () => {
+    setSaving(true)
+    setMsg('')
+    const res = await setTournamentRules(tournamentId, text)
+    setSaving(false)
+    setMsg(res.ok ? '✓ נשמר' : `שגיאה: ${res.error}`)
+    setTimeout(() => setMsg(''), 3000)
+  }
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setMsg('')
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('tournamentId', tournamentId)
+    const res = await uploadRulesImage(fd)
+    setUploading(false)
+    if (fileRef.current) fileRef.current.value = ''
+    if (res.url) {
+      setText(prev => `${prev}${prev && !prev.endsWith('\n') ? '\n\n' : ''}![](${res.url})\n`)
+      setMsg('✓ התמונה הוכנסה — לחץ שמור')
+    } else {
+      setMsg(`שגיאה: ${res.error}`)
+    }
+    setTimeout(() => setMsg(''), 4000)
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ScrollText className="h-4 w-4 text-primary" />
+          תקנון הטורניר
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          נתמך Markdown: כותרות (#), רשימות (-), הדגשה (**טקסט**), קישורים, ותמונות. השתמש בכפתור להעלאת תמונה.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {msg && (
+          <p className={`text-sm px-3 py-2 rounded-lg ${msg.startsWith('✓') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700'}`}>
+            {msg}
+          </p>
+        )}
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)}
+          rows={12}
+          dir="rtl"
+          placeholder={'## חוקי הטורניר\n\n- ניחוש מדויק = 4 נק׳\n- כיוון נכון = 1 נק׳\n\n![](כתובת-תמונה)'}
+          className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/40"
+        />
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Save className="h-4 w-4 ml-1" />}
+            שמור תקנון
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
+            {uploading ? <Loader2 className="h-4 w-4 ml-1 animate-spin" /> : <Plus className="h-4 w-4 ml-1" />}
+            העלה תמונה
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function AdminTournamentDetailPage() {
   const params = useParams()
   const id = params.id as string
@@ -1210,6 +1289,9 @@ export default function AdminTournamentDetailPage() {
       </div>
 
       <BracketConfigSection tournamentId={id} />
+
+      {/* ── תקנון הטורניר ─────────────────────────────────────────── */}
+      <RulesSection tournamentId={id} initialRules={tournament.rules ?? ''} />
 
       {/* ── עליה לשלב הבא — +5 נק' ───────────────────────────────── */}
       <AdvancementBonusSection tournamentId={id} />

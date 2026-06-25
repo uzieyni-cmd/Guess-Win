@@ -1,7 +1,7 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { requireAdmin } from '@/lib/auth-server'
+import { requireAdmin, requireTournamentAdmin } from '@/lib/auth-server'
 import { TournamentStatus } from '@/types'
 import { fetchLeagueSeasons } from './leagues'
 
@@ -86,6 +86,47 @@ export async function uploadLogo(formData: FormData): Promise<{ url?: string; er
 
   const ext = detectedMime.split('/')[1].replace('jpeg', 'jpg').replace('svg+xml', 'svg')
   const path = `${Date.now()}.${ext}`
+  const { error } = await supabaseAdmin.storage
+    .from('logos')
+    .upload(path, buffer, { contentType: detectedMime, upsert: true })
+  if (error) return { error: error.message }
+  const { data } = supabaseAdmin.storage.from('logos').getPublicUrl(path)
+  return { url: data.publicUrl }
+}
+
+// ── תקנון לכל טורניר (Markdown) ──────────────────────────────────
+export async function setTournamentRules(
+  tournamentId: string,
+  rules: string
+): Promise<{ ok: boolean; error?: string }> {
+  await requireTournamentAdmin(tournamentId)
+  const { error } = await supabaseAdmin
+    .from('tournaments')
+    .update({ rules: rules.trim() || null, updated_at: new Date().toISOString() })
+    .eq('id', tournamentId)
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+const MAX_RULES_IMG_BYTES = 3 * 1024 * 1024 // 3MB — תמונות תוכן בתקנון
+
+// העלאת תמונה לתקנון; מחזיר URL ציבורי שאפשר להכניס כ-Markdown
+export async function uploadRulesImage(formData: FormData): Promise<{ url?: string; error?: string }> {
+  const tournamentId = formData.get('tournamentId') as string | null
+  if (!tournamentId) return { error: 'חסר מזהה טורניר' }
+  await requireTournamentAdmin(tournamentId)
+
+  const file = formData.get('file') as File | null
+  if (!file || !file.size) return { error: 'לא נבחר קובץ' }
+  if (file.size > MAX_RULES_IMG_BYTES) return { error: 'הקובץ גדול מדי (מקסימום 3MB)' }
+  if (!ALLOWED_LOGO_MIME.includes(file.type)) return { error: 'סוג קובץ לא נתמך' }
+
+  const buffer = new Uint8Array(await file.arrayBuffer())
+  const detectedMime = LOGO_MAGIC.find(([bytes]) => bytes.every((b, i) => buffer[i] === b))?.[1] ?? null
+  if (!detectedMime) return { error: 'הקובץ אינו תמונה תקינה' }
+
+  const ext = detectedMime.split('/')[1].replace('jpeg', 'jpg').replace('svg+xml', 'svg')
+  const path = `rules/${tournamentId}/${Date.now()}.${ext}`
   const { error } = await supabaseAdmin.storage
     .from('logos')
     .upload(path, buffer, { contentType: detectedMime, upsert: true })

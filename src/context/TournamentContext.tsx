@@ -201,6 +201,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       description: t.description ?? '',
       status: t.status,
       isHidden: t.is_hidden ?? false,
+      rules: t.rules ?? null,
       participantIds: (participantRowsRes.data ?? [])
         .filter((p: { tournament_id: string }) => p.tournament_id === t.id)
         .map((p: { user_id: string }) => p.user_id),
