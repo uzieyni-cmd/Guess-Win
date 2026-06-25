@@ -104,15 +104,16 @@ export default function LeaderboardPage() {
             <p className="text-xs text-muted-foreground">בול</p>
           </div>
 
-          <div className="text-left shrink-0 flex flex-col items-center min-w-[48px]">
-            <p className="font-condensed text-2xl font-bold tabular-nums text-primary">{myStanding.totalPoints}</p>
-            {(myStanding.liveBonus ?? 0) > 0 ? (
-              <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
-                <Flame className="h-2.5 w-2.5" />+{myStanding.liveBonus}
-              </span>
-            ) : (
-              <p className="text-xs text-muted-foreground text-center">נק׳</p>
-            )}
+          <div className="text-left shrink-0 flex flex-col items-center min-w-[52px]">
+            <p className="font-condensed text-3xl font-bold tabular-nums text-primary leading-none">{myStanding.totalPoints}</p>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-xs text-muted-foreground">נק׳</span>
+              {(myStanding.liveBonus ?? 0) > 0 && (
+                <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
+                  <Flame className="h-2.5 w-2.5" />+{myStanding.liveBonus}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -194,17 +195,18 @@ export default function LeaderboardPage() {
                 </div>
 
                 {/* ניקוד */}
-                <div className="text-left shrink-0 flex flex-col items-center min-w-[48px]">
-                  <p className={cn('font-condensed text-2xl font-bold tabular-nums', rankIdx < 3 ? rankStyles[rankIdx].points : 'text-primary')}>
+                <div className="text-left shrink-0 flex flex-col items-center min-w-[52px]">
+                  <p className={cn('font-condensed text-3xl font-bold tabular-nums leading-none', rankIdx < 3 ? rankStyles[rankIdx].points : 'text-primary')}>
                     {s.totalPoints}
                   </p>
-                  {liveBonus > 0 ? (
-                    <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
-                      <Flame className="h-2.5 w-2.5" />+{liveBonus}
-                    </span>
-                  ) : (
-                    <p className="text-xs text-muted-foreground text-center">נק׳</p>
-                  )}
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-xs text-muted-foreground">נק׳</span>
+                    {liveBonus > 0 && (
+                      <span className="flex items-center gap-0.5 text-xs font-bold text-orange-400 animate-pulse">
+                        <Flame className="h-2.5 w-2.5" />+{liveBonus}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )
