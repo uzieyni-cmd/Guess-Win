@@ -37,6 +37,7 @@ function dbMatchToMatch(m: DbMatch): Match {
     matchStartTime: m.match_start_time,
     status: m.status as Match['status'],
     round: m.round ?? undefined,
+    hidden: m.hidden ?? false,
     liveMinute: m.elapsed_minutes ?? undefined,
     matchPeriod: m.match_period ?? undefined,
     apiFixtureId: m.api_fixture_id ?? undefined,
@@ -85,7 +86,7 @@ interface TournamentContextType {
   addMatch: (tournamentId: string, match: Omit<Match, 'id' | 'tournamentId'>) => Promise<void>
   updateUserPermissions: (userId: string, competitionIds: string[]) => Promise<void>
   reload: () => void
-  reloadMatches: (tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean }) => Promise<{ cursor: string | null; hasPast: boolean } | null>
+  reloadMatches: (tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean; includeHidden?: boolean }) => Promise<{ cursor: string | null; hasPast: boolean } | null>
   patchMatches: (tournamentId: string, updatedMatches: Match[]) => void
   betsReady: boolean
 }
@@ -208,12 +209,15 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   // ── Load matches — Route Handler עם cache ─────────────────────
   const loadActiveMatches = useCallback(async (
     tournamentId: string,
-    options: { all?: boolean; after?: string; append?: boolean } = {}
+    options: { all?: boolean; after?: string; append?: boolean; includeHidden?: boolean } = {}
   ) => {
-    const { all = false, after, append = false } = options
-    let url = `/api/matches/${tournamentId}`
-    if (all)  url += '?all=1'
-    if (after) url += `?after=${encodeURIComponent(after)}`
+    const { all = false, after, append = false, includeHidden = false } = options
+    const params = new URLSearchParams()
+    if (all)  params.set('all', '1')
+    if (after) params.set('after', after)
+    if (includeHidden) params.set('includeHidden', '1')
+    const qs = params.toString()
+    const url = `/api/matches/${tournamentId}${qs ? `?${qs}` : ''}`
 
     // PERF-04: next: { revalidate } הוא no-op בתוך Client Component — הוסר
     const res = await fetch(url)
@@ -645,7 +649,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const reload = useCallback(() => { loadTournaments() }, [loadTournaments])
-  const reloadMatches = useCallback((tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean }) => {
+  const reloadMatches = useCallback((tournamentId: string, options?: { all?: boolean; after?: string; append?: boolean; includeHidden?: boolean }) => {
     return loadActiveMatches(tournamentId, options ?? {})
   }, [loadActiveMatches])
 

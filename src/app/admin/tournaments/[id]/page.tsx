@@ -5,7 +5,7 @@ import { Plus, Save, CheckCircle2, RefreshCw, Loader2, RotateCcw, EyeOff, Eye, T
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTournament } from '@/context/TournamentContext'
-import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult } from '@/app/actions/fixtures'
+import { syncFixtures, syncOdds, setMatchScore, refreshMatchResult, setMatchHidden, setRoundHidden } from '@/app/actions/fixtures'
 import { rescoreTournamentBets } from '@/app/actions/bets'
 import { getBonusQuestions, createBonusQuestion, updateBonusQuestion, deleteBonusQuestion, setBonusResult, syncAllBonusLockTimes } from '@/app/actions/bonus'
 import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } from '@/app/actions/roles'
@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { TeamFlag } from '@/components/shared/TeamFlag'
+import { translateRound } from '@/components/tournament/MatchCard'
 import { Match, BonusQuestion, UserRole } from '@/types'
 import { ApiFixture } from '@/lib/api-football'
 import { cn } from '@/lib/utils'
@@ -835,7 +836,7 @@ export default function AdminTournamentDetailPage() {
 
   useEffect(() => {
     if (!id) return
-    reloadMatches(id, { all: true }).then(() => setMatchesLoaded(true))
+    reloadMatches(id, { all: true, includeHidden: true }).then(() => setMatchesLoaded(true))
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!tournament) return <div className="p-6 text-muted-foreground">התחרות לא נמצאה.</div>
@@ -845,6 +846,20 @@ export default function AdminTournamentDetailPage() {
   const isLoadingMatches = !matchesLoaded || (tournament.matches.length > 0 && realMatches.length === 0)
   const visibleMatches = hideFinished ? realMatches.filter((m) => m.status !== 'finished') : realMatches
   const finishedCount = realMatches.filter((m) => m.status === 'finished').length
+
+  // ── קיבוץ לפי שלב (round) לטובת הסתרה קבוצתית ────────────────────
+  const roundGroups: { round: string; label: string; matches: Match[] }[] = []
+  const roundIndex = new Map<string, number>()
+  for (const m of visibleMatches) {
+    const round = m.round ?? '—'
+    let idx = roundIndex.get(round)
+    if (idx === undefined) {
+      idx = roundGroups.length
+      roundIndex.set(round, idx)
+      roundGroups.push({ round, label: round === '—' ? 'ללא שלב' : translateRound(round), matches: [] })
+    }
+    roundGroups[idx].matches.push(m)
+  }
 
   // ── Sync from API-Football ─────────────────────────────────────
   const handleSync = async () => {
@@ -866,7 +881,7 @@ export default function AdminTournamentDetailPage() {
       setSyncMsg(`שגיאה: ${result.error}`)
     } else {
       setSyncMsg(`✓ סונכרנו ${result.synced} משחקים מ-API-Football`)
-      await reloadMatches(id, { all: true })
+      await reloadMatches(id, { all: true, includeHidden: true })
     }
   }
 
@@ -893,7 +908,7 @@ export default function AdminTournamentDetailPage() {
       setSyncMsg(`שגיאה: ${result.error}`)
     } else {
       setSyncMsg(`✓ עודכנו יחסי הימורים ל-${result.synced} משחקים`)
-      await reloadMatches(id, { all: true })
+      await reloadMatches(id, { all: true, includeHidden: true })
     }
   }
 
@@ -902,7 +917,7 @@ export default function AdminTournamentDetailPage() {
     if (!match.apiFixtureId) return
     const result = await refreshMatchResult(match.apiFixtureId)
     if (result.error) alert(`שגיאה: ${result.error}`)
-    reloadMatches(id, { all: true })
+    reloadMatches(id, { all: true, includeHidden: true })
   }
 
   // ── Manual score save ──────────────────────────────────────────
@@ -915,7 +930,24 @@ export default function AdminTournamentDetailPage() {
     await setMatchScore(matchId, home, away)
     setSaved((prev) => [...prev, matchId])
     setTimeout(() => setSaved((prev) => prev.filter((x) => x !== matchId)), 2000)
-    reloadMatches(id)
+    reloadMatches(id, { all: true, includeHidden: true })
+  }
+
+  // ── הסתרה/הצגה של משחק בודד ─────────────────────────────────────
+  const handleToggleMatchHidden = async (match: Match) => {
+    const next = !match.hidden
+    const res = await setMatchHidden(match.id, id, next)
+    if (!res.ok) { setSyncMsg(`שגיאה: ${res.error}`); return }
+    await reloadMatches(id, { all: true, includeHidden: true })
+  }
+
+  // ── הסתרה/הצגה של שלב שלם (round) ───────────────────────────────
+  const handleToggleRoundHidden = async (round: string, hidden: boolean) => {
+    const res = await setRoundHidden(id, round, hidden)
+    if (!res.ok) { setSyncMsg(`שגיאה: ${res.error}`); return }
+    setSyncMsg(`✓ ${hidden ? 'הוסתרו' : 'הוצגו'} ${res.updated ?? 0} משחקים בשלב`)
+    setTimeout(() => setSyncMsg(''), 3000)
+    await reloadMatches(id, { all: true, includeHidden: true })
   }
 
   // ── Add match manually ─────────────────────────────────────────
@@ -1042,72 +1074,114 @@ export default function AdminTournamentDetailPage() {
         </div>
       )}
 
-      <div className="space-y-4 stagger">
-        {!isLoadingMatches && visibleMatches.map((match: Match) => (
-          <div key={match.id} className="animate-fade-up">
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {new Date(match.matchStartTime).toLocaleDateString('he-IL', {
-                      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-                    })}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    {match.actualScore !== null && (
-                      <Badge variant="outline" className="text-green-700 border-green-300">
-                        תוצאה: {match.actualScore.home}–{match.actualScore.away}
-                      </Badge>
-                    )}
-                    <button
-                      onClick={() => handleRefreshMatch(match)}
-                      className="p-1 rounded hover:bg-muted transition-colors"
-                      title="רענן תוצאה מ-API"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                  </div>
+      <div className="space-y-6 stagger">
+        {!isLoadingMatches && roundGroups.map((group) => {
+          const allHidden = group.matches.every((m) => m.hidden)
+          const hiddenCount = group.matches.filter((m) => m.hidden).length
+          return (
+            <div key={group.round} className="space-y-3">
+              {/* ── כותרת שלב + הסתרה קבוצתית ── */}
+              <div className="flex items-center justify-between gap-2 sticky top-0 bg-background/80 backdrop-blur py-1 z-10">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
+                  {hiddenCount > 0 && (
+                    <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">
+                      {hiddenCount} מוסתרים
+                    </Badge>
+                  )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <TeamFlag team={match.homeTeam} size="sm" />
-                    <span className="font-semibold">{match.homeTeam.name}</span>
-                  </div>
-                  <span className="text-muted-foreground font-bold">נגד</span>
-                  <div className="flex items-center gap-2">
-                    <TeamFlag team={match.awayTeam} size="sm" />
-                    <span className="font-semibold">{match.awayTeam.name}</span>
-                  </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleToggleRoundHidden(group.round, !allHidden)}
+                  title={allHidden ? 'הצג את כל המשחקים בשלב' : 'הסתר את כל המשחקים בשלב'}
+                >
+                  {allHidden
+                    ? <><Eye className="h-4 w-4 ml-1" />הצג שלב</>
+                    : <><EyeOff className="h-4 w-4 ml-1" />הסתר שלב</>}
+                </Button>
+              </div>
+
+              {group.matches.map((match: Match) => (
+                <div key={match.id} className="animate-fade-up">
+                  <Card className={cn(match.hidden && 'opacity-60 border-dashed')}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                          {new Date(match.matchStartTime).toLocaleDateString('he-IL', {
+                            weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                          })}
+                          {match.hidden && (
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">מוסתר</Badge>
+                          )}
+                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                          {match.actualScore !== null && (
+                            <Badge variant="outline" className="text-green-700 border-green-300">
+                              תוצאה: {match.actualScore.home}–{match.actualScore.away}
+                            </Badge>
+                          )}
+                          <button
+                            onClick={() => handleToggleMatchHidden(match)}
+                            className="p-1 rounded hover:bg-muted transition-colors"
+                            title={match.hidden ? 'הצג משחק למשתתפים' : 'הסתר משחק מהמשתתפים'}
+                          >
+                            {match.hidden
+                              ? <EyeOff className="h-3.5 w-3.5 text-amber-600" />
+                              : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                          </button>
+                          <button
+                            onClick={() => handleRefreshMatch(match)}
+                            className="p-1 rounded hover:bg-muted transition-colors"
+                            title="רענן תוצאה מ-API"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="flex items-center gap-2">
+                          <TeamFlag team={match.homeTeam} size="sm" />
+                          <span className="font-semibold">{match.homeTeam.name}</span>
+                        </div>
+                        <span className="text-muted-foreground font-bold">נגד</span>
+                        <div className="flex items-center gap-2">
+                          <TeamFlag team={match.awayTeam} size="sm" />
+                          <span className="font-semibold">{match.awayTeam.name}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Label className="text-xs shrink-0">קביעת תוצאה:</Label>
+                        <Input
+                          type="number" min={0} max={20} placeholder="בית" className="w-20"
+                          value={scores[match.id]?.home ?? ''}
+                          onChange={(e) => setScores((p) => ({ ...p, [match.id]: { home: e.target.value, away: p[match.id]?.away ?? '' } }))}
+                        />
+                        <span className="font-bold">–</span>
+                        <Input
+                          type="number" min={0} max={20} placeholder="אורח" className="w-20"
+                          value={scores[match.id]?.away ?? ''}
+                          onChange={(e) => setScores((p) => ({ ...p, [match.id]: { home: p[match.id]?.home ?? '', away: e.target.value } }))}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveScore(match.id)}
+                          disabled={!scores[match.id]?.home && !scores[match.id]?.away}
+                        >
+                          {saved.includes(match.id)
+                            ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                            : <Save className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Label className="text-xs shrink-0">קביעת תוצאה:</Label>
-                  <Input
-                    type="number" min={0} max={20} placeholder="בית" className="w-20"
-                    value={scores[match.id]?.home ?? ''}
-                    onChange={(e) => setScores((p) => ({ ...p, [match.id]: { home: e.target.value, away: p[match.id]?.away ?? '' } }))}
-                  />
-                  <span className="font-bold">–</span>
-                  <Input
-                    type="number" min={0} max={20} placeholder="אורח" className="w-20"
-                    value={scores[match.id]?.away ?? ''}
-                    onChange={(e) => setScores((p) => ({ ...p, [match.id]: { home: p[match.id]?.home ?? '', away: e.target.value } }))}
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => handleSaveScore(match.id)}
-                    disabled={!scores[match.id]?.home && !scores[match.id]?.away}
-                  >
-                    {saved.includes(match.id)
-                      ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      : <Save className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ))}
+              ))}
+            </div>
+          )
+        })}
 
         {!isLoadingMatches && visibleMatches.length === 0 && realMatches.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">

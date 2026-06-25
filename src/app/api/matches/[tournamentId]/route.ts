@@ -17,7 +17,7 @@ const COLS =
   'id,tournament_id,home_team_id,home_team_name,home_team_short,home_team_flag,' +
   'away_team_id,away_team_name,away_team_short,away_team_flag,' +
   'match_start_time,status,actual_home_score,actual_away_score,api_fixture_id,round,elapsed_minutes,match_period,' +
-  'odds_home,odds_draw,odds_away'
+  'odds_home,odds_draw,odds_away,hidden'
 
 const WINDOW_FUTURE = 60  // ימים קדימה לחלון הראשוני
 const PAGE_SIZE     = 20  // גודל דף infinite scroll
@@ -29,6 +29,8 @@ export async function GET(
   const { tournamentId } = await params
   const sp  = req.nextUrl.searchParams
   const all = sp.get('all') === '1'
+  // includeHidden — רק ממשק הניהול מעביר; משתתפים לעולם לא רואים מוסתרים
+  const includeHidden = sp.get('includeHidden') === '1'
   // cursor לטעינת משחקים עתידיים — תאריך המשחק האחרון שנטען
   const after = sp.get('after') // ISO string
 
@@ -36,13 +38,15 @@ export async function GET(
 
   // ── מצב 1: infinite scroll — 20 משחקים עתידיים אחרי cursor ──────
   if (after) {
-    const { data, error } = await supabaseAdmin
+    let q = supabaseAdmin
       .from('matches')
       .select(COLS)
       .eq('tournament_id', tournamentId)
       .gt('match_start_time', after)
       .order('match_start_time', { ascending: true })
       .limit(PAGE_SIZE)
+    if (!includeHidden) q = q.eq('hidden', false)
+    const { data, error } = await q
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ matches: translateMatches(data ?? []), hasMore: (data?.length ?? 0) === PAGE_SIZE }, {
@@ -52,11 +56,13 @@ export async function GET(
 
   // ── מצב 2: all=1 — כל המשחקים (ניהול / כפתור "טען ישנים") ──────
   if (all) {
-    const { data, error } = await supabaseAdmin
+    let q = supabaseAdmin
       .from('matches')
       .select(COLS)
       .eq('tournament_id', tournamentId)
       .order('match_start_time', { ascending: true })
+    if (!includeHidden) q = q.eq('hidden', false)
+    const { data, error } = await q
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ matches: translateMatches(data ?? []), hasMore: false }, {
@@ -70,36 +76,44 @@ export async function GET(
   const to = new Date(now.getTime() + WINDOW_FUTURE * 86400_000).toISOString()
 
   // כולל: (לא גמורים) OR (גמורים אבל התחילו היום)
-  let { data, error } = await supabaseAdmin
+  let mainQ = supabaseAdmin
     .from('matches')
     .select(COLS)
     .eq('tournament_id', tournamentId)
     .or(`status.neq.finished,match_start_time.gte.${todayStart.toISOString()}`)
     .lte('match_start_time', to)
     .order('match_start_time', { ascending: true })
+  if (!includeHidden) mainQ = mainQ.eq('hidden', false)
+  const mainRes = await mainQ
+  let data = mainRes.data
+  const error = mainRes.error
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // fallback: אין משחקים בחלון — קודם נסה ראשוני (טורניר עתידי), אחר כך אחרונים (טורניר שהסתיים)
   if (!data || data.length === 0) {
-    const { data: upcoming } = await supabaseAdmin
+    let upcomingQ = supabaseAdmin
       .from('matches')
       .select(COLS)
       .eq('tournament_id', tournamentId)
       .neq('status', 'finished')
       .order('match_start_time', { ascending: true })
       .limit(PAGE_SIZE)
+    if (!includeHidden) upcomingQ = upcomingQ.eq('hidden', false)
+    const { data: upcoming } = await upcomingQ
 
     if (upcoming && upcoming.length > 0) {
       data = upcoming
     } else {
       // כל המשחקים הסתיימו — הצג 20 האחרונים
-      const { data: lastMatches } = await supabaseAdmin
+      let lastQ = supabaseAdmin
         .from('matches')
         .select(COLS)
         .eq('tournament_id', tournamentId)
         .order('match_start_time', { ascending: false })
         .limit(PAGE_SIZE)
+      if (!includeHidden) lastQ = lastQ.eq('hidden', false)
+      const { data: lastMatches } = await lastQ
       data = (lastMatches ?? []).reverse()
     }
   }
@@ -109,22 +123,29 @@ export async function GET(
   const oldestInWindow = rows[0]?.match_start_time
   const lastDate       = rows.at(-1)?.match_start_time
 
+  const pastQ = () => {
+    let q = supabaseAdmin
+      .from('matches')
+      .select('id', { count: 'exact', head: true })
+      .eq('tournament_id', tournamentId)
+      .eq('status', 'finished')
+      .lt('match_start_time', oldestInWindow!)
+    if (!includeHidden) q = q.eq('hidden', false)
+    return q
+  }
+  const moreQ = () => {
+    let q = supabaseAdmin
+      .from('matches')
+      .select('id', { count: 'exact', head: true })
+      .eq('tournament_id', tournamentId)
+      .gt('match_start_time', lastDate!)
+    if (!includeHidden) q = q.eq('hidden', false)
+    return q
+  }
+
   const [hasPastResult, hasMoreResult] = await Promise.all([
-    oldestInWindow
-      ? supabaseAdmin
-          .from('matches')
-          .select('id', { count: 'exact', head: true })
-          .eq('tournament_id', tournamentId)
-          .eq('status', 'finished')
-          .lt('match_start_time', oldestInWindow)
-      : Promise.resolve({ count: 0 }),
-    lastDate
-      ? supabaseAdmin
-          .from('matches')
-          .select('id', { count: 'exact', head: true })
-          .eq('tournament_id', tournamentId)
-          .gt('match_start_time', lastDate)
-      : Promise.resolve({ count: 0 }),
+    oldestInWindow ? pastQ() : Promise.resolve({ count: 0 }),
+    lastDate ? moreQ() : Promise.resolve({ count: 0 }),
   ])
 
   const hasPast = (hasPastResult.count ?? 0) > 0

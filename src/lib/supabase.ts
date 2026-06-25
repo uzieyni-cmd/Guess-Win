@@ -55,6 +55,7 @@ export type DbMatch = {
   odds_draw: number | null
   odds_away: number | null
   odds_updated_at: string | null
+  hidden: boolean | null
   created_at: string
 }
 

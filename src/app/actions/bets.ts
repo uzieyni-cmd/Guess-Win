@@ -61,11 +61,12 @@ export async function placeBetAction(
   // ולידציה: המשחק לא נעול עדיין
   const { data: match } = await supabaseAdmin
     .from('matches')
-    .select('match_start_time, status')
+    .select('match_start_time, status, hidden')
     .eq('id', matchId)
     .single()
 
   if (!match) return { ok: false, error: 'משחק לא נמצא' }
+  if (match.hidden) return { ok: false, error: 'המשחק אינו זמין לניחוש' }
   if (match.status === 'live' || match.status === 'finished') return { ok: false, error: 'המשחק כבר התחיל' }
   const lockTime = new Date(match.match_start_time).getTime() - 60 * 60 * 1000
   if (Date.now() >= lockTime) return { ok: false, error: 'הגשת הניחוש נסגרה' }

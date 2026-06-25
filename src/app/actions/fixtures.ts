@@ -1,7 +1,7 @@
 'use server'
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { requireAdmin } from '@/lib/auth-server'
+import { requireAdmin, requireTournamentAdmin } from '@/lib/auth-server'
 import { fetchFixtures, fetchFixtureById, fetchOdds, mapFixtureStatus } from '@/lib/api-football'
 import { scoreMatch } from '@/lib/bet-scoring'
 
@@ -156,4 +156,37 @@ export async function setMatchScore(
   } catch (err) {
     return { ok: false, error: String(err) }
   }
+}
+
+// הסתרה/הצגה של משחק בודד למשתתפים (Admin / מנהל טורניר)
+export async function setMatchHidden(
+  matchId: string,
+  tournamentId: string,
+  hidden: boolean
+): Promise<{ ok: boolean; error?: string }> {
+  await requireTournamentAdmin(tournamentId)
+  const { error } = await supabaseAdmin
+    .from('matches')
+    .update({ hidden })
+    .eq('id', matchId)
+    .eq('tournament_id', tournamentId)
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+// הסתרה/הצגה של כל המשחקים בשלב מסוים (round) בבת אחת
+export async function setRoundHidden(
+  tournamentId: string,
+  round: string,
+  hidden: boolean
+): Promise<{ ok: boolean; updated?: number; error?: string }> {
+  await requireTournamentAdmin(tournamentId)
+  const { data, error } = await supabaseAdmin
+    .from('matches')
+    .update({ hidden })
+    .eq('tournament_id', tournamentId)
+    .eq('round', round)
+    .select('id')
+  if (error) return { ok: false, error: error.message }
+  return { ok: true, updated: data?.length ?? 0 }
 }
