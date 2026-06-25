@@ -131,30 +131,39 @@ export async function updateBonusQuestion(
     question: string
     options: string[]
     points: number
+    lockTime?: string   // ISO — אם מסופק, גובר על החישוב האוטומטי
   }
 ): Promise<{ ok: boolean; error?: string }> {
   await requireAdmin()
 
-  // Fetch the tournament_id for this question so we can recalculate lock_time
-  const { data: qRow } = await supabaseAdmin
-    .from('bonus_questions')
-    .select('tournament_id')
-    .eq('id', id)
-    .single()
-
   let lockTime: string | undefined
-  if (qRow) {
-    const { data: firstMatch } = await supabaseAdmin
-      .from('matches')
-      .select('match_start_time')
-      .eq('tournament_id', (qRow as { tournament_id: string }).tournament_id)
-      .order('match_start_time', { ascending: true })
-      .limit(1)
+
+  if (input.lockTime) {
+    // נעילה ידנית — אמת שהערך תקין
+    const parsed = new Date(input.lockTime)
+    if (isNaN(parsed.getTime())) return { ok: false, error: 'זמן נעילה לא תקין' }
+    lockTime = parsed.toISOString()
+  } else {
+    // ברירת מחדל — חשב מחדש מהמשחק הראשון (60 דק' לפני)
+    const { data: qRow } = await supabaseAdmin
+      .from('bonus_questions')
+      .select('tournament_id')
+      .eq('id', id)
       .single()
-    if (firstMatch) {
-      lockTime = new Date(
-        new Date((firstMatch as { match_start_time: string }).match_start_time).getTime() - 60 * 60 * 1000
-      ).toISOString()
+
+    if (qRow) {
+      const { data: firstMatch } = await supabaseAdmin
+        .from('matches')
+        .select('match_start_time')
+        .eq('tournament_id', (qRow as { tournament_id: string }).tournament_id)
+        .order('match_start_time', { ascending: true })
+        .limit(1)
+        .single()
+      if (firstMatch) {
+        lockTime = new Date(
+          new Date((firstMatch as { match_start_time: string }).match_start_time).getTime() - 60 * 60 * 1000
+        ).toISOString()
+      }
     }
   }
 

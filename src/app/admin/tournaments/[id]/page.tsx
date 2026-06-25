@@ -26,6 +26,19 @@ import { ApiFixture } from '@/lib/api-football'
 import { cn } from '@/lib/utils'
 import { translateTeam } from '@/lib/teams-he'
 
+// ── datetime-local helpers (זמן נעילה ידני) ─────────────────────
+// ISO (UTC) → ערך datetime-local בזמן מקומי של הדפדפן
+function isoToLocalInput(iso: string): string {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 16)
+}
+// ערך datetime-local (זמן מקומי) → ISO (UTC)
+function localInputToIso(local: string): string {
+  return new Date(local).toISOString()
+}
+
 // ── MonkeyBetsSection ────────────────────────────────────────────
 
 const MONKEY_EMAIL = 'ai-monkey@guessandwin.internal'
@@ -682,6 +695,7 @@ export default function AdminTournamentDetailPage() {
     question: '',
     optionsRaw: '',
     points: '10',
+    lockTime: '',   // datetime-local value (זמן מקומי)
   })
   const [editBonusError, setEditBonusError] = useState('')
 
@@ -735,6 +749,7 @@ export default function AdminTournamentDetailPage() {
       question: q.question,
       optionsRaw: q.options.join(', '),
       points: String(q.points),
+      lockTime: q.lockTime ? isoToLocalInput(q.lockTime) : '',
     })
     setEditBonusOpen(true)
   }
@@ -752,6 +767,7 @@ export default function AdminTournamentDetailPage() {
         question: editBonus.question,
         options,
         points: parseInt(editBonus.points) || 10,
+        lockTime: editBonus.lockTime ? localInputToIso(editBonus.lockTime) : undefined,
       })
       if (res.ok) {
         setEditBonusOpen(false)
@@ -1431,9 +1447,15 @@ export default function AdminTournamentDetailPage() {
                 value={editBonus.points}
                 onChange={e => setEditBonus(p => ({ ...p, points: e.target.value }))} />
             </div>
-            <p className="text-xs text-muted-foreground bg-muted/60 rounded-lg px-3 py-2">
-              זמן הנעילה מחושב אוטומטית — 10 דקות לפני תחילת המשחק הראשון בטורניר.
-            </p>
+            <div>
+              <Label>זמן נעילה</Label>
+              <Input className="mt-1" type="datetime-local"
+                value={editBonus.lockTime}
+                onChange={e => setEditBonus(p => ({ ...p, lockTime: e.target.value }))} />
+              <p className="text-xs text-muted-foreground mt-1">
+                ניתן לערוך ידנית. ברירת המחדל היא 60 דקות לפני המשחק הראשון. כפתור &quot;סנכרן נעילות&quot; ידרוס ערך ידני.
+              </p>
+            </div>
             {editBonusError && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {editBonusError}
