@@ -17,6 +17,17 @@ export async function scoreMatch(
 ): Promise<void> {
   const { home, away } = actualScore
 
+  // משחק מוסתר מוחרג מהניקוד לחלוטין — אם בטעות יש עליו נקודות, אפס אותן
+  const { data: matchRow } = await supabaseAdmin
+    .from('matches')
+    .select('hidden')
+    .eq('id', matchId)
+    .single()
+  if ((matchRow as { hidden: boolean } | null)?.hidden) {
+    await zeroMatchScores(matchId)
+    return
+  }
+
   const { data: bets } = await supabaseAdmin
     .from('bets')
     .select('id, user_id, predicted_home, predicted_away, points, result, team_bonus_pick')
@@ -213,5 +224,25 @@ async function applyTeamBonusOnly(
         team_bonus_pick: bonus,
       })
     }
+  }
+}
+
+/**
+ * מאפס ניקוד לכל ה-bets של משחק (points=null, result=null, team_bonus_pick=0)
+ * כך שהמשחק לא נספר בדירוג ולא מוצג. כותב רק שורות שהשתנו (חוסך אירועי Realtime).
+ * משמש למשחקים מוסתרים — מוחרגים מהניקוד לחלוטין.
+ */
+export async function zeroMatchScores(matchId: string): Promise<void> {
+  const { data: bets } = await supabaseAdmin
+    .from('bets')
+    .select('id, points, result, team_bonus_pick')
+    .eq('match_id', matchId)
+
+  for (const b of (bets ?? []) as { id: string; points: number | null; result: string | null; team_bonus_pick: number | null }[]) {
+    if (b.points === null && b.result === null && (b.team_bonus_pick ?? 0) === 0) continue // כבר מאופס
+    await supabaseAdmin
+      .from('bets')
+      .update({ points: null, result: null, team_bonus_pick: 0 })
+      .eq('id', b.id)
   }
 }

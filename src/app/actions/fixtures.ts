@@ -158,6 +158,17 @@ export async function setMatchScore(
   }
 }
 
+// מיישם ניקוד לאחר שינוי מצב הסתרה:
+// מוסתר → scoreMatch מזהה ומאפס; גלוי ומסתיים → חישוב מחדש מהתוצאה.
+type HiddenScoreRow = { id: string; status: string; actual_home_score: number | null; actual_away_score: number | null }
+async function applyHiddenScoring(m: HiddenScoreRow, hidden: boolean): Promise<void> {
+  if (hidden) {
+    await scoreMatch(m.id, { home: 0, away: 0 }) // scoreMatch מזהה hidden ומאפס
+  } else if (m.status === 'finished' && m.actual_home_score != null && m.actual_away_score != null) {
+    await scoreMatch(m.id, { home: m.actual_home_score, away: m.actual_away_score })
+  }
+}
+
 // הסתרה/הצגה של משחק בודד למשתתפים (Admin / מנהל טורניר)
 export async function setMatchHidden(
   matchId: string,
@@ -165,12 +176,17 @@ export async function setMatchHidden(
   hidden: boolean
 ): Promise<{ ok: boolean; error?: string }> {
   await requireTournamentAdmin(tournamentId)
-  const { error } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('matches')
     .update({ hidden })
     .eq('id', matchId)
     .eq('tournament_id', tournamentId)
+    .select('id, status, actual_home_score, actual_away_score')
   if (error) return { ok: false, error: error.message }
+
+  const row = (data as HiddenScoreRow[] | null)?.[0]
+  if (row) await applyHiddenScoring(row, hidden)
+
   return { ok: true }
 }
 
@@ -186,7 +202,12 @@ export async function setRoundHidden(
     .update({ hidden })
     .eq('tournament_id', tournamentId)
     .eq('round', round)
-    .select('id')
+    .select('id, status, actual_home_score, actual_away_score')
   if (error) return { ok: false, error: error.message }
+
+  for (const row of (data as HiddenScoreRow[] | null) ?? []) {
+    await applyHiddenScoring(row, hidden)
+  }
+
   return { ok: true, updated: data?.length ?? 0 }
 }
