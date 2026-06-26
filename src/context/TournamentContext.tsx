@@ -157,7 +157,14 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         bonusPoints: bonusByUser[user.id] ?? 0,
       }))
       .sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)
-    newStandings.forEach((s, i) => { s.rank = i + 1 })
+    // אדמין-על אינו תופס מיקום בשום טורניר — שומרים לו נקודות אך rank=0 (לא מדורג).
+    // שאר המשתתפים מקבלים מיקומים רציפים 1..M ללא חורים.
+    let rank = 0
+    newStandings.forEach((s) => {
+      if (s.user.role === 'admin') { s.rank = 0; return }
+      rank += 1
+      s.rank = rank
+    })
     return newStandings
   }, [activeBets, bonusPointsByUser, participants])
 

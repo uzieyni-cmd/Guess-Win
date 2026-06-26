@@ -66,7 +66,7 @@ export default function MatchesPage() {
           <div className="grid grid-cols-4 gap-2 text-center mb-4">
             {[
               { label: 'נקודות', value: myStanding?.totalPoints ?? 0 },
-              { label: 'מיקום', value: myStanding ? `#${myStanding.rank}` : '#' },
+              { label: 'מיקום', value: myStanding && myStanding.rank > 0 ? `#${myStanding.rank}` : '—' },
               { label: 'פגיעות בול', value: myStanding?.exactCount ?? 0 },
               { label: 'כיוון נכון', value: correctOutcomeCount },
             ].map(({ label, value }) => (

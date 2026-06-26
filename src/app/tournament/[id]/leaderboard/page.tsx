@@ -78,11 +78,11 @@ export default function LeaderboardPage() {
         >
           <div className="flex items-center gap-3 w-full">
             <div className="w-8 h-8 flex items-center justify-center rounded-full font-condensed text-lg font-bold shrink-0 bg-primary/15 text-primary">
-              {myStanding.rank}
+              {myStanding.rank > 0 ? myStanding.rank : '—'}
             </div>
 
             <div className="flex-1 min-w-0 flex items-center gap-1.5">
-              <p className="font-semibold text-sm truncate text-foreground min-w-0">המיקום שלי</p>
+              <p className="font-semibold text-sm truncate text-foreground min-w-0">{myStanding.rank > 0 ? 'המיקום שלי' : 'הנקודות שלי'}</p>
               {(jokerCountByUser[myStanding.user.id] ?? 0) > 0 && (
                 <div className="flex items-center gap-0.5 shrink-0">
                   {Array.from({ length: jokerCountByUser[myStanding.user.id] ?? 0 }).map((_, i) => (
