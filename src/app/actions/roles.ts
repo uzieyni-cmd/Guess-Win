@@ -69,6 +69,12 @@ export async function assignTournamentAdmin(
     .upsert({ tournament_id: tournamentId, user_id: userId }, { onConflict: 'tournament_id,user_id' })
 
   if (error) return { ok: false, error: error.message }
+
+  // מנהל טורניר מופיע בטורניר כמשתתף (כדי שיוצג בדירוג) — בלי להמתין לניחוש ראשון
+  await supabaseAdmin
+    .from('tournament_participants')
+    .upsert({ tournament_id: tournamentId, user_id: userId }, { onConflict: 'tournament_id,user_id' })
+
   return { ok: true }
 }
 
