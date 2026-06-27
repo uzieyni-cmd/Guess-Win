@@ -1,11 +1,45 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Trophy, Flame, Search, Zap } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { translateRound } from '@/components/tournament/MatchCard'
+import type { Bet, ParticipantStanding } from '@/types'
 import { cn } from '@/lib/utils'
+
+// בונה דירוג לשלב בודד: סכום נקודות המשחקים (כולל ג'וקר ובונוס מדורגת) רק
+// מהמשחקים באותו round. בונוסי שאלות (כלל-טורניר) לא נכללים בדירוג שלב.
+function computeStageStandings(
+  round: string,
+  bets: Bet[],
+  universe: ParticipantStanding[],
+  matchRound: Map<string, string | undefined>
+): ParticipantStanding[] {
+  const pts: Record<string, number> = {}
+  const exact: Record<string, number> = {}
+  const count: Record<string, number> = {}
+  for (const b of bets) {
+    if (matchRound.get(b.matchId) !== round) continue
+    pts[b.userId] = (pts[b.userId] ?? 0) + (b.points ?? 0) + (b.teamBonusPick ?? 0)
+    if (b.points !== null) count[b.userId] = (count[b.userId] ?? 0) + 1
+    if (b.betResult === 'exact') exact[b.userId] = (exact[b.userId] ?? 0) + 1
+  }
+  const arr = universe.map(s => ({
+    user: s.user,
+    totalPoints: pts[s.user.id] ?? 0,
+    rank: 0,
+    betResults: [],
+    scoredBetsCount: count[s.user.id] ?? 0,
+    exactCount: exact[s.user.id] ?? 0,
+    matchPoints: pts[s.user.id] ?? 0,
+    bonusPoints: 0,
+  })).sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)
+  let rank = 0
+  arr.forEach(s => { if (s.user.role === 'admin') { s.rank = 0; return } rank += 1; s.rank = rank })
+  return arr
+}
 
 const rankStyles = [
   { badge: 'bg-yellow-400/20 border border-yellow-500/50 text-yellow-600', card: 'border-yellow-400/40', points: 'text-yellow-600' },
@@ -26,12 +60,40 @@ function PointsSplit({ match, bonus }: { match: number; bonus: number }) {
 }
 
 export default function LeaderboardPage() {
-  const { standings, activeTournament, jokerPicks, bets } = useTournament()
+  const { standings, activeTournament, jokerPicks, bets, reloadMatches } = useTournament()
   const { currentUser } = useAuth()
   const router = useRouter()
   const { id: tournamentId } = useParams() as { id: string }
   const prevRanks = useRef<Record<string, number>>({})
   const [search, setSearch] = useState('')
+  const [stage, setStage] = useState<string | null>(null) // null = דירוג כללי
+
+  // טען את כל המשחקים — דרוש כדי למפות bet→round לכל השלבים
+  useEffect(() => {
+    if (tournamentId) reloadMatches(tournamentId, { all: true })
+  }, [tournamentId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // מיפוי match→round + רשימת שלבים קיימים (לפי סדר הופעה כרונולוגי)
+  const matchRound = useMemo(() => {
+    const map = new Map<string, string | undefined>()
+    for (const m of activeTournament?.matches ?? []) map.set(m.id, m.round)
+    return map
+  }, [activeTournament])
+
+  const stages = useMemo(() => {
+    const seen = new Set<string>()
+    const list: string[] = []
+    for (const m of activeTournament?.matches ?? []) {
+      if (m.round && !seen.has(m.round)) { seen.add(m.round); list.push(m.round) }
+    }
+    return list
+  }, [activeTournament])
+
+  // דירוג מוצג: כללי (context) או לפי שלב נבחר
+  const displayStandings = useMemo(
+    () => stage ? computeStageStandings(stage, bets, standings, matchRound) : standings,
+    [stage, bets, standings, matchRound]
+  )
 
   // ספירת ג'וקרים שמומשו בפועל — רק עבור ניחושים שכבר חושבו (points !== null)
   const scoredBetKeys = new Set(
@@ -43,12 +105,13 @@ export default function LeaderboardPage() {
     return acc
   }, {})
 
+  // ניקוד חי מוצג רק בדירוג הכללי (בשלב בודד אין הבחנה חיה)
   const hasLive = (activeTournament?.matches ?? []).some(m => m.status === 'live')
-  const isLiveMode = hasLive && standings.some(s => (s.liveBonus ?? 0) > 0)
-  const myStanding = standings.find(s => s.user.id === currentUser?.id)
+  const isLiveMode = !stage && hasLive && standings.some(s => (s.liveBonus ?? 0) > 0)
+  const myStanding = displayStandings.find(s => s.user.id === currentUser?.id)
 
   // הרשימה הציבורית אינה כוללת מנהלי-על — אך "המיקום שלי" ממשיך לשקף את הדירוג האמיתי
-  const publicStandings = standings.filter(s => s.user.role !== 'admin')
+  const publicStandings = displayStandings.filter(s => s.user.role !== 'admin')
 
   const filtered = search.trim()
     ? publicStandings.filter(s => s.user.displayName.toLowerCase().includes(search.toLowerCase()))
@@ -69,6 +132,37 @@ export default function LeaderboardPage() {
           </span>
         )}
       </div>
+
+      {/* בורר שלבים — דירוג כללי או לפי שלב בודד */}
+      {stages.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none mb-3 pb-1">
+          <button
+            onClick={() => setStage(null)}
+            className={cn(
+              'shrink-0 text-xs font-semibold rounded-full px-3 py-1.5 border transition-colors min-h-[34px]',
+              stage === null
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card text-muted-foreground border-border hover:text-foreground'
+            )}
+          >
+            כללי
+          </button>
+          {stages.map(r => (
+            <button
+              key={r}
+              onClick={() => setStage(r)}
+              className={cn(
+                'shrink-0 text-xs font-semibold rounded-full px-3 py-1.5 border transition-colors min-h-[34px] whitespace-nowrap',
+                stage === r
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-card text-muted-foreground border-border hover:text-foreground'
+              )}
+            >
+              {translateRound(r)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* המיקום שלי */}
       {myStanding && (
