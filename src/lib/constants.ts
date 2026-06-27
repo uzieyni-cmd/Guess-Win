@@ -30,3 +30,11 @@ export function getJokerStageGroup(round?: string | null): JokerStageGroup | nul
   if (!round) return null
   return JOKER_STAGE_GROUPS.find(g => g.prefixes.some(p => round.startsWith(p))) ?? null
 }
+
+/** True if a round belongs to the group/league stage (collapsed into one filter) */
+export function isGroupStageRound(round?: string | null): boolean {
+  if (!round) return false
+  return GROUP_STAGE_PREFIXES.some(p => round.startsWith(p))
+    || round.startsWith('Regular Season')
+    || round.startsWith('League Stage')
+}

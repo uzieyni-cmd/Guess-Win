@@ -6,13 +6,16 @@ import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { translateRound } from '@/components/tournament/MatchCard'
+import { isGroupStageRound } from '@/lib/constants'
 import type { Bet, ParticipantStanding } from '@/types'
 import { cn } from '@/lib/utils'
 
-// בונה דירוג לשלב בודד: סכום נקודות המשחקים (כולל ג'וקר ובונוס מדורגת) רק
-// מהמשחקים באותו round. בונוסי שאלות (כלל-טורניר) לא נכללים בדירוג שלב.
+const GROUP_STAGE_KEY = '__group__'
+
+// בונה דירוג לשלב: סכום נקודות המשחקים (כולל ג'וקר ובונוס מדורגת) רק
+// מהמשחקים שעונים ל-inStage. בונוסי שאלות (כלל-טורניר) לא נכללים בדירוג שלב.
 function computeStageStandings(
-  round: string,
+  inStage: (round: string | undefined) => boolean,
   bets: Bet[],
   universe: ParticipantStanding[],
   matchRound: Map<string, string | undefined>
@@ -21,7 +24,7 @@ function computeStageStandings(
   const exact: Record<string, number> = {}
   const count: Record<string, number> = {}
   for (const b of bets) {
-    if (matchRound.get(b.matchId) !== round) continue
+    if (!inStage(matchRound.get(b.matchId))) continue
     pts[b.userId] = (pts[b.userId] ?? 0) + (b.points ?? 0) + (b.teamBonusPick ?? 0)
     if (b.points !== null) count[b.userId] = (count[b.userId] ?? 0) + 1
     if (b.betResult === 'exact') exact[b.userId] = (exact[b.userId] ?? 0) + 1
@@ -80,20 +83,28 @@ export default function LeaderboardPage() {
     return map
   }, [activeTournament])
 
+  // רשימת שלבים — כל מחזורי שלב הבתים מתקבצים לצ'יפ אחד "שלב הבתים"
   const stages = useMemo(() => {
     const seen = new Set<string>()
-    const list: string[] = []
+    const list: { key: string; label: string }[] = []
     for (const m of activeTournament?.matches ?? []) {
-      if (m.round && !seen.has(m.round)) { seen.add(m.round); list.push(m.round) }
+      if (!m.round) continue
+      const key = isGroupStageRound(m.round) ? GROUP_STAGE_KEY : m.round
+      if (seen.has(key)) continue
+      seen.add(key)
+      list.push({ key, label: key === GROUP_STAGE_KEY ? 'שלב הבתים' : translateRound(m.round) })
     }
     return list
   }, [activeTournament])
 
   // דירוג מוצג: כללי (context) או לפי שלב נבחר
-  const displayStandings = useMemo(
-    () => stage ? computeStageStandings(stage, bets, standings, matchRound) : standings,
-    [stage, bets, standings, matchRound]
-  )
+  const displayStandings = useMemo(() => {
+    if (!stage) return standings
+    const inStage = stage === GROUP_STAGE_KEY
+      ? (r: string | undefined) => isGroupStageRound(r)
+      : (r: string | undefined) => r === stage
+    return computeStageStandings(inStage, bets, standings, matchRound)
+  }, [stage, bets, standings, matchRound])
 
   // ספירת ג'וקרים שמומשו בפועל — רק עבור ניחושים שכבר חושבו (points !== null)
   const scoredBetKeys = new Set(
@@ -147,18 +158,18 @@ export default function LeaderboardPage() {
           >
             כללי
           </button>
-          {stages.map(r => (
+          {stages.map(s => (
             <button
-              key={r}
-              onClick={() => setStage(r)}
+              key={s.key}
+              onClick={() => setStage(s.key)}
               className={cn(
                 'shrink-0 text-xs font-semibold rounded-full px-3 py-1.5 border transition-colors min-h-[34px] whitespace-nowrap',
-                stage === r
+                stage === s.key
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-card text-muted-foreground border-border hover:text-foreground'
               )}
             >
-              {translateRound(r)}
+              {s.label}
             </button>
           ))}
         </div>
