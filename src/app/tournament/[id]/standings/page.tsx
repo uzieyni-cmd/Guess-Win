@@ -448,11 +448,37 @@ function wcRoundFixtures(rounds: Record<string, ApiFixture[]>, keys: string[]): 
   return []
 }
 
-function wcBuildMatrix(rounds: Record<string, ApiFixture[]>): (ApiFixture | null)[][] {
+// מפתח tie זהה ל-BracketConfigSection: מזהי שתי הקבוצות ממוינים ומחוברים ב-'-'
+function wcTieKey(f: ApiFixture): string {
+  return [f.teams.home.id, f.teams.away.id].sort((a, b) => a - b).join('-')
+}
+
+function wcBuildMatrix(
+  rounds: Record<string, ApiFixture[]>,
+  roundOrders?: Record<string, string[]>
+): (ApiFixture | null)[][] {
   return WC_ROUNDS_DEF.map(({ keys, size }) => {
-    const sorted = [...wcRoundFixtures(rounds, keys)].sort((a, b) =>
-      a.fixture.date.localeCompare(b.fixture.date) || a.fixture.id - b.fixture.id
-    )
+    const fixtures = wcRoundFixtures(rounds, keys)
+    // אם יש סדר ידני שמור לשלב — סדר לפיו (קובע גם את המיקום וגם את מספר המשחק)
+    const savedKey = keys.find(k => roundOrders?.[k]?.length)
+    const order = savedKey ? roundOrders![savedKey] : null
+
+    let sorted: ApiFixture[]
+    if (order) {
+      const byKey = new Map(fixtures.map(f => [wcTieKey(f), f]))
+      const used = new Set<string>()
+      sorted = order
+        .map(k => { used.add(k); return byKey.get(k) })
+        .filter((f): f is ApiFixture => !!f)
+      // משחקים שלא הופיעו בסדר השמור — נספחים בסוף לפי תאריך
+      for (const f of [...fixtures].sort((a, b) => a.fixture.date.localeCompare(b.fixture.date) || a.fixture.id - b.fixture.id)) {
+        if (!used.has(wcTieKey(f))) sorted.push(f)
+      }
+    } else {
+      sorted = [...fixtures].sort((a, b) =>
+        a.fixture.date.localeCompare(b.fixture.date) || a.fixture.id - b.fixture.id
+      )
+    }
     return Array.from({ length: size }, (_, i) => sorted[i] ?? null)
   })
 }
@@ -550,8 +576,8 @@ function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchN
   )
 }
 
-function WC2026Bracket({ rounds }: { rounds: Record<string, ApiFixture[]> }) {
-  const matrix  = wcBuildMatrix(rounds)
+function WC2026Bracket({ rounds, roundOrders }: { rounds: Record<string, ApiFixture[]>; roundOrders?: Record<string, string[]> }) {
+  const matrix  = wcBuildMatrix(rounds, roundOrders)
   const centers = wcComputeCenters(matrix)
   const n = WC_ROUNDS_DEF.length
 
@@ -636,7 +662,7 @@ function KnockoutBracket({
 }) {
   // WC 2026 — 32-team single-elimination bracket (only when explicitly configured)
   if (bracketConfig?.wc2026) {
-    return <WC2026Bracket rounds={rounds} />
+    return <WC2026Bracket rounds={rounds} roundOrders={bracketConfig?.roundOrders} />
   }
   const sortedRoundKeys = Object.keys(rounds).sort((a, b) => {
     const ai = ROUND_ORDER.findIndex(r => r.toLowerCase() === a.toLowerCase())
