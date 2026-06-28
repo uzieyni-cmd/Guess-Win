@@ -97,12 +97,12 @@ export default function PlayerDetailPage() {
             <h2 className="text-sm font-bold text-foreground">בחירות בונוס</h2>
           </div>
           <div className="space-y-2">
-            {bonusPicks.map((bp, i) => (
+            {bonusPicks.map((bp, i) => {
+              const gotPoints = bp.pointsAwarded > 0
+              return (
               <div key={i} className={cn(
                 'flex items-center justify-between rounded-xl px-3 py-2.5 border',
-                bp.isCorrect === true  && 'bg-emerald-50 border-emerald-200',
-                bp.isCorrect === false && 'bg-red-50 border-red-200',
-                bp.isCorrect === null  && 'bg-muted/40 border-border',
+                gotPoints ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200',
               )}>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground truncate">{bp.question}</p>
@@ -110,14 +110,13 @@ export default function PlayerDetailPage() {
                 </div>
                 <span className={cn(
                   'text-sm font-bold shrink-0 mr-3 tabular-nums',
-                  bp.isCorrect === true  && 'text-emerald-600',
-                  bp.isCorrect === false && 'text-red-500',
-                  bp.isCorrect === null  && 'text-muted-foreground',
+                  gotPoints ? 'text-emerald-600' : 'text-red-500',
                 )}>
                   {bp.pointsAwarded} נק׳
                 </span>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
