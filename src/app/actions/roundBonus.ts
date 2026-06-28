@@ -54,22 +54,30 @@ export async function getTeamPickTeams(
 
   const { data: questions } = await supabaseAdmin
     .from('bonus_questions')
-    .select('id')
+    .select('id, options')
     .eq('tournament_id', tournamentId)
     .eq('type', 'team_pick')
 
   if (!questions?.length) return []
 
+  const teams = new Set<string>()
+
+  // כל הנבחרות שהוגדרו בשאלה (גם אם אף אחד לא בחר בהן)
+  for (const q of questions as { id: string; options: string[] | null }[]) {
+    for (const opt of q.options ?? []) {
+      if (opt) teams.add(opt)
+    }
+  }
+
+  // וגם בחירות בפועל (ליתר ביטחון — אם נבחרה נבחרת שאינה ברשימת האפשרויות)
   const { data: picks } = await supabaseAdmin
     .from('bonus_picks')
     .select('pick')
     .in('bonus_question_id', (questions as { id: string }[]).map(q => q.id))
 
-  if (!picks?.length) return []
-
-  const teams = new Set<string>()
-  for (const row of picks as { pick: string }[]) {
+  for (const row of (picks ?? []) as { pick: string }[]) {
     if (row.pick) teams.add(row.pick)
   }
+
   return Array.from(teams).sort()
 }
