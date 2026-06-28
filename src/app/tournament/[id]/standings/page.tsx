@@ -583,8 +583,9 @@ function WCMatchCard({ fixture, matchNum }: { fixture: ApiFixture | null; matchN
           isW ? 'text-foreground font-bold' : 'text-muted-foreground')}>
           {translateTeam(team.name)}
         </span>
-        {hasScore && <span className={cn('text-xs font-bold shrink-0', isW ? 'text-primary' : 'text-muted-foreground')}>{g}</span>}
-        {side === 'home' && <span className="text-[8px] text-muted-foreground/30 shrink-0 mr-0.5">#{matchNum}</span>}
+        {hasScore && <span className={cn('text-xs font-bold shrink-0 tabular-nums', isW ? 'text-primary' : 'text-muted-foreground')}>{g}</span>}
+        {/* מספר המשחק — מוצג בשורת הבית, ושמור כ-placeholder נסתר בשורת האורחת כדי שהתוצאות יתיישרו באותו קו */}
+        <span className={cn('text-[8px] text-muted-foreground/30 shrink-0 mr-0.5', side === 'away' && 'invisible')}>#{matchNum}</span>
       </div>
     )
   }
