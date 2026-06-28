@@ -13,7 +13,7 @@ import Image from 'next/image'
 interface BonusPick {
   question: string
   pick: string
-  pointsAwarded: number
+  pointsAwarded: number | null   // null = טרם נוקד
   isCorrect: boolean | null
 }
 
@@ -57,7 +57,7 @@ export default function PlayerDetailPage() {
   }, [tournamentId, userId])
 
   const totalPoints = rows.reduce((sum, r) => sum + r.total, 0)
-  const totalBonus  = bonusPicks.reduce((sum, b) => sum + b.pointsAwarded, 0)
+  const totalBonus  = bonusPicks.reduce((sum, b) => sum + (b.pointsAwarded ?? 0), 0)
   const grandTotal  = totalPoints + totalBonus
 
   if (loading) return <LoadingState />
@@ -98,11 +98,13 @@ export default function PlayerDetailPage() {
           </div>
           <div className="space-y-2">
             {bonusPicks.map((bp, i) => {
-              const gotPoints = bp.pointsAwarded > 0
+              const notScored = bp.pointsAwarded === null   // טרם נוקד
+              const gotPoints  = (bp.pointsAwarded ?? 0) > 0
               return (
               <div key={i} className={cn(
                 'flex items-center justify-between rounded-xl px-3 py-2.5 border',
-                gotPoints ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200',
+                notScored ? 'bg-muted/40 border-border'
+                  : gotPoints ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200',
               )}>
                 <div className="min-w-0">
                   <p className="text-xs text-muted-foreground truncate">{bp.question}</p>
@@ -110,9 +112,10 @@ export default function PlayerDetailPage() {
                 </div>
                 <span className={cn(
                   'text-sm font-bold shrink-0 mr-3 tabular-nums',
-                  gotPoints ? 'text-emerald-600' : 'text-red-500',
+                  notScored ? 'text-muted-foreground/60 font-medium'
+                    : gotPoints ? 'text-emerald-600' : 'text-red-500',
                 )}>
-                  {bp.pointsAwarded} נק׳
+                  {notScored ? 'טרם נוקד' : `${bp.pointsAwarded} נק׳`}
                 </span>
               </div>
               )

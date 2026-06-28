@@ -42,7 +42,8 @@ export async function GET(
     .map(r => ({
       question:      r.bonus_questions?.question ?? '',
       pick:          r.pick,
-      pointsAwarded: r.points_awarded ?? 0,
+      // null = השאלה עדיין לא נוקדה (אין תוצאה). 0 = נוקדה אך לא זכתה.
+      pointsAwarded: r.points_awarded,
       isCorrect:     r.bonus_questions?.correct_option != null
                        ? r.pick === r.bonus_questions.correct_option
                        : null,
