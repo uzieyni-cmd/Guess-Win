@@ -2,7 +2,7 @@
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
-import { getJokerStageGroup } from '@/lib/constants'
+import { getJokerStageGroup, MATCH_LOCK_BEFORE_MS } from '@/lib/constants'
 
 // ── Toggle a joker pick on/off ────────────────────────────────────
 // Rules:
@@ -34,7 +34,7 @@ export async function toggleJokerPick(
     return { ok: false, error: "ג'וקר אינו זמין בשלב זה" }
   }
 
-  const lockTime = new Date(m.match_start_time).getTime() - 60 * 60 * 1000
+  const lockTime = new Date(m.match_start_time).getTime() - MATCH_LOCK_BEFORE_MS
   if (Date.now() >= lockTime) {
     return { ok: false, error: 'המשחק נעול' }
   }

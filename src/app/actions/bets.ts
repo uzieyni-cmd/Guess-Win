@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { requireAdmin } from '@/lib/auth-server'
 import { scoreMatch } from '@/lib/bet-scoring'
+import { MATCH_LOCK_BEFORE_MS } from '@/lib/constants'
 
 /**
  * Rescore ALL finished matches in a tournament.
@@ -68,7 +69,7 @@ export async function placeBetAction(
   if (!match) return { ok: false, error: 'משחק לא נמצא' }
   if (match.hidden) return { ok: false, error: 'המשחק אינו זמין לניחוש' }
   if (match.status === 'live' || match.status === 'finished') return { ok: false, error: 'המשחק כבר התחיל' }
-  const lockTime = new Date(match.match_start_time).getTime() - 60 * 60 * 1000
+  const lockTime = new Date(match.match_start_time).getTime() - MATCH_LOCK_BEFORE_MS
   if (Date.now() >= lockTime) return { ok: false, error: 'הגשת הניחוש נסגרה' }
 
   // בדוק תפקיד המשתמש

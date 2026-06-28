@@ -12,7 +12,7 @@ import {
 } from '@/app/actions/tournaments'
 import { placeBetAction, setActualScoreAction } from '@/app/actions/bets'
 import { toggleJokerPick } from '@/app/actions/joker'
-import { getJokerStageGroup } from '@/lib/constants'
+import { getJokerStageGroup, MATCH_LOCK_BEFORE_MS } from '@/lib/constants'
 
 // ── Adapters: DB row → App type ──────────────────────────────────
 
@@ -349,7 +349,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         submittedAt: b.submitted_at,
         updatedAt: b.updated_at,
         isLocked: b.matches
-          ? Date.now() >= new Date(b.matches.match_start_time).getTime() - 60 * 60 * 1000
+          ? Date.now() >= new Date(b.matches.match_start_time).getTime() - MATCH_LOCK_BEFORE_MS
           : false,
         points: b.points ?? null,
         teamBonusPick: b.team_bonus_pick ?? 0,
@@ -414,7 +414,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         // גלה isLocked מה-ref העדכני — ללא DB round-trip
         const matchStart = matchTimesRef.current.get(raw.match_id)
         const isLocked = matchStart
-          ? Date.now() >= new Date(matchStart).getTime() - 60 * 60 * 1000
+          ? Date.now() >= new Date(matchStart).getTime() - MATCH_LOCK_BEFORE_MS
           : false
         const newBet: Bet = {
           id: raw.id,

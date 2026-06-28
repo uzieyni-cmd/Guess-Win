@@ -6,6 +6,7 @@
  */
 
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { MATCH_LOCK_BEFORE_MS } from '@/lib/constants'
 import { createOpenAI } from '@ai-sdk/openai'
 import { generateText } from 'ai'
 import { fetchTeamRecentMatches } from '@/lib/api-football'
@@ -201,7 +202,7 @@ export async function runMonkeyBets(tournamentId: string, formCache: FormCache =
     await joinMonkeyToTournament(tournamentId)
 
     const now = new Date()
-    const cutoff = new Date(now.getTime() + 60 * 60 * 1000) // עד שעה לפני נעילת המשחק (כמו אצל המשתמשים)
+    const cutoff = new Date(now.getTime() + MATCH_LOCK_BEFORE_MS) // עד נעילת המשחק (כמו אצל המשתמשים)
     const urgentCutoff = new Date(now.getTime() + 24 * 60 * 60 * 1000) // משחקים שמתחילים תוך 24 שעות — חובה למלא, ללא הגבלת BATCH_SIZE
 
     // שלוף משחקים עתידיים שעדיין לא ננעלו

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-
-const LOCK_BEFORE_MS = 60 * 60 * 1000 // 60 minutes
+import { MATCH_LOCK_BEFORE_MS as LOCK_BEFORE_MS } from '@/lib/constants'
 
 interface CountdownResult {
   timeLeft: number // ms remaining until lock
