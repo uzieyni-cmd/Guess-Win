@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseServerClient } from '@/lib/supabase-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,9 +10,14 @@ export async function GET(
 ) {
   const { tournamentId, userId } = await params
 
+  // הצופה — בחירות של בונוס פתוח (טרם נעול) מוסתרות מכולם פרט לבעל הבחירה עצמו
+  const supabase = await createSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isSelf = user?.id === userId
+
   const { data, error } = await supabaseAdmin
     .from('bonus_picks')
-    .select('pick, points_awarded, bonus_questions(question, correct_option, points)')
+    .select('pick, points_awarded, bonus_questions(question, correct_option, points, lock_time)')
     .eq('tournament_id', tournamentId)
     .eq('user_id', userId)
 
@@ -20,17 +26,25 @@ export async function GET(
   type Row = {
     pick: string
     points_awarded: number | null
-    bonus_questions: { question: string; correct_option: string | null; points: number } | null
+    bonus_questions: { question: string; correct_option: string | null; points: number; lock_time: string | null } | null
   }
 
-  const picks = (data as unknown as Row[]).map(r => ({
-    question:      r.bonus_questions?.question ?? '',
-    pick:          r.pick,
-    pointsAwarded: r.points_awarded ?? 0,
-    isCorrect:     r.bonus_questions?.correct_option != null
-                     ? r.pick === r.bonus_questions.correct_option
-                     : null,
-  }))
+  const now = Date.now()
+  const picks = (data as unknown as Row[])
+    // הסתר בחירות של בונוסים שעדיין פתוחים (לפני נעילה) — אלא אם זו הבחירה של הצופה עצמו
+    .filter(r => {
+      const lock = r.bonus_questions?.lock_time
+      const isLocked = lock ? now >= new Date(lock).getTime() : false
+      return isLocked || isSelf
+    })
+    .map(r => ({
+      question:      r.bonus_questions?.question ?? '',
+      pick:          r.pick,
+      pointsAwarded: r.points_awarded ?? 0,
+      isCorrect:     r.bonus_questions?.correct_option != null
+                       ? r.pick === r.bonus_questions.correct_option
+                       : null,
+    }))
 
   return NextResponse.json({ picks })
 }
