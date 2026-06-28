@@ -453,34 +453,66 @@ function wcTieKey(f: ApiFixture): string {
   return [f.teams.home.id, f.teams.away.id].sort((a, b) => a - b).join('-')
 }
 
+// מזהה הקבוצה המנצחת במשחק (לפי פנדלים אם PEN, אחרת לפי שערים); null אם טרם הוכרע
+function wcWinnerId(f: ApiFixture | null): number | null {
+  if (!f) return null
+  const st = f.fixture.status.short
+  if (!FIN_ST.has(st)) return null
+  if (st === 'PEN') {
+    const ph = f.score.penalty.home ?? 0, pa = f.score.penalty.away ?? 0
+    return ph > pa ? f.teams.home.id : pa > ph ? f.teams.away.id : null
+  }
+  const gh = f.goals.home ?? 0, ga = f.goals.away ?? 0
+  return gh > ga ? f.teams.home.id : ga > gh ? f.teams.away.id : null
+}
+
 function wcBuildMatrix(
   rounds: Record<string, ApiFixture[]>,
   roundOrders?: Record<string, string[]>
 ): (ApiFixture | null)[][] {
-  return WC_ROUNDS_DEF.map(({ keys, size }) => {
-    const fixtures = wcRoundFixtures(rounds, keys)
-    // אם יש סדר ידני שמור לשלב — סדר לפיו (קובע גם את המיקום וגם את מספר המשחק)
-    const savedKey = keys.find(k => roundOrders?.[k]?.length)
-    const order = savedKey ? roundOrders![savedKey] : null
+  const matrix: (ApiFixture | null)[][] = []
 
-    let sorted: ApiFixture[]
-    if (order) {
-      const byKey = new Map(fixtures.map(f => [wcTieKey(f), f]))
-      const used = new Set<string>()
-      sorted = order
-        .map(k => { used.add(k); return byKey.get(k) })
-        .filter((f): f is ApiFixture => !!f)
-      // משחקים שלא הופיעו בסדר השמור — נספחים בסוף לפי תאריך
-      for (const f of [...fixtures].sort((a, b) => a.fixture.date.localeCompare(b.fixture.date) || a.fixture.id - b.fixture.id)) {
-        if (!used.has(wcTieKey(f))) sorted.push(f)
-      }
-    } else {
-      sorted = [...fixtures].sort((a, b) =>
-        a.fixture.date.localeCompare(b.fixture.date) || a.fixture.id - b.fixture.id
-      )
+  // ── שלב 32 (עמודה ראשונה) — לפי הסדר הידני 1→16 (או תאריך כ-fallback) ──
+  const r32 = WC_ROUNDS_DEF[0]
+  const r32Fixtures = wcRoundFixtures(rounds, r32.keys)
+  const savedKey = r32.keys.find(k => roundOrders?.[k]?.length)
+  const order = savedKey ? roundOrders![savedKey] : null
+  let r32Sorted: ApiFixture[]
+  if (order) {
+    const byKey = new Map(r32Fixtures.map(f => [wcTieKey(f), f]))
+    const used = new Set<string>()
+    r32Sorted = order.map(k => { used.add(k); return byKey.get(k) }).filter((f): f is ApiFixture => !!f)
+    for (const f of [...r32Fixtures].sort((a, b) => a.fixture.date.localeCompare(b.fixture.date) || a.fixture.id - b.fixture.id)) {
+      if (!used.has(wcTieKey(f))) r32Sorted.push(f)
     }
-    return Array.from({ length: size }, (_, i) => sorted[i] ?? null)
-  })
+  } else {
+    r32Sorted = [...r32Fixtures].sort((a, b) => a.fixture.date.localeCompare(b.fixture.date) || a.fixture.id - b.fixture.id)
+  }
+  matrix.push(Array.from({ length: r32.size }, (_, i) => r32Sorted[i] ?? null))
+
+  // ── שלבים מאוחרים — מילוי אוטומטי לפי המבנה: סלוט p ניזון ממנצחי 2p ו-2p+1 ──
+  for (let r = 1; r < WC_ROUNDS_DEF.length; r++) {
+    const { keys, size } = WC_ROUNDS_DEF[r]
+    const fixtures = wcRoundFixtures(rounds, keys)
+    const prev = matrix[r - 1]
+    const usedIds = new Set<number>()
+    const row: (ApiFixture | null)[] = Array.from({ length: size }, (_, p) => {
+      const wA = wcWinnerId(prev[2 * p])
+      const wB = wcWinnerId(prev[2 * p + 1])
+      if (!wA && !wB) return null // שני המזינים טרם הוכרעו → TBD
+      const found = fixtures.find(f =>
+        !usedIds.has(f.fixture.id) && (
+          (wA && (f.teams.home.id === wA || f.teams.away.id === wA)) ||
+          (wB && (f.teams.home.id === wB || f.teams.away.id === wB))
+        )
+      )
+      if (found) usedIds.add(found.fixture.id)
+      return found ?? null
+    })
+    matrix.push(row)
+  }
+
+  return matrix
 }
 
 function wcComputeCenters(matrix: (ApiFixture | null)[][]): number[][] {
