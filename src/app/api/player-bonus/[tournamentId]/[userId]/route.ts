@@ -17,7 +17,7 @@ export async function GET(
 
   const { data, error } = await supabaseAdmin
     .from('bonus_picks')
-    .select('pick, points_awarded, bonus_questions(question, correct_option, points, lock_time)')
+    .select('pick, points_awarded, bonus_questions(question, correct_option, points, lock_time, created_at)')
     .eq('tournament_id', tournamentId)
     .eq('user_id', userId)
 
@@ -26,7 +26,7 @@ export async function GET(
   type Row = {
     pick: string
     points_awarded: number | null
-    bonus_questions: { question: string; correct_option: string | null; points: number; lock_time: string | null } | null
+    bonus_questions: { question: string; correct_option: string | null; points: number; lock_time: string | null; created_at: string | null } | null
   }
 
   const now = Date.now()
@@ -37,6 +37,8 @@ export async function GET(
       const isLocked = lock ? now >= new Date(lock).getTime() : false
       return isLocked || isSelf
     })
+    // סדר לפי סדר השאלות בבונוס (created_at של השאלה)
+    .sort((a, b) => (a.bonus_questions?.created_at ?? '').localeCompare(b.bonus_questions?.created_at ?? ''))
     .map(r => ({
       question:      r.bonus_questions?.question ?? '',
       pick:          r.pick,
