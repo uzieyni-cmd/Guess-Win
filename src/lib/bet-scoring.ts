@@ -17,16 +17,20 @@ export async function scoreMatch(
 ): Promise<void> {
   const { home, away } = actualScore
 
-  // משחק מוסתר מוחרג מהניקוד לחלוטין — אם בטעות יש עליו נקודות, אפס אותן
+  // משחק מוסתר מוחרג מהניקוד לחלוטין — אם בטעות יש עליו נקודות, אפס אותן.
+  // בנוסף קוראים את דגל בונוס המנחש היחיד של הטורניר.
   const { data: matchRow } = await supabaseAdmin
     .from('matches')
-    .select('hidden')
+    .select('hidden, tournaments(unique_bonus_enabled)')
     .eq('id', matchId)
     .single()
-  if ((matchRow as { hidden: boolean } | null)?.hidden) {
+  const mr = matchRow as { hidden: boolean; tournaments: { unique_bonus_enabled: boolean } | { unique_bonus_enabled: boolean }[] | null } | null
+  if (mr?.hidden) {
     await zeroMatchScores(matchId)
     return
   }
+  const tour = Array.isArray(mr?.tournaments) ? mr?.tournaments[0] : mr?.tournaments
+  const uniqueBonusEnabled = tour?.unique_bonus_enabled ?? true
 
   const { data: bets } = await supabaseAdmin
     .from('bets')
@@ -76,8 +80,9 @@ export async function scoreMatch(
   }
 
   // ── Step C: בונוס ניחוש מדויק יחידני (+5, לא מוכפל בג'וקר) ──────
+  // מושבת אם הטורניר הגדיר unique_bonus_enabled = false
   const exactOnes = scored.filter(b => b.result === 'exact')
-  if (exactOnes.length === 1) exactOnes[0].points += 5
+  if (uniqueBonusEnabled && exactOnes.length === 1) exactOnes[0].points += 5
 
   // ── Step D: כתוב ניקוד סופי + team_bonus_pick ב-write אחד ──────
   // מיזוג team_bonus_pick לאותו update מונע שני אירועי Realtime

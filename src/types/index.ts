@@ -22,6 +22,7 @@ export interface Tournament {
   status: TournamentStatus
   isHidden: boolean
   rules: string | null
+  uniqueBonusEnabled: boolean
   participantIds: string[]
   matches: Match[]
   createdAt: string

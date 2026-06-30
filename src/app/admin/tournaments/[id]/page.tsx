@@ -12,7 +12,7 @@ import { getTournamentAdmins, assignTournamentAdmin, removeTournamentAdmin } fro
 import { awardAdvancementBonus, getTeamPickTeams } from '@/app/actions/roundBonus'
 import { setPaymentStatus } from '@/app/actions/users'
 import { setupMonkey, joinMonkeyToTournament, runMonkeyBets, runMonkeyBonusPicks } from '@/app/actions/ai-monkey'
-import { setTournamentRules, uploadRulesImage } from '@/app/actions/tournaments'
+import { setTournamentRules, uploadRulesImage, setUniqueBonusEnabled } from '@/app/actions/tournaments'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -732,6 +732,50 @@ function RulesSection({ tournamentId, initialRules }: { tournamentId: string; in
   )
 }
 
+// ── Toggle: unique-exact-predictor bonus (+5) ────────────────────
+function UniqueBonusToggle({ tournamentId, initialEnabled }: { tournamentId: string; initialEnabled: boolean }) {
+  const [enabled, setEnabled] = useState(initialEnabled)
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  const toggle = async () => {
+    const next = !enabled
+    setEnabled(next)
+    setSaving(true)
+    const res = await setUniqueBonusEnabled(tournamentId, next)
+    setSaving(false)
+    if (!res.ok) { setEnabled(!next); setMsg(`שגיאה: ${res.error}`); return }
+    setMsg(next ? '✓ בונוס מנחש יחיד הופעל' : '✓ בונוס מנחש יחיד הושבת (מעכשיו)')
+    setTimeout(() => setMsg(''), 3000)
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <CheckCircle2 className="h-4 w-4 text-amber-500" />
+          בונוס מנחש יחיד (+5)
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          +5 נק&apos; למי שלבד ניחש תוצאה מדויקת במשחק. השינוי חל מעכשיו (משחקים שינוקדו מכאן והלאה).
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {msg && (
+          <p className={`text-sm px-3 py-2 rounded-lg ${msg.startsWith('✓') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700'}`}>
+            {msg}
+          </p>
+        )}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={enabled} disabled={saving} onChange={toggle}
+            className="h-4 w-4 rounded border-border accent-amber-500" />
+          <span className="text-sm text-foreground">{enabled ? 'מופעל' : 'מושבת'}</span>
+        </label>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function AdminTournamentDetailPage() {
   const params = useParams()
   const id = params.id as string
@@ -1292,6 +1336,9 @@ export default function AdminTournamentDetailPage() {
 
       {/* ── תקנון הטורניר ─────────────────────────────────────────── */}
       <RulesSection tournamentId={id} initialRules={tournament.rules ?? ''} />
+
+      {/* ── בונוס מנחש יחיד ──────────────────────────────────────── */}
+      <UniqueBonusToggle tournamentId={id} initialEnabled={tournament.uniqueBonusEnabled ?? true} />
 
       {/* ── עליה לשלב הבא — +5 נק' ───────────────────────────────── */}
       <AdvancementBonusSection tournamentId={id} />

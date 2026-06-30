@@ -27,6 +27,7 @@ export type DbTournament = {
   status: 'upcoming' | 'active' | 'completed'
   is_hidden: boolean
   rules: string | null
+  unique_bonus_enabled: boolean
   api_league_id: number | null
   api_season: number | null
   created_at: string

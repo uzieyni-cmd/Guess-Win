@@ -94,6 +94,20 @@ export async function uploadLogo(formData: FormData): Promise<{ url?: string; er
   return { url: data.publicUrl }
 }
 
+// ── בונוס מנחש יחיד (+5) — הפעלה/השבתה לכל טורניר ─────────────────
+export async function setUniqueBonusEnabled(
+  tournamentId: string,
+  enabled: boolean
+): Promise<{ ok: boolean; error?: string }> {
+  await requireTournamentAdmin(tournamentId)
+  const { error } = await supabaseAdmin
+    .from('tournaments')
+    .update({ unique_bonus_enabled: enabled, updated_at: new Date().toISOString() })
+    .eq('id', tournamentId)
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
 // ── תקנון לכל טורניר (Markdown) ──────────────────────────────────
 export async function setTournamentRules(
   tournamentId: string,
