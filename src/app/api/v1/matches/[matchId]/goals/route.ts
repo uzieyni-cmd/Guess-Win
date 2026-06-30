@@ -33,9 +33,9 @@ export async function GET(
       return NextResponse.json({ goals: [] })
     }
 
-    // לא לספור פנדל הכרעה (shootout) שמתרחש אחרי הדקה ה-120
+    // לא לספור פנדל הכרעה (shootout) — נשמר ב-elapsed >= 120
     const goals = events
-      .filter(e => !(e.detail === 'Penalty' && (e.elapsed ?? 0) > 120))
+      .filter(e => !(e.detail === 'Penalty' && (e.elapsed ?? 0) >= 120))
       .map(e => ({
         scorer: e.heb_name ?? '',
         minute: e.elapsed,

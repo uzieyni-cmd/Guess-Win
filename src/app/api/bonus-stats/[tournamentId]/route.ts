@@ -35,7 +35,7 @@ export async function GET(
     const { data: events } = fixtureIds.length
       ? await supabaseAdmin
           .from('vw_fixture_events' as 'fixture_events')
-          .select('type, detail, player_id, heb_name, team_name, synced_at')
+          .select('type, detail, player_id, heb_name, team_name, elapsed, synced_at')
           .in('api_fixture_id', fixtureIds)
       : { data: [] }
 
@@ -50,6 +50,10 @@ export async function GET(
         if (e.detail === 'Yellow Card') yellowCards++
         else if (e.detail === 'Red Card' || e.detail === 'Yellow Red Card') redCards++
       } else if (e.type === 'Goal') {
+        // פנדל הכרעה (shootout) נשמר ב-elapsed >= 120 — לא נספר כשער/פנדל במשחק
+        const isShootoutPen = e.detail === 'Penalty' && ((e as unknown as { elapsed: number | null }).elapsed ?? 0) >= 120
+        if (isShootoutPen) continue
+
         if (e.detail === 'Penalty') penalties++
         else if (e.detail === 'Own Goal') ownGoals++
 

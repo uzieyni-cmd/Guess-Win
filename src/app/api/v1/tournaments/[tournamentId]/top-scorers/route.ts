@@ -69,7 +69,7 @@ export async function GET(
     const scored = events.filter(e =>
       e.detail !== 'Missed Penalty' &&
       e.detail !== 'Own Goal' &&
-      !(e.detail === 'Penalty' && (e.elapsed ?? 0) > 120)
+      !(e.detail === 'Penalty' && (e.elapsed ?? 0) >= 120)
     )
 
     // dedup — אותו fixture עשוי להופיע בכמה טורנירים (league+season משותף);
