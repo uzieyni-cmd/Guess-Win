@@ -33,12 +33,15 @@ export async function GET(
       return NextResponse.json({ goals: [] })
     }
 
-    const goals = events.map(e => ({
-      scorer: e.heb_name ?? '',
-      minute: e.elapsed,
-      team: e.team_name,
-      type: mapGoalType(e.detail),
-    }))
+    // לא לספור פנדל הכרעה (shootout) שמתרחש אחרי הדקה ה-120
+    const goals = events
+      .filter(e => !(e.detail === 'Penalty' && (e.elapsed ?? 0) > 120))
+      .map(e => ({
+        scorer: e.heb_name ?? '',
+        minute: e.elapsed,
+        team: e.team_name,
+        type: mapGoalType(e.detail),
+      }))
 
     return NextResponse.json({ goals })
   } catch {

@@ -64,9 +64,12 @@ export async function GET(
       return NextResponse.json({ topScorers: [] })
     }
 
-    // ספירת שערים שהובקעו בלבד — לא פנדל מוחמץ ולא גול עצמי
-    const scored = events.filter(
-      e => e.detail !== 'Missed Penalty' && e.detail !== 'Own Goal'
+    // ספירת שערים שהובקעו בלבד — לא פנדל מוחמץ, לא גול עצמי,
+    // ולא פנדל הכרעה (shootout) שמתרחש אחרי הדקה ה-120
+    const scored = events.filter(e =>
+      e.detail !== 'Missed Penalty' &&
+      e.detail !== 'Own Goal' &&
+      !(e.detail === 'Penalty' && (e.elapsed ?? 0) > 120)
     )
 
     // dedup — אותו fixture עשוי להופיע בכמה טורנירים (league+season משותף);
