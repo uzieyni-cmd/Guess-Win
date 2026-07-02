@@ -225,6 +225,26 @@ export async function fetchPlayerInfo(playerName: string): Promise<PlayerInfo | 
   }
 }
 
+// ── Top Scorers (מלך השערים — רשימה מוכנה מה-API) ─────────────────
+
+export interface ApiTopScorer {
+  player: { id: number; name: string; photo: string | null }
+  statistics: {
+    team: { id: number; name: string; logo: string | null }
+    games: { appearences: number | null }
+    goals: { total: number | null; assists: number | null }
+    penalty: { scored: number | null }
+  }[]
+}
+
+export async function fetchTopScorers(leagueId: number, season: number): Promise<ApiTopScorer[]> {
+  const data = await apiFetchRaw<ApiTopScorer>(
+    `/players/topscorers?league=${leagueId}&season=${season}`,
+    true,
+  )
+  return data.response
+}
+
 // ── Fixture Events (כרטיסים, שערים, פנדלים, שערים עצמיים) ─────────
 
 export interface FixtureEvent {

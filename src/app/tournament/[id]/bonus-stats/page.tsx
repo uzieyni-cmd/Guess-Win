@@ -12,7 +12,7 @@ interface BonusStats {
   redCards: number
   penalties: number
   ownGoals: number
-  topScorers: { name: string; team: string; photo: string; goals: number }[]
+  topScorers: { name: string; team: string; photo: string | null; goals: number; assists: number | null }[]
   matchCount: number
   lastSyncedAt: string | null
 }
@@ -23,6 +23,8 @@ const medalStyles = [
   'bg-yellow-400/20 border border-yellow-500/50 text-yellow-600',
   'bg-slate-400/15 border border-slate-400/50 text-slate-500',
   'bg-amber-500/15 border border-amber-500/50 text-amber-600',
+  'bg-muted border border-border text-muted-foreground',
+  'bg-muted border border-border text-muted-foreground',
 ]
 
 export default function BonusStatsPage() {
@@ -121,7 +123,10 @@ export default function BonusStatsPage() {
                   <p className="font-semibold text-sm truncate text-foreground">{p.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{p.team}</p>
                 </div>
-                <p className="font-condensed text-2xl font-bold tabular-nums text-primary shrink-0">{p.goals}</p>
+                <div className="text-left shrink-0">
+                  <p className="font-condensed text-2xl font-bold tabular-nums text-primary leading-none">{p.goals}</p>
+                  <p className="text-[10px] text-muted-foreground tabular-nums" dir="rtl">{p.assists ?? 0} בישולים</p>
+                </div>
               </div>
             ))}
           </CardContent>

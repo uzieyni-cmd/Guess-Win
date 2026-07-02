@@ -11,6 +11,13 @@ export async function GET(
   const { tournamentId } = await params
 
   try {
+    // ליגה+עונה של הטורניר — בשביל טבלת מלכי השערים
+    const { data: tournament } = await supabaseAdmin
+      .from('tournaments')
+      .select('api_league_id, api_season')
+      .eq('id', tournamentId)
+      .single()
+
     // סכום שערים מהמשחקים עצמם (מהימן תמיד)
     const { data: matches } = await supabaseAdmin
       .from('matches')
@@ -35,7 +42,7 @@ export async function GET(
     const { data: events } = fixtureIds.length
       ? await supabaseAdmin
           .from('vw_fixture_events' as 'fixture_events')
-          .select('type, detail, player_id, heb_name, team_name, elapsed, synced_at')
+          .select('type, detail, elapsed, synced_at')
           .in('api_fixture_id', fixtureIds)
       : { data: [] }
 
@@ -43,7 +50,6 @@ export async function GET(
     let redCards = 0
     let penalties = 0
     let ownGoals = 0
-    const scorerStats = new Map<number, { name: string; team: string; goals: number }>()
 
     for (const e of events ?? []) {
       if (e.type === 'Card') {
@@ -56,32 +62,41 @@ export async function GET(
 
         if (e.detail === 'Penalty') penalties++
         else if (e.detail === 'Own Goal') ownGoals++
-
-        if (e.player_id !== null && e.detail !== 'Own Goal' && e.detail !== 'Missed Penalty') {
-          const existing = scorerStats.get(e.player_id)
-          if (existing) {
-            existing.goals++
-          } else {
-            const displayName = (e as unknown as { heb_name: string | null }).heb_name ?? ''
-            scorerStats.set(e.player_id, {
-              name: displayName,
-              team: translateTeam(e.team_name ?? ''),
-              goals: 1,
-            })
-          }
-        }
       }
     }
 
-    const topScorers = [...scorerStats.entries()]
-      .sort((a, b) => b[1].goals - a[1].goals)
-      .slice(0, 3)
-      .map(([playerId, s]) => ({
-        name: s.name,
-        team: s.team,
-        photo: `https://media.api-sports.io/football/players/${playerId}.png`,
-        goals: s.goals,
-      }))
+    // מלכי השערים — מטבלת top_scorers (מסונכרנת מ-/players/topscorers של ה-API)
+    let topScorers: { name: string; team: string; photo: string | null; goals: number; assists: number | null }[] = []
+    const league = (tournament as { api_league_id: number | null; api_season: number | null } | null)?.api_league_id
+    const season = (tournament as { api_league_id: number | null; api_season: number | null } | null)?.api_season
+
+    if (league != null && season != null) {
+      const { data: scorers } = await supabaseAdmin
+        .from('top_scorers')
+        .select('player_id, player_name, photo, team_name, goals, assists, rank')
+        .eq('api_league_id', league)
+        .eq('api_season', season)
+        .order('rank', { ascending: true })
+        .limit(5) as { data: { player_id: number; player_name: string; photo: string | null; team_name: string | null; goals: number; assists: number | null }[] | null }
+
+      if (scorers?.length) {
+        // שמות בעברית מטבלת players (fallback לשם מה-API)
+        const { data: hebPlayers } = await supabaseAdmin
+          .from('players')
+          .select('id, heb_name')
+          .in('id', scorers.map(s => s.player_id)) as { data: { id: number; heb_name: string | null }[] | null }
+
+        const hebMap = new Map((hebPlayers ?? []).map(p => [p.id, p.heb_name]))
+
+        topScorers = scorers.map(s => ({
+          name: hebMap.get(s.player_id) || s.player_name,
+          team: translateTeam(s.team_name ?? ''),
+          photo: s.photo ?? `https://media.api-sports.io/football/players/${s.player_id}.png`,
+          goals: s.goals,
+          assists: s.assists,
+        }))
+      }
+    }
 
     const lastSyncedAt = (events ?? []).reduce<string | null>((max, e) => {
       if (!max || e.synced_at > max) return e.synced_at
