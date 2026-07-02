@@ -69,8 +69,11 @@ export function startSyncCron() {
             if (f.goals.home !== null && f.goals.home !== undefined) fields.actual_home_score = f.goals.home
             if (f.goals.away !== null && f.goals.away !== undefined) fields.actual_away_score = f.goals.away
           } else if (isFinished) {
-            if (f.score.fulltime.home !== null) fields.actual_home_score = f.score.fulltime.home
-            if (f.score.fulltime.away !== null) fields.actual_away_score = f.score.fulltime.away
+            // goals = תוצאה סופית כולל הארכה (AET); fulltime = רק תום 90 דק'
+            const fh = f.goals.home ?? f.score.fulltime.home
+            const fa = f.goals.away ?? f.score.fulltime.away
+            if (fh !== null && fh !== undefined) fields.actual_home_score = fh
+            if (fa !== null && fa !== undefined) fields.actual_away_score = fa
           }
 
           await supabaseAdmin
@@ -84,8 +87,8 @@ export function startSyncCron() {
               m.api_fixture_id === f.fixture.id
           )
           if (dbMatch && isFinished && dbMatch.status !== 'finished') {
-            const home = f.score.fulltime.home ?? f.goals.home ?? 0
-            const away = f.score.fulltime.away ?? f.goals.away ?? 0
+            const home = f.goals.home ?? f.score.fulltime.home ?? 0
+            const away = f.goals.away ?? f.score.fulltime.away ?? 0
             await scoreMatch(dbMatch.id, { home, away })
           }
         }

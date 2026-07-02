@@ -104,8 +104,12 @@ export async function syncLiveMatches(opts: {
         if (f.goals.home !== null && f.goals.home !== undefined) fields.actual_home_score = f.goals.home
         if (f.goals.away !== null && f.goals.away !== undefined) fields.actual_away_score = f.goals.away
       } else if (isFinished) {
-        if (f.score.fulltime.home !== null) fields.actual_home_score = f.score.fulltime.home
-        if (f.score.fulltime.away !== null) fields.actual_away_score = f.score.fulltime.away
+        // goals = התוצאה הסופית כולל הארכה (AET); fulltime = רק תום 90 דק'.
+        // מעדיפים goals כדי לא לאבד שערי הארכה.
+        const fh = f.goals.home ?? f.score.fulltime.home
+        const fa = f.goals.away ?? f.score.fulltime.away
+        if (fh !== null && fh !== undefined) fields.actual_home_score = fh
+        if (fa !== null && fa !== undefined) fields.actual_away_score = fa
       }
 
       await supabaseAdmin
@@ -124,8 +128,8 @@ export async function syncLiveMatches(opts: {
       if (dbMatch && isFinished) {
         // נופל לערך החי האחרון שנשמר ב-DB אם הספק עדיין לא החזיר תוצאת סיום —
         // כך שלא "מאפסים" בטעות את הניקוד של כולם ל-0:0 בטיק המעבר ל-finished
-        const home = f.score.fulltime.home ?? f.goals.home ?? dbMatch.actual_home_score ?? 0
-        const away = f.score.fulltime.away ?? f.goals.away ?? dbMatch.actual_away_score ?? 0
+        const home = f.goals.home ?? f.score.fulltime.home ?? dbMatch.actual_home_score ?? 0
+        const away = f.goals.away ?? f.score.fulltime.away ?? dbMatch.actual_away_score ?? 0
         await scoreMatch(dbMatch.id, { home, away })
       } else if (dbMatch && isLive) {
         const home = f.goals.home ?? (dbMatch as unknown as { actual_home_score: number | null }).actual_home_score ?? 0

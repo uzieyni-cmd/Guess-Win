@@ -31,8 +31,9 @@ export async function syncFixtures(
       away_team_flag: f.teams.away.logo,
       match_start_time: f.fixture.date,
       status: mapFixtureStatus(f.fixture.status.short),
-      actual_home_score: f.score.fulltime.home ?? null,
-      actual_away_score: f.score.fulltime.away ?? null,
+      // goals = תוצאה סופית כולל הארכה (AET); fulltime = רק תום 90 דק'
+      actual_home_score: f.goals.home ?? f.score.fulltime.home ?? null,
+      actual_away_score: f.goals.away ?? f.score.fulltime.away ?? null,
       api_fixture_id: f.fixture.id,
       round: f.league.round ?? null,
     }))
@@ -94,8 +95,9 @@ export async function refreshMatchResult(
     if (!fixture) return { ok: false, error: 'Fixture not found' }
 
     const status = mapFixtureStatus(fixture.fixture.status.short)
-    const homeScore = fixture.score.fulltime.home ?? null
-    const awayScore = fixture.score.fulltime.away ?? null
+    // goals = תוצאה סופית כולל הארכה (AET); fulltime = רק תום 90 דק'
+    const homeScore = fixture.goals.home ?? fixture.score.fulltime.home ?? null
+    const awayScore = fixture.goals.away ?? fixture.score.fulltime.away ?? null
 
     const { data: updated, error } = await supabaseAdmin
       .from('matches')
