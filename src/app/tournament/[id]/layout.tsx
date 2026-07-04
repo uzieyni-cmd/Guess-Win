@@ -8,6 +8,7 @@ import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { SiteHeader } from '@/components/shared/SiteHeader'
 import { ChatBot } from '@/components/shared/ChatBot'
+import { BonusCountdownBanner } from '@/components/tournament/BonusCountdownBanner'
 import { cn } from '@/lib/utils'
 
 const NAV_TABS = [
@@ -89,6 +90,8 @@ function TournamentShell({ children }: { children: React.ReactNode }) {
 
       {/* Content */}
       <div key={pathname} className="flex-1 max-w-[1600px] mx-auto w-full px-4 py-6 animate-fade-up">
+        {/* תזכורת בונוס פתוח — בכל הלשוניות חוץ מלשונית הבונוס עצמה (שם כבר יש שעון) */}
+        {!pathname.endsWith('/bonus') && <BonusCountdownBanner tournamentId={id} />}
         {children}
       </div>
 

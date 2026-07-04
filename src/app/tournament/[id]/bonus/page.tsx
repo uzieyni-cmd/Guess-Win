@@ -550,7 +550,14 @@ export default function BonusPage() {
     )
   }
 
-  const lockTime = questions[0]?.lockTime
+  // שעון ההירו סופר עד הבונוס הפתוח האחרון להיסגר (ה-lockTime העתידי המאוחר ביותר).
+  // אם אין אף בונוס פתוח — נופלים חזרה לשאלה הראשונה כדי להציג את מצב "הבחירות נסגרו".
+  const now = Date.now()
+  const lastOpenLock = questions
+    .map(q => q.lockTime)
+    .filter(t => new Date(t).getTime() > now)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+  const lockTime = lastOpenLock ?? questions[0]?.lockTime
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
