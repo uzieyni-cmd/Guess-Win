@@ -132,6 +132,7 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
     const matchByUser: Record<string, number> = {}
     const countByUser: Record<string, number> = {}
     const exactByUser: Record<string, number> = {}
+    const outcomeByUser: Record<string, number> = {}
     for (const bet of activeBets) {
       if (bet.teamBonusPick) {
         pointsByUser[bet.userId] = (pointsByUser[bet.userId] ?? 0) + bet.teamBonusPick
@@ -143,6 +144,8 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
       countByUser[bet.userId] = (countByUser[bet.userId] ?? 0) + 1
       if (bet.betResult === 'exact') {
         exactByUser[bet.userId] = (exactByUser[bet.userId] ?? 0) + 1
+      } else if (bet.betResult === 'outcome') {
+        outcomeByUser[bet.userId] = (outcomeByUser[bet.userId] ?? 0) + 1
       }
     }
     const newStandings: ParticipantStanding[] = participants
@@ -153,10 +156,11 @@ export function TournamentProvider({ children }: { children: React.ReactNode }) 
         betResults: [],
         scoredBetsCount: countByUser[user.id] ?? 0,
         exactCount: exactByUser[user.id] ?? 0,
+        outcomeCount: outcomeByUser[user.id] ?? 0,
         matchPoints: matchByUser[user.id] ?? 0,
         bonusPoints: bonusByUser[user.id] ?? 0,
       }))
-      .sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)
+      .sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount || b.outcomeCount - a.outcomeCount)
     // אדמין-על אינו תופס מיקום בשום טורניר — שומרים לו נקודות אך rank=0 (לא מדורג).
     // שאר המשתתפים מקבלים מיקומים רציפים 1..M ללא חורים.
     let rank = 0

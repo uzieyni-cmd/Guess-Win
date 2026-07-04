@@ -22,12 +22,14 @@ function computeStageStandings(
 ): ParticipantStanding[] {
   const pts: Record<string, number> = {}
   const exact: Record<string, number> = {}
+  const outcome: Record<string, number> = {}
   const count: Record<string, number> = {}
   for (const b of bets) {
     if (!inStage(matchRound.get(b.matchId))) continue
     pts[b.userId] = (pts[b.userId] ?? 0) + (b.points ?? 0) + (b.teamBonusPick ?? 0)
     if (b.points !== null) count[b.userId] = (count[b.userId] ?? 0) + 1
     if (b.betResult === 'exact') exact[b.userId] = (exact[b.userId] ?? 0) + 1
+    else if (b.betResult === 'outcome') outcome[b.userId] = (outcome[b.userId] ?? 0) + 1
   }
   const arr = universe.map(s => ({
     user: s.user,
@@ -36,9 +38,10 @@ function computeStageStandings(
     betResults: [],
     scoredBetsCount: count[s.user.id] ?? 0,
     exactCount: exact[s.user.id] ?? 0,
+    outcomeCount: outcome[s.user.id] ?? 0,
     matchPoints: pts[s.user.id] ?? 0,
     bonusPoints: 0,
-  })).sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)
+  })).sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount || b.outcomeCount - a.outcomeCount)
   let rank = 0
   arr.forEach(s => { if (s.user.role === 'admin') { s.rank = 0; return } rank += 1; s.rank = rank })
   return arr
@@ -51,13 +54,15 @@ const rankStyles = [
 ]
 
 // פירוק ניקוד — שורה עצמאית ברוחב מלא מתחת לשורה הראשית
-function PointsSplit({ match, bonus }: { match: number; bonus: number }) {
-  if (match === 0 && bonus === 0) return null
+function PointsSplit({ match, bonus, outcome }: { match: number; bonus: number; outcome: number }) {
+  if (match === 0 && bonus === 0 && outcome === 0) return null
   return (
     <div className="flex items-center gap-1.5 text-xs text-muted-foreground tabular-nums mt-2 pt-2 border-t border-border/40">
       <span><span className="font-semibold text-foreground/70">{match}</span> נק׳ משחקים</span>
       <span className="text-muted-foreground/40">·</span>
       <span><span className="font-semibold text-emerald-600">{bonus}</span> נק׳ בונוס</span>
+      <span className="text-muted-foreground/40">·</span>
+      <span><span className="font-semibold text-sky-600">{outcome}</span> כיוונים</span>
     </div>
   )
 }
@@ -215,7 +220,7 @@ export default function LeaderboardPage() {
             </div>
           </div>
 
-          <PointsSplit match={myStanding.matchPoints} bonus={myStanding.bonusPoints} />
+          <PointsSplit match={myStanding.matchPoints} bonus={myStanding.bonusPoints} outcome={myStanding.outcomeCount} />
         </div>
       )}
 
@@ -301,7 +306,7 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
 
-                <PointsSplit match={s.matchPoints} bonus={s.bonusPoints} />
+                <PointsSplit match={s.matchPoints} bonus={s.bonusPoints} outcome={s.outcomeCount} />
               </div>
             )
           })}

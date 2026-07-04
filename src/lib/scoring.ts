@@ -62,10 +62,11 @@ export function deriveLeaderboard(
 
     const totalPoints = betResults.reduce((sum, r) => sum + r.points, 0)
     const exactCount = betResults.filter(r => r.result === 'exact').length
-    return { user, totalPoints, rank: 0, betResults, scoredBetsCount: betResults.length, exactCount, matchPoints: totalPoints, bonusPoints: 0 }
+    const outcomeCount = betResults.filter(r => r.result === 'outcome').length
+    return { user, totalPoints, rank: 0, betResults, scoredBetsCount: betResults.length, exactCount, outcomeCount, matchPoints: totalPoints, bonusPoints: 0 }
   })
 
-  standings.sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)
+  standings.sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount || b.outcomeCount - a.outcomeCount)
   standings.forEach((s, i) => (s.rank = i + 1))
 
   return standings
