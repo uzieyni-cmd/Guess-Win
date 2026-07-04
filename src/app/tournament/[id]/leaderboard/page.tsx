@@ -5,6 +5,7 @@ import { Trophy, Flame, Search, Zap } from 'lucide-react'
 import { useTournament } from '@/context/TournamentContext'
 import { useAuth } from '@/context/AuthContext'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { BonusCountdownBanner } from '@/components/tournament/BonusCountdownBanner'
 import { translateRound } from '@/components/tournament/MatchCard'
 import { isGroupStageRound } from '@/lib/constants'
 import type { Bet, ParticipantStanding } from '@/types'
@@ -135,6 +136,8 @@ export default function LeaderboardPage() {
 
   return (
     <div>
+      <BonusCountdownBanner tournamentId={tournamentId} />
+
       <div className="flex items-center gap-2 mb-3">
         <Trophy className="h-5 w-5 text-primary" />
         <h2 className="font-suez text-xl text-foreground">טבלת דירוג</h2>
