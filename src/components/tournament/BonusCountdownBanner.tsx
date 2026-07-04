@@ -30,8 +30,8 @@ function useCountdown(lockTime: string | null) {
   return r
 }
 
-// באנר תזכורת: מוצג רק אם יש בונוס פתוח (lockTime בעתיד).
-// מציג את המועד הקרוב ביותר להיסגר, ולחיצה מקפיצה ללשונית הבונוס.
+// באנר תזכורת: מוצג רק אם יש בונוס פתוח אחד לפחות (lockTime בעתיד).
+// הספירה היא עד המועד המאוחר ביותר להיסגר — כלומר מתי הבונוס האחרון ננעל.
 export function BonusCountdownBanner({ tournamentId }: { tournamentId: string }) {
   const [lockTime, setLockTime] = useState<string | null>(null)
 
@@ -40,11 +40,11 @@ export function BonusCountdownBanner({ tournamentId }: { tournamentId: string })
     getBonusQuestions(tournamentId).then(qs => {
       if (cancelled) return
       const now = Date.now()
-      const next = qs
+      const last = qs
         .map(q => q.lockTime)
         .filter(t => new Date(t).getTime() > now)
-        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0]
-      setLockTime(next ?? null)
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
+      setLockTime(last ?? null)
     }).catch(() => { /* אין הרשאה / שגיאה — פשוט לא נציג באנר */ })
     return () => { cancelled = true }
   }, [tournamentId])
