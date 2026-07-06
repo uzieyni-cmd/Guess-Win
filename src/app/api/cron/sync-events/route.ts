@@ -60,11 +60,13 @@ export async function GET(req: Request) {
           tournament_id:  match.tournament_id,
           type:           e.type,
           detail:         e.detail ?? '',
-          player_id:      e.player.id ?? null,
-          player_name:    e.player.name ?? null,
-          team_id:        e.team.id ?? null,
-          team_name:      e.team.name ?? null,
-          elapsed:        e.time.elapsed ?? null,
+          player_id:         e.player.id ?? null,
+          player_name:       e.player.name ?? null,
+          team_id:           e.team.id ?? null,
+          team_name:         e.team.name ?? null,
+          elapsed:           e.time.elapsed ?? null,
+          assist_player_id:  e.assist?.id ?? null,
+          assist_player_name: e.assist?.name ?? null,
         }))
 
         const { error: insertErr } = await supabaseAdmin
