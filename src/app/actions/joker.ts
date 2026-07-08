@@ -6,7 +6,7 @@ import { getJokerStageGroup, MATCH_LOCK_BEFORE_MS } from '@/lib/constants'
 
 // ── Toggle a joker pick on/off ────────────────────────────────────
 // Rules:
-//   • Only matches in a configured joker stage group (group stage / R32 / R16)
+//   • Only matches in a configured joker stage group (ראה JOKER_STAGE_GROUPS)
 //   • Not locked (match_start_time − 60 min)
 //   • Each stage group has its own independent quota — unused jokers
 //     from one stage do not carry over to the next
