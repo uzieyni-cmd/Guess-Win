@@ -27,9 +27,8 @@ export const JOKER_STAGE_GROUPS: JokerStageGroup[] = [
   { id: 'group', label: 'שלב הבתים', prefixes: GROUP_STAGE_PREFIXES, max: 3 },
   { id: 'r32', label: 'שלב ה-32', prefixes: ['Round of 32'], max: 1 },
   { id: 'r16', label: 'שמינית הגמר', prefixes: ['Round of 16'], max: 1 },
-  // ג'וקר אחד משותף לרבע/חצי/גמר + גמר מקום 3
-  // (שמות ה-API: Quarter-finals / Semi-finals / 3rd Place Final / Final)
-  { id: 'finals', label: 'שלבי הגמר', prefixes: ['Quarter-finals', 'Semi-finals', '3rd Place Final', 'Final'], max: 1 },
+  // ג'וקר אחד לרבע הגמר בלבד
+  { id: 'qf', label: 'רבע הגמר', prefixes: ['Quarter-finals'], max: 1 },
 ]
 
 /** Resolves which joker stage group (if any) a match round belongs to */
